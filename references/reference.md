@@ -110,7 +110,7 @@ Response fields: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `i
 | seller | String | Seller filter |
 | asin | String | ASIN filter |
 | categoryPath | List\<String\> | Category filter |
-| sortBy | String | `monthlySales` / `monthlyRevenue` / `bsr` / `price` / `rating` / `reviewCount` / `listingDate` |
+| sortBy | String | `atLeastMonthlySales` / `atLeastMonthlyRevenue` / `bsr` / `price` / `rating` / `reviewCount` / `listingDate` |
 | sortOrder | String | `asc` / `desc` |
 | pageSize | Integer | default 20 |
 
@@ -215,7 +215,7 @@ Same as competitor-lookup plus:
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| salesMonthly | Integer | Monthly unit sales |
+| atLeastMonthlySales | Integer | Estimated monthly sales (lower bound, actual may be higher) |
 | salesRevenue | Float | Monthly revenue |
 | salesGrowthRate | Float | Sales growth rate |
 | childSalesMonthly | Integer | Child ASIN monthly sales |
@@ -272,7 +272,7 @@ Same as competitor-lookup plus:
 
 ### BSR to sales estimation
 
-When `salesMonthly` is null, estimate: **Monthly sales ≈ 300,000 / BSR^0.65**
+When `atLeastMonthlySales` is null, estimate: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 ---
 
