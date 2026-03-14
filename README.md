@@ -31,16 +31,14 @@ apiclaw-analysis-skill/
 
 Sign up at [apiclaw.io/api-keys](https://apiclaw.io/api-keys) → Create a new key (format: `hms_live_xxx`)
 
-### 2. Set Environment Variable
+### 2. Use It
 
-```bash
-export APICLAW_API_KEY="hms_live_your_key_here"
-```
+Tell your AI agent your API Key — it will handle the rest automatically.
 
 ### 3. Verify
 
 ```bash
-python scripts/apiclaw.py check
+python3 scripts/apiclaw.py check
 ```
 
 ## Script Commands
@@ -66,6 +64,8 @@ python scripts/apiclaw.py check
 
 - Python 3.8+ (stdlib only, no pip dependencies)
 - APIClaw API Key ([get one here](https://apiclaw.io/api-keys))
+
+> 📖 [中文文档](README_CN.md)
 
 ## API Coverage
 

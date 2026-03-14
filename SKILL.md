@@ -97,8 +97,6 @@ print(f"API Key saved to {config_path}")
 - Standardized error messages
 - `_query` metadata injection (for query condition traceability)
 
-**macOS note**: macOS doesn't have `python` command by default, use `python3`. Replace `python` in example commands with `python3`.
-
 **Fallback plan:** If script execution fails and can't be quickly fixed, can use curl to call API directly as temporary solution, but note "this time using curl direct call" in output.
 
 ---
@@ -110,9 +108,9 @@ All commands output JSON. Progress messages go to stderr.
 ### categories — Category tree lookup
 
 ```bash
-python scripts/apiclaw.py categories --keyword "pet supplies"
-python scripts/apiclaw.py categories --parent "Pet Supplies"
-python scripts/apiclaw.py categories                          # root categories
+python3 scripts/apiclaw.py categories --keyword "pet supplies"
+python3 scripts/apiclaw.py categories --parent "Pet Supplies"
+python3 scripts/apiclaw.py categories                          # root categories
 ```
 
 Common fields: `categoryName` (not `name`), `categoryPath`, `productCount`, `hasChildren`
@@ -120,8 +118,8 @@ Common fields: `categoryName` (not `name`), `categoryPath`, `productCount`, `has
 ### market — Market-level aggregate data
 
 ```bash
-python scripts/apiclaw.py market --category "Pet Supplies,Dogs" --topn 10
-python scripts/apiclaw.py market --keyword "treadmill"
+python3 scripts/apiclaw.py market --category "Pet Supplies,Dogs" --topn 10
+python3 scripts/apiclaw.py market --keyword "treadmill"
 ```
 
 Key output fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `topSalesRate` (concentration), `topBrandSalesRate`, `sampleNewSkuRate`, `sampleFbaRate`, `sampleBrandCount`
@@ -130,15 +128,15 @@ Key output fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `topSalesRate` (co
 
 ```bash
 # Use a preset mode (14 built-in modes)
-python scripts/apiclaw.py products --keyword "yoga mat" --mode beginner
-python scripts/apiclaw.py products --keyword "pet toys" --mode high-demand-low-barrier
+python3 scripts/apiclaw.py products --keyword "yoga mat" --mode beginner
+python3 scripts/apiclaw.py products --keyword "pet toys" --mode high-demand-low-barrier
 
 # Or use explicit filters
-python scripts/apiclaw.py products --keyword "yoga mat" --sales-min 300 --reviews-max 50
-python scripts/apiclaw.py products --keyword "yoga mat" --growth-min 0.1 --listing-age 180
+python3 scripts/apiclaw.py products --keyword "yoga mat" --sales-min 300 --reviews-max 50
+python3 scripts/apiclaw.py products --keyword "yoga mat" --growth-min 0.1 --listing-age 180
 
 # Combine mode + overrides (overrides win)
-python scripts/apiclaw.py products --keyword "yoga mat" --mode beginner --price-max 30
+python3 scripts/apiclaw.py products --keyword "yoga mat" --mode beginner --price-max 30
 ```
 
 Available modes: `fast-movers`, `emerging`, `single-variant`, `high-demand-low-barrier`, `long-tail`, `underserved`, `new-release`, `fbm-friendly`, `low-price`, `broad-catalog`, `selective-catalog`, `speculative`, `beginner`, `top-bsr`
@@ -146,9 +144,9 @@ Available modes: `fast-movers`, `emerging`, `single-variant`, `high-demand-low-b
 ### competitors — Competitor lookup
 
 ```bash
-python scripts/apiclaw.py competitors --keyword "wireless earbuds"
-python scripts/apiclaw.py competitors --brand "Anker"
-python scripts/apiclaw.py competitors --asin B09V3KXJPB
+python3 scripts/apiclaw.py competitors --keyword "wireless earbuds"
+python3 scripts/apiclaw.py competitors --brand "Anker"
+python3 scripts/apiclaw.py competitors --asin B09V3KXJPB
 ```
 
 **products/competitors shared fields (easily confused)**:
@@ -166,8 +164,8 @@ Common fields: `salesMonthly`, `bsrRank`, `ratingCount`, `rating`, `salesGrowthR
 ### product — Single ASIN real-time detail
 
 ```bash
-python scripts/apiclaw.py product --asin B09V3KXJPB
-python scripts/apiclaw.py product --asin B09V3KXJPB --marketplace JP
+python3 scripts/apiclaw.py product --asin B09V3KXJPB
+python3 scripts/apiclaw.py product --asin B09V3KXJPB --marketplace JP
 ```
 
 Returns: title, brand, rating, ratingBreakdown, features (bullets), topReviews, specifications, variants, bestsellersRank, buyboxWinner
@@ -175,7 +173,7 @@ Returns: title, brand, rating, ratingBreakdown, features (bullets), topReviews, 
 ### report — Full market analysis (composite)
 
 ```bash
-python scripts/apiclaw.py report --keyword "pet supplies"
+python3 scripts/apiclaw.py report --keyword "pet supplies"
 ```
 
 Runs automatically: categories → market → products (top 50) → realtime detail (top 1). Returns combined JSON.
@@ -183,8 +181,8 @@ Runs automatically: categories → market → products (top 50) → realtime det
 ### opportunity — Product opportunity discovery (composite)
 
 ```bash
-python scripts/apiclaw.py opportunity --keyword "pet supplies"
-python scripts/apiclaw.py opportunity --keyword "pet supplies" --mode fast-movers
+python3 scripts/apiclaw.py opportunity --keyword "pet supplies"
+python3 scripts/apiclaw.py opportunity --keyword "pet supplies" --mode fast-movers
 ```
 
 Runs: categories → market → products (filtered) → realtime detail (top 3). Returns combined JSON.
@@ -355,7 +353,7 @@ HTTP errors (401/402/403/404/429) are handled by the script automatically, retur
 When encountering issues, run self-check:
 
 ```bash
-python scripts/apiclaw.py check
+python3 scripts/apiclaw.py check
 ```
 
 Tests 4 of 5 endpoints (skips `realtime/product` which requires a valid ASIN), reports availability.
@@ -364,7 +362,6 @@ Tests 4 of 5 endpoints (skips `realtime/product` which requires a valid ASIN), r
 
 | Error | Cause | Solution |
 |-----|------|------|
-| `command not found: python` | macOS has no python command | Use `python3` |
 | `Cannot index array with string` | `.data` is array | Use `.data[0].fieldName` |
 | Returns empty `data: []` | Keyword no match | Use `categories` to confirm category exists first |
 | `salesMonthly: null` | Some products lack sales data | BSR estimate: Monthly sales ≈ 300,000 / BSR^0.65 |
