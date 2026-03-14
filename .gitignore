@@ -12,3 +12,4 @@ __pycache__/
 
 # Environment
 .env
+config.json
