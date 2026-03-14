@@ -19,16 +19,38 @@ Gives AI agents the ability to perform real-time Amazon product research:
 apiclaw-analysis-skill/
 ├── SKILL.md                  # Main entry — intent routing, usage, evaluation criteria
 ├── references/
-│   ├── reference.md          # API endpoints, fields, filters, scoring criteria
-│   └── scenarios.md          # Advanced scenarios (evaluation, pricing, operations, expansion)
+│   ├── reference.md            # API endpoints, fields, filters, scoring criteria
+│   ├── scenarios-composite.md  # Comprehensive recommendations & Chinese seller cases
+│   ├── scenarios-eval.md       # Product evaluation, risk, review analysis
+│   ├── scenarios-pricing.md    # Pricing strategy, profit estimation, listing
+│   ├── scenarios-ops.md        # Market monitoring, anomaly alerts
+│   └── scenarios-expand.md     # Expansion, trends, discontinuation
 └── scripts/
     └── apiclaw.py            # CLI script — 8 subcommands, 14 preset modes
 ```
 
-## Quick Start
+## Installation
 
-1. Sign up at [apiclaw.io/api-keys](https://apiclaw.io/api-keys) → Create a new key (format: `hms_live_xxx`)
-2. Tell your AI agent your API Key — it will handle the rest automatically.
+### Option 1: ClawHub (recommended for OpenClaw users)
+
+```bash
+npx clawhub install Amazon-analysis-skill
+```
+
+This installs the skill into `./skills/Amazon-analysis-skill/` under your current directory.
+
+**For OpenClaw:** Run this command in your OpenClaw workspace directory (usually `~/.openclaw/workspace`). The skill will be automatically loaded in your next session — no extra setup needed.
+
+**For other AI agents (Claude Code, etc.):** After install, point your agent to the `SKILL.md` file in the installed directory.
+
+### Option 2: Manual Install
+
+Clone this repo or download the files directly into your agent's skill directory.
+
+## Setup
+
+1. Get an API Key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys) (format: `hms_live_xxx`)
+2. Tell your AI agent your API Key — it handles the rest automatically.
 
 ## Script Commands
 

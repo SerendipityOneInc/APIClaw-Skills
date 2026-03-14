@@ -329,7 +329,7 @@ def cmd_products(args):
     if args.exclude_brands:
         params["excludeBrands"] = args.exclude_brands
 
-    params["sortBy"] = args.sort or "monthlySales"
+    params["sortBy"] = args.sort or "atLeastMonthlySales"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
 
@@ -349,7 +349,7 @@ def cmd_competitors(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
 
-    params["sortBy"] = args.sort or "monthlySales"
+    params["sortBy"] = args.sort or "atLeastMonthlySales"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
 
@@ -409,7 +409,7 @@ def cmd_report(args):
     print("Step 3/4: Searching top products...", file=sys.stderr)
     products_result = api_call("products/search", {
         "keyword": keyword,
-        "sortBy": "monthlySales",
+        "sortBy": "atLeastMonthlySales",
         "sortOrder": "desc",
         "pageSize": 50,
     })
@@ -464,7 +464,7 @@ def cmd_opportunity(args):
         "keyword": keyword,
         "monthlySalesMin": 300,
         "reviewCountMax": 50,
-        "sortBy": "monthlySales",
+        "sortBy": "atLeastMonthlySales",
         "sortOrder": "desc",
         "pageSize": 20,
     }
@@ -625,7 +625,7 @@ Examples:
     p_prod.add_argument("--include-brands", help="Include brands (comma-separated)")
     p_prod.add_argument("--exclude-brands", help="Exclude brands (comma-separated)")
     p_prod.add_argument("--page-size", type=int, default=20)
-    p_prod.add_argument("--sort", help="Sort field (default: monthlySales)")
+    p_prod.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
     p_prod.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_prod.set_defaults(func=cmd_products)
 
@@ -636,7 +636,7 @@ Examples:
     p_comp.add_argument("--asin", help="ASIN filter")
     p_comp.add_argument("--category", help="Category path (comma-separated)")
     p_comp.add_argument("--page-size", type=int, default=20)
-    p_comp.add_argument("--sort", help="Sort field (default: monthlySales)")
+    p_comp.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
     p_comp.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_comp.set_defaults(func=cmd_competitors)
 
