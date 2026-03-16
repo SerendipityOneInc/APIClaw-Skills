@@ -2,10 +2,11 @@
 name: apiclaw-analysis
 version: 1.1.1
 description: >
-  Amazon product research, competitor analysis, and market analysis for sellers.
+  Find winning Amazon products with 14 battle-tested selection strategies
+  & 6-dimension risk assessment. Backed by 200M+ product database.
   Use when user asks about: product selection, finding products to sell, ASIN lookup,
   BSR analysis, competitor lookup, market opportunity, risk assessment, category research,
-  pricing strategy, review analysis, or any Amazon seller data needs.
+  pricing strategy, review analysis, listing optimization, or any Amazon seller data needs.
   Powered by APIClaw API (requires APICLAW_API_KEY).
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/Amazon-analysis-skill
@@ -50,6 +51,7 @@ When user provides a Key, write it to `config.json`. New keys may need 3-5 secon
 | `references/scenarios-pricing.md` | Pricing strategy, profit estimation, listing reference (5.x) |
 | `references/scenarios-ops.md` | Market monitoring, competitor tracking, anomaly alerts (6.x) |
 | `references/scenarios-expand.md` | Product expansion, trends, discontinuation decisions (7.x) |
+| `references/scenarios-listing.md` | Listing writing, optimization, content creation (8.x) |
 
 **Don't guess field names** — if uncertain, load `reference.md` first.
 
@@ -220,6 +222,9 @@ All interfaces return `.data` as an **array**. Use `.data[0]` to get the first r
 | "what else can I sell" / "related products" | `categories` + `market` | `scenarios-expand.md` → 7.1 |
 | "trends" | `products --growth-min 0.2` | `scenarios-expand.md` → 7.3 |
 | "should I delist" | `competitors --asin XXX` + `market` | `scenarios-expand.md` → 7.4 |
+| "write listing" / "generate bullet points" / "write title" | `product --asin XXX` (competitors) | `scenarios-listing.md` → 8.2 |
+| "analyze competitor listing" / "their selling points" | `product --asin XXX` (multiple) | `scenarios-listing.md` → 8.1 |
+| "optimize my listing" / "listing diagnosis" | `product --asin XXX` + `competitors` | `scenarios-listing.md` → 8.3 |
 | Need exact filters or field names | — | Load `reference.md` |
 
 **Product Selection Mode Mapping (14 types)**:
