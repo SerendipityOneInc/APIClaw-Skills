@@ -222,10 +222,18 @@ def output(data, fmt="json"):
 # ─── Helper: parse category string ──────────────────────────────────────────
 
 def parse_category(cat_str: str) -> list:
-    """Parse 'Pet Supplies,Dogs,Toys' or 'Pet Supplies > Dogs > Toys' into a list."""
+    """Parse category path string into a list.
+
+    Supported formats (in priority order):
+    1. ' > ' separator: 'Pet Supplies > Dogs > Toys'  (recommended, handles commas in names)
+    2. ',' separator:   'Pet Supplies,Dogs,Toys'       (legacy, breaks on names with commas)
+
+    Use ' > ' when category names contain commas, e.g.:
+    'Baby Products > Baby Care > Pacifiers, Teethers & Teething Relief'
+    """
     if not cat_str:
         return []
-    # Support both comma and ' > ' separators
+    # Prefer ' > ' separator — handles commas in category names correctly
     if " > " in cat_str:
         return [c.strip() for c in cat_str.split(" > ")]
     return [c.strip() for c in cat_str.split(",")]

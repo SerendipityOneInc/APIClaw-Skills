@@ -118,6 +118,14 @@ Available modes: `fast-movers`, `emerging`, `single-variant`, `high-demand-low-b
 
 **Keyword matching:** Default is `fuzzy` (matches brand names too — e.g. "smart ring" matches "Smart Color Art" pens). Use `--keyword-match-type exact` or `phrase` for precise results. Always combine with `--category` when possible to reduce noise.
 
+**Category path with commas:** Some category names contain commas (e.g. "Pacifiers, Teethers & Teething Relief"). Use ` > ` separator instead of `,` to avoid parsing errors:
+```bash
+# ❌ Wrong — comma in name breaks parsing
+--category "Baby Products,Baby Care,Pacifiers, Teethers & Teething Relief"
+# ✅ Correct — use ' > ' separator
+--category "Baby Products > Baby Care > Pacifiers, Teethers & Teething Relief"
+```
+
 ### competitors — Competitor lookup
 
 ```bash
