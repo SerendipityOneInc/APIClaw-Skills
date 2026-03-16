@@ -50,7 +50,9 @@ Clone this repo or download the files directly into your agent's skill directory
 ## Setup
 
 1. Get an API Key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys) (format: `hms_live_xxx`)
-2. Tell your AI agent your API Key — it handles the rest automatically.
+2. Configure your key (choose one):
+   - **Environment variable (recommended):** `export APICLAW_API_KEY='hms_live_xxx'`
+   - **Config file:** Tell your AI agent your key — it saves to `config.json` automatically
 
 ## Script Commands
 

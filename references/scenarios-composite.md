@@ -37,13 +37,15 @@ python3 scripts/apiclaw.py products --keyword "pet toys" --mode high-demand-low-
 
 **AI Weighted Scoring Dimensions**:
 
-| Dimension | Weight | Data Source |
-|------|------|---------|
-| Demand Strength | 25% | atLeastMonthlySales |
-| Competition Difficulty | 25% | ratingCount + sellerCount |
-| Profit Margin | 20% | price × profitMargin |
-| Differentiation Opportunity | 15% | rating < 4.3 or ratingCount < 200 |
-| User Match | 15% | Budget/Experience/Preferences |
+| Dimension | Weight | Field | Source Interface |
+|------|------|---------|---------|
+| Demand Strength | 25% | `atLeastMonthlySales` | `products` / `competitors` |
+| Competition Difficulty | 25% | `ratingCount` + `sellerCount` | `products` / `competitors` |
+| Profit Margin | 20% | `price` × `profitMargin` | `products` / `competitors` |
+| Differentiation Opportunity | 15% | `rating` < 4.3 or `ratingCount` < 200 | `products` / `competitors` |
+| User Match | 15% | Budget/Experience/Preferences | User input |
+
+**⚠️ All scoring fields come from `products`/`competitors` interface. Do NOT use `realtime/product` for scoring — it lacks sales, profitMargin, and sellerCount.**
 
 **Output Template**
 
@@ -77,8 +79,13 @@ python3 scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 
 ```
 
 **sellerLocation Filtering Logic**:
-- Contains "CN" / "China" / Chinese city names: Shenzhen, Guangzhou, Hangzhou, Yiwu, Dongguan, Xiamen, Shanghai, Beijing, Ningbo, Fuzhou
+- Primary: `sellerLocation` contains "CN" / "China" / Chinese city names: Shenzhen, Guangzhou, Hangzhou, Yiwu, Dongguan, Xiamen, Shanghai, Beijing, Ningbo, Fuzhou
 - Sort by `atLeastMonthlySales`, find Top 5 Chinese sellers by sales volume
+
+**⚠️ Fallback when sellerLocation is null** (common — many ASINs don't have this field):
+- Check `buyboxSeller` or `brand` for Chinese seller patterns: all-pinyin names, names ending in "-Direct"/"-Store"/"-Official", or gibberish letter combinations
+- Cross-reference with product categories typical of Chinese sellers (electronics accessories, phone cases, etc.)
+- If sellerLocation coverage is too low (<30% of results), note this limitation in output
 
 **Analysis Dimensions**:
 - Chinese sellers count ratio (vs total sellers)

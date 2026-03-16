@@ -47,13 +47,17 @@ python3 scripts/apiclaw.py market --category "category path" --topn 10
 
 **Discontinuation Signals**:
 
+⚠️ API provides current snapshot only. Growth rates (`salesGrowthRate`, `bsrGrowthRate`) reflect recent trends but are not historical time-series. Use them as directional indicators, not definitive proof of sustained decline.
+
 | Signal | Data Source | Trigger Condition |
 |--------|-------------|-------------------|
-| Sales decline | salesGrowthRate | Negative growth rate |
-| Profit erosion | profitMargin | Margin < 10% |
-| Competition intensifying | sellerCount | Sellers > 10 and increasing |
-| BSR dropping | bsrGrowthRate | BSR rank continuously rising (worsening) |
-| Market shrinking | sampleAvgMonthlySales | Category avg sales declining |
+| Sales decline | `salesGrowthRate` | Negative growth rate (current snapshot) |
+| Profit erosion | `profitMargin` | Margin < 10% |
+| High competition | `sellerCount` | Currently > 10 sellers |
+| BSR worsening | `bsrGrowthRate` | Negative BSR growth (rank number increasing) |
+| Weak market | `sampleAvgMonthlySales` | Category avg below viable threshold |
+
+**Note:** `salesGrowthRate` and `bsrGrowthRate` come from `products`/`competitors` interface. `realtime/product` does NOT provide these fields. For stronger evidence, run this analysis periodically and compare snapshots.
 
 **Output Template**
 

@@ -50,12 +50,16 @@ python3 scripts/apiclaw.py products --category "Pet Supplies,Dogs,Toys" --listin
 
 **Alert Signal Detection**:
 
+⚠️ API provides snapshot data only (no historical comparison). Detect anomalies by comparing **current values against standard thresholds**, not by tracking changes over time.
+
 | Alert Type | Detection Method | Trigger Condition |
 |------------|-----------------|-------------------|
-| New blockbuster invasion | Step 3 results | New product (<90 days) already in Top 20 |
-| Price war risk | Step 2 price distribution | Multiple top products with similar low prices |
-| Concentration change | Step 1 topSalesRate | Sudden increase in concentration |
-| New SKU rate anomaly | Step 1 sampleNewSkuRate | Sudden spike (flood) or drop (market freeze) |
+| New blockbuster invasion | Step 3 results | New product (<90 days) already in Top 20 by sales |
+| Price war risk | Step 2 price distribution | Multiple top products clustered at same low price point |
+| High concentration | Step 1 `topSalesRate` | Currently > 60% (Warning threshold from evaluation criteria) |
+| Low new SKU rate | Step 1 `sampleNewSkuRate` | Currently < 5% (market may be frozen) or > 30% (flooding) |
+
+**For continuous monitoring:** Run this workflow periodically (weekly/monthly) and compare results manually across snapshots. The API does not provide historical trend data.
 
 **Output Template**
 

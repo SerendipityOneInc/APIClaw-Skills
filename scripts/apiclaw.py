@@ -87,12 +87,12 @@ def get_api_key():
     print("", file=sys.stderr)
     print("Please configure your API Key using one of these methods:", file=sys.stderr)
     print("", file=sys.stderr)
-    print("  Method 1: Config file (recommended)", file=sys.stderr)
+    print("  Method 1: Environment variable (recommended)", file=sys.stderr)
+    print("    export APICLAW_API_KEY='hms_live_yourkey'", file=sys.stderr)
+    print("", file=sys.stderr)
+    print("  Method 2: Config file", file=sys.stderr)
     print(f"    Create config.json in the skill directory: {skill_dir}", file=sys.stderr)
     print('    Content: {"api_key": "hms_live_yourkey"}', file=sys.stderr)
-    print("", file=sys.stderr)
-    print("  Method 2: Environment variable", file=sys.stderr)
-    print("    export APICLAW_API_KEY='hms_live_yourkey'", file=sys.stderr)
     print("", file=sys.stderr)
     print("Get a free key at https://apiclaw.io/api-keys", file=sys.stderr)
     sys.exit(1)
@@ -318,6 +318,18 @@ def cmd_products(args):
         params["ratingMax"] = args.rating_max
     if args.growth_min is not None:
         params["salesGrowthRateMin"] = args.growth_min
+    if args.bsr_min is not None:
+        params["bsrMin"] = args.bsr_min
+    if args.bsr_max is not None:
+        params["bsrMax"] = args.bsr_max
+    if args.seller_count_min is not None:
+        params["sellerCountMin"] = args.seller_count_min
+    if args.seller_count_max is not None:
+        params["sellerCountMax"] = args.seller_count_max
+    if args.variant_count_max is not None:
+        params["variantCountMax"] = args.variant_count_max
+    if args.keyword_match_type:
+        params["keywordMatchType"] = args.keyword_match_type
     if args.listing_age:
         params["listingAge"] = args.listing_age
     if args.badges:
@@ -512,9 +524,8 @@ def cmd_check(args):
                 pass
 
     if api_key:
-        masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
-        source_label = "~/.apiclaw/config.json" if key_source == "config" else "env"
-        print(f"✅ API Key ({source_label}): {masked}", file=sys.stderr)
+        source_label = "~/.apiclaw/config.json" if key_source == "config" else "environment variable"
+        print(f"✅ API Key found (source: {source_label})", file=sys.stderr)
     else:
         print("❌ API Key: Not found", file=sys.stderr)
         print("   Checked: $APICLAW_API_KEY, ~/.apiclaw/config.json", file=sys.stderr)
@@ -619,6 +630,13 @@ Examples:
     p_prod.add_argument("--rating-min", type=float, help="Min rating")
     p_prod.add_argument("--rating-max", type=float, help="Max rating")
     p_prod.add_argument("--growth-min", type=float, help="Min sales growth rate")
+    p_prod.add_argument("--bsr-min", type=int, help="Min BSR rank")
+    p_prod.add_argument("--bsr-max", type=int, help="Max BSR rank")
+    p_prod.add_argument("--seller-count-min", type=int, help="Min seller count")
+    p_prod.add_argument("--seller-count-max", type=int, help="Max seller count")
+    p_prod.add_argument("--variant-count-max", type=int, help="Max variant count")
+    p_prod.add_argument("--keyword-match-type", choices=["fuzzy", "phrase", "exact"],
+                        help="Keyword match type (default: fuzzy)")
     p_prod.add_argument("--listing-age", help="Max listing age in days (string)")
     p_prod.add_argument("--badges", nargs="+", help="Badge filters (e.g. 'New Release')")
     p_prod.add_argument("--fulfillment", nargs="+", help="Fulfillment filter (FBA, FBM)")

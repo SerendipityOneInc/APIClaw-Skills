@@ -1,12 +1,18 @@
 ---
 name: apiclaw-analysis
-version: 1.1.0
+version: 1.1.1
 description: >
   Amazon product research, competitor analysis, and market analysis for sellers.
   Use when user asks about: product selection, finding products to sell, ASIN lookup,
   BSR analysis, competitor lookup, market opportunity, risk assessment, category research,
   pricing strategy, review analysis, or any Amazon seller data needs.
   Powered by APIClaw API (requires APICLAW_API_KEY).
+author: SerendipityOneInc
+homepage: https://github.com/SerendipityOneInc/Amazon-analysis-skill
+credentials:
+  - name: APICLAW_API_KEY
+    scope: api.apiclaw.io
+    required: true
 ---
 
 # APIClaw — Amazon Seller Data Analysis
@@ -20,7 +26,9 @@ description: >
 
 - Required: `APICLAW_API_KEY`
 - Scope: used only for `https://api.apiclaw.io`
-- Storage: `config.json` in the skill root directory (next to SKILL.md)
+- Resolution order:
+  1. **Environment variable** `APICLAW_API_KEY` (preferred, most secure)
+  2. **Config file** `config.json` in the skill root directory (fallback)
 
 ```json
 { "api_key": "hms_live_xxxxxx" }
@@ -106,6 +114,8 @@ python3 scripts/apiclaw.py products --keyword "yoga mat" --mode beginner --price
 
 Available modes: `fast-movers`, `emerging`, `single-variant`, `high-demand-low-barrier`, `long-tail`, `underserved`, `new-release`, `fbm-friendly`, `low-price`, `broad-catalog`, `selective-catalog`, `speculative`, `beginner`, `top-bsr`
 
+**Keyword matching:** Default is `fuzzy` (matches brand names too — e.g. "smart ring" matches "Smart Color Art" pens). Use `--keyword-match-type exact` or `phrase` for precise results. Always combine with `--category` when possible to reduce noise.
+
 ### competitors — Competitor lookup
 
 ```bash
@@ -118,8 +128,11 @@ python3 scripts/apiclaw.py competitors --asin B09V3KXJPB
 | ❌ Wrong | ✅ Correct | Note |
 |----------|-----------|------|
 | `reviewCount` | `ratingCount` | Review count |
-| `bsr` | `bsrRank` | BSR ranking |
-| `monthlySales` / `salesMonthly` | `atLeastMonthlySales` | Monthly sales (lower bound estimate) |
+| `bsr` | `bsrRank` | BSR ranking (integer, only in products/competitors) |
+| `monthlySales` / `salesMonthly` | `atLeastMonthlySales` | Monthly sales (lower bound estimate, NOT in realtime/product) |
+| `bestsellersRank` | `bsrRank` | `bestsellersRank` is realtime/product only (array format); use `bsrRank` for products/competitors |
+| `price` (in realtime) | `buyboxWinner.price` | realtime/product nests price inside buyboxWinner object |
+| `profitMargin` (in realtime) | ❌ N/A | realtime/product does NOT return profitMargin; use products/competitors |
 
 > Complete field list: `reference.md` → Shared Product Object
 
@@ -139,6 +152,8 @@ python3 scripts/apiclaw.py report --keyword "pet supplies"
 
 Runs: categories → market → products (top 50) → realtime detail (top 1).
 
+**Note:** The realtime detail section has a different field structure than products (no sales/revenue/profitMargin). It provides review details, seller info, and listing content as qualitative supplement.
+
 ### opportunity — Product opportunity discovery (composite)
 
 ```bash
@@ -147,7 +162,35 @@ python3 scripts/apiclaw.py opportunity --keyword "pet supplies" --mode fast-move
 
 Runs: categories → market → products (filtered) → realtime detail (top 3).
 
+**Note:** Same as `report` — realtime detail provides qualitative data only (reviews, features, seller). Sales/revenue come from the products step.
+
 ---
+
+## ⚠️ Interface Data Differences
+
+The 3 types of interfaces return **different fields**. Do NOT assume they share the same structure.
+
+| Data | `market` | `products` / `competitors` | `realtime/product` |
+|------|----------|---------------------------|-------------------|
+| Monthly Sales | `sampleAvgMonthlySales` | ✅ `atLeastMonthlySales` | ❌ **Not available** |
+| Revenue | `sampleAvgMonthlyRevenue` | `salesRevenue` | ❌ **Not available** |
+| Price | `sampleAvgPrice` | `price` | `buyboxWinner.price` |
+| BSR | `sampleAvgBsr` | `bsrRank` (integer) | `bestsellersRank` (array of {category, rank}) |
+| Rating | `sampleAvgRating` | `rating` | `rating` |
+| Review Count | `sampleAvgReviewCount` | `ratingCount` | `ratingCount` |
+| Review Details | ❌ | ❌ | ✅ `topReviews` + `ratingBreakdown` |
+| Seller | ❌ | `buyboxSeller` (string) | `buyboxWinner` (object with price, fulfillment, seller) |
+| Profit Margin | ❌ | `profitMargin` | ❌ **Not available** |
+| FBA Fee | ❌ | `fbaFee` | ❌ **Not available** |
+| Seller Count | ❌ | `sellerCount` | ❌ **Not available** |
+| Features/Bullets | ❌ | ❌ | ✅ `features` |
+| Variants | ❌ | `variantCount` (integer) | `variants` (full list) |
+
+**Usage rule:**
+- Use `products` / `competitors` for **sales, pricing, and competition data**
+- Use `realtime/product` for **review details, listing content, and seller info**
+- Use `market` for **category-level aggregate metrics**
+- For reports: combine `products`/`competitors` (quantitative) + `realtime/product` (qualitative) as evidence
 
 ## Data Structure Reminder
 

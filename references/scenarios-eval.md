@@ -49,27 +49,35 @@ python3 scripts/apiclaw.py product --asin B09V3KXJPB
 > Trigger: "Which of these products is more worth pursuing" / "compare evaluation" / "compare products"
 
 ```bash
+# Primary: use competitors for quantitative comparison (sales, price, margins)
 python3 scripts/apiclaw.py competitors --keyword "yoga mat" --page-size 20
 # Or for specific ASINs:
+python3 scripts/apiclaw.py competitors --asin B09XXXXX
+
+# Optional supplement: use realtime/product for qualitative details (reviews, features)
 python3 scripts/apiclaw.py product --asin B09XXXXX
-python3 scripts/apiclaw.py product --asin B08YYYYY
 ```
+
+**⚠️ Important:** Use `competitors` (not `product`) as the primary data source for comparison.
+`realtime/product` does NOT return sales, profitMargin, fbaFee, or sellerCount.
 
 **Horizontal Comparison Dimensions**:
 
-| Dimension | Field | Description |
+| Dimension | Field | Source |
 |------|------|------|
-| Price | price | Pricing comparison |
-| Monthly Sales | atLeastMonthlySales | Demand validation |
-| BSR | bsrRank | Ranking comparison |
-| Rating | rating | Product quality |
-| Review Count | ratingCount | Competition barrier |
-| Profit Margin | profitMargin | Profitability |
-| Variant Count | variantCount | Product complexity |
-| FBA Fee | fbaFee | Cost comparison |
-| Seller Count | sellerCount | Competition intensity |
-| Tags | isBestSeller / isAmazonChoice / isNewRelease | Market recognition |
-| A+/Video | hasAPlus / hasVideo | Listing investment level |
+| Price | `price` | competitors |
+| Monthly Sales | `atLeastMonthlySales` | competitors |
+| BSR | `bsrRank` | competitors |
+| Rating | `rating` | competitors |
+| Review Count | `ratingCount` | competitors |
+| Profit Margin | `profitMargin` | competitors |
+| Variant Count | `variantCount` | competitors |
+| FBA Fee | `fbaFee` | competitors |
+| Seller Count | `sellerCount` | competitors |
+| Tags | `isBestSeller` / `isAmazonChoice` | competitors |
+| A+/Video | `hasAPlus` / `hasVideo` | competitors |
+| Review Details | `topReviews` / `ratingBreakdown` | realtime/product (optional) |
+| Listing Quality | `features` / `description` | realtime/product (optional) |
 
 ---
 
@@ -78,13 +86,16 @@ python3 scripts/apiclaw.py product --asin B08YYYYY
 > Trigger: "What are the risks" / "can I do this" / "risk assessment"
 
 ```bash
-# Step 1: Product detail
-python3 scripts/apiclaw.py product --asin B09XXXXX
-# Step 2: Market context
-python3 scripts/apiclaw.py market --category "category path" --topn 10
-# Step 3: Competitive landscape
+# Step 1: Competitive landscape (primary data: sales, margins, seller count)
 python3 scripts/apiclaw.py competitors --keyword "product keyword" --page-size 20
+# Step 2: Market context (category-level metrics)
+python3 scripts/apiclaw.py market --category "category path" --topn 10
+# Step 3 (optional): Review details for the target ASIN
+python3 scripts/apiclaw.py product --asin B09XXXXX
 ```
+
+**⚠️ Note:** Step 1 (`competitors`) provides sales, margins, and seller data needed for risk scoring.
+Step 3 (`product`) only adds review details and listing content — do NOT expect sales/profitMargin from it.
 
 **Six-Dimensional Risk Assessment Matrix**:
 
