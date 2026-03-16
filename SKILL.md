@@ -35,7 +35,10 @@ credentials:
 { "api_key": "hms_live_xxxxxx" }
 ```
 
-When user provides a Key, write it to `config.json`. New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
+**Credential configuration:**
+- **Recommended:** User sets `APICLAW_API_KEY` as environment variable before invoking the skill
+- **Alternative:** If user explicitly chooses to persist the key locally, confirm with them that the key will be written to `config.json` in the skill directory (on disk), then proceed. Remind user that `.gitignore` already excludes this file.
+- **Activation delay:** New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
 
 **New users:** Get API Key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys).
 
