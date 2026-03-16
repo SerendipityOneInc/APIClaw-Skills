@@ -1,6 +1,6 @@
 ---
 name: apiclaw-analysis
-version: 1.1.1
+version: 1.1.3
 description: >
   Find winning Amazon products with 14 battle-tested selection strategies
   & 6-dimension risk assessment. Backed by 200M+ product database.
@@ -10,10 +10,7 @@ description: >
   Powered by APIClaw API (requires APICLAW_API_KEY).
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/Amazon-analysis-skill
-credentials:
-  - name: APICLAW_API_KEY
-    scope: api.apiclaw.io
-    required: true
+metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
 # APIClaw — Amazon Seller Data Analysis
@@ -35,10 +32,9 @@ credentials:
 { "api_key": "hms_live_xxxxxx" }
 ```
 
-**Credential configuration:**
-- **Recommended:** User sets `APICLAW_API_KEY` as environment variable before invoking the skill
-- **Alternative:** If user explicitly chooses to persist the key locally, confirm with them that the key will be written to `config.json` in the skill directory (on disk), then proceed. Remind user that `.gitignore` already excludes this file.
-- **Activation delay:** New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
+When user provides a Key, write it to `config.json`. New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
+
+**⚠️ Data persistence notice:** When you provide an API Key, the skill saves it to `config.json` in the skill directory for persistent access across sessions. This file is local-only and listed in `.gitignore` to prevent accidental commits. If you prefer not to store the key on disk, use the environment variable method (`export APICLAW_API_KEY=...`) instead — no file will be created.
 
 **New users:** Get API Key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys).
 
