@@ -60,7 +60,7 @@ Response fields: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `i
 | sampleAvgPriceMin/Max | Avg price |
 | sampleAvgBsrMin/Max | Avg BSR |
 | sampleAvgRatingMin/Max | Avg rating |
-| sampleAvgReviewCountMin/Max | Avg review count |
+| sampleAvgRatingCountMin/Max | Avg rating count |
 | sampleAvgGrossMarginMin/Max | Avg gross margin |
 | totalSkuCountMin/Max | Total SKU count |
 | sampleSkuCountMin/Max | Sample SKU count |
@@ -75,6 +75,10 @@ Response fields: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `i
 | sampleAmzRateMin/Max | Amazon direct rate |
 | sampleNewSkuCountMin/Max | New SKU count |
 | sampleNewSkuRateMin/Max | New SKU rate |
+| sampleNewSkuAvgPriceMin/Max | New product avg price |
+| sampleNewSkuAvgMonthlySaleCntMin/Max | New product avg sales |
+| sampleNewSkuAvgRatingAmtMin/Max | New product avg rating |
+| sampleNewSkuAvgRatingCntMin/Max | New product avg rating count |
 
 ### Key response fields
 
@@ -86,11 +90,16 @@ Response fields: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `i
 | sampleAvgMonthlySales | Average monthly units per product |
 | sampleAvgMonthlyRevenue | Average monthly revenue per product |
 | sampleAvgRating | Average rating |
-| sampleAvgReviewCount | Average reviews |
+| sampleAvgRatingCount | Average ratings |
 | sampleBrandCount | Number of brands |
 | sampleSellerCount | Number of sellers |
 | sampleFbaRate | FBA ratio (decimal) |
 | sampleNewSkuRate | New product ratio |
+| sampleNewSkuAvgPrice | New product avg price |
+| sampleNewSkuAvgMonthlySaleCnt | New product avg sales |
+| sampleNewSkuAvgRatingAmt | New product avg rating |
+| sampleNewSkuAvgRatingCnt | New product avg rating count |
+| sampleNewSkuCount | New product count |
 | **topSalesRate** | **Product concentration** — Top N share of total sales |
 | **topBrandSalesRate** | **Brand concentration** — Top N brands' share |
 | **topSellerSalesRate** | **Seller concentration** — Top N sellers' share |
@@ -110,7 +119,7 @@ Response fields: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `i
 | seller | String | Seller filter |
 | asin | String | ASIN filter |
 | categoryPath | List\<String\> | Category filter |
-| sortBy | String | `monthlySales` / `monthlyRevenue` / `bsr` / `price` / `rating` / `reviewCount` / `listingDate` |
+| sortBy | String | `monthlySales` / `monthlyRevenue` / `bsr` / `price` / `rating` / `ratingCount` / `listingDate` |
 | sortOrder | String | `asc` / `desc` |
 | pageSize | Integer | default 20 |
 
@@ -143,12 +152,12 @@ Same as competitor-lookup plus:
 | bsrGrowthRateMin/Max | BSR growth rate |
 | priceMin/Max | Price range |
 | ratingMin/Max | Rating range |
-| reviewCountMin/Max | Review count range |
+| ratingCountMin/Max | Rating count range |
 | fbaShippingMin/Max | FBA shipping cost |
 | variantCountMin/Max | Variant count |
 | qaCountMin/Max | Q&A count |
-| monthlyNewReviewsMin/Max | Monthly new reviews |
-| reviewRateMin/Max | Review rate |
+| monthlyNewRatingsMin/Max | Monthly new ratings |
+| ratingRateMin/Max | Rating rate |
 | grossMarginMin/Max | Gross margin |
 | lqsMin/Max | Listing quality score |
 | sellerCountMin/Max | Seller count |
@@ -188,7 +197,6 @@ Same as competitor-lookup plus:
 | specifications | Key-value tech specs |
 | categories | Category path |
 | variants | Variant list with dimensions |
-| topReviews | Top reviews with title, body, rating, date, helpful_votes |
 | bestsellersRank | BSR info: `[{category, rank}, ...]` |
 | buyboxWinner | Buy Box: price, fulfillment, seller |
 | images | All image URLs |
@@ -229,7 +237,8 @@ Same as competitor-lookup plus:
 |-------|------|---------|
 | rating | Float | Rating (0-5) |
 | ratingCount | Integer | Total ratings |
-| reviewMonthlyNew | Integer | Monthly new reviews |
+| ratingMonthlyNew | Integer | Monthly new ratings |
+| ratingRate | Float | Rating rate |
 | isBestSeller | Boolean | Best Seller badge |
 | isAmazonChoice | Boolean | Amazon's Choice badge |
 | hasAPlus | Boolean | A+ content |
@@ -266,7 +275,7 @@ Same as competitor-lookup plus:
 | Metric | Source | High potential | Medium | Low potential |
 |--------|--------|---------------|--------|---------------|
 | BSR rank | bestsellersRank | Top 1000 | 1000–5000 | > 5000 |
-| Review count | reviewCount | < 200 | 200–1000 | > 1000 |
+| Rating count | ratingCount | < 200 | 200–1000 | > 1000 |
 | Rating | rating | > 4.3 | 4.0–4.3 | < 4.0 |
 | Negative review % | ratingBreakdown (1+2 star) | < 10% | 10–20% | > 20% |
 

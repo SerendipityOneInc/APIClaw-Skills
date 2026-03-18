@@ -40,13 +40,13 @@ PRODUCT_MODES = {
     "fast-movers":              {"monthlySalesMin": 300, "salesGrowthRateMin": 0.1},
     "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180"},
     "single-variant":           {"salesGrowthRateMin": 0.2, "variantCountMax": 1, "listingAge": "180"},
-    "high-demand-low-barrier":  {"monthlySalesMin": 300, "reviewCountMax": 50, "listingAge": "180"},
+    "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
     "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1},
     "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180"},
     "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"]},
     "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"]},
     "low-price":                {"priceMax": 10},
-    "broad-catalog":            {"bsrGrowthRateMin": 0.99, "reviewCountMax": 10, "listingAge": "90"},
+    "broad-catalog":            {"bsrGrowthRateMin": 0.99, "ratingCountMax": 10, "listingAge": "90"},
     "selective-catalog":        {"bsrGrowthRateMin": 0.99, "listingAge": "90"},
     "speculative":              {"monthlySalesMin": 600, "sellerCountMin": 3},
     "beginner":                 {"monthlySalesMin": 300, "priceMin": 15, "priceMax": 60, "fulfillment": ["FBA"]},
@@ -287,7 +287,7 @@ def cmd_products(args):
             sys.exit(1)
 
     # Override with explicit filters
-    for attr in ("monthlySalesMin", "monthlySalesMax", "reviewCountMin", "reviewCountMax",
+    for attr in ("monthlySalesMin", "monthlySalesMax", "ratingCountMin", "ratingCountMax",
                  "priceMin", "priceMax", "ratingMin", "ratingMax", "bsrMin", "bsrMax",
                  "salesGrowthRateMin", "salesGrowthRateMax", "sellerCountMin", "sellerCountMax",
                  "variantCountMin", "variantCountMax"):
@@ -304,10 +304,10 @@ def cmd_products(args):
         params["monthlySalesMin"] = args.sales_min
     if args.sales_max is not None:
         params["monthlySalesMax"] = args.sales_max
-    if args.reviews_min is not None:
-        params["reviewCountMin"] = args.reviews_min
-    if args.reviews_max is not None:
-        params["reviewCountMax"] = args.reviews_max
+    if args.ratings_min is not None:
+        params["ratingCountMin"] = args.ratings_min
+    if args.ratings_max is not None:
+        params["ratingCountMax"] = args.ratings_max
     if args.price_min is not None:
         params["priceMin"] = args.price_min
     if args.price_max is not None:
@@ -463,7 +463,7 @@ def cmd_opportunity(args):
     search_params = {
         "keyword": keyword,
         "monthlySalesMin": 300,
-        "reviewCountMax": 50,
+        "ratingCountMax": 50,
         "sortBy": "monthlySales",
         "sortOrder": "desc",
         "pageSize": 20,
@@ -573,7 +573,7 @@ Examples:
   %(prog)s categories --keyword "pet supplies"
   %(prog)s market --category "Pet Supplies,Dogs" --topn 10
   %(prog)s products --keyword "yoga mat" --mode beginner
-  %(prog)s products --keyword "yoga mat" --sales-min 300 --reviews-max 50
+  %(prog)s products --keyword "yoga mat" --sales-min 300 --ratings-max 50
   %(prog)s competitors --keyword "wireless earbuds" --brand Anker
   %(prog)s product --asin B09V3KXJPB
   %(prog)s report --keyword "pet supplies"
@@ -612,8 +612,8 @@ Examples:
     p_prod.add_argument("--mode", help=f"Preset filter mode: {', '.join(sorted(PRODUCT_MODES.keys()))}")
     p_prod.add_argument("--sales-min", type=int, help="Min monthly sales")
     p_prod.add_argument("--sales-max", type=int, help="Max monthly sales")
-    p_prod.add_argument("--reviews-min", type=int, help="Min review count")
-    p_prod.add_argument("--reviews-max", type=int, help="Max review count")
+    p_prod.add_argument("--ratings-min", type=int, help="Min rating count")
+    p_prod.add_argument("--ratings-max", type=int, help="Max rating count")
     p_prod.add_argument("--price-min", type=float, help="Min price")
     p_prod.add_argument("--price-max", type=float, help="Max price")
     p_prod.add_argument("--rating-min", type=float, help="Min rating")
