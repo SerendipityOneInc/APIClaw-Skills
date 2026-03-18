@@ -44,9 +44,9 @@ python scripts/apiclaw.py products --keyword "pet toys" --mode underserved --pag
 | Dimension | Weight | Data Source |
 |------|------|---------|
 | Demand Strength | 25% | salesMonthly |
-| Competition Difficulty | 25% | reviewCount + sellerCount |
+| Competition Difficulty | 25% | ratingCount + sellerCount |
 | Profit Margin | 20% | price × profitMargin |
-| Differentiation Opportunity | 15% | rating < 4.3 or reviewCount < 200 |
+| Differentiation Opportunity | 15% | rating < 4.3 or ratingCount < 200 |
 | User Match | 15% | Budget/Experience/Preferences |
 
 **Output Template**
@@ -62,7 +62,7 @@ python scripts/apiclaw.py products --keyword "pet toys" --mode underserved --pag
 | Preferences | ... |
 
 ## Top 5 Recommended Products
-| # | ASIN | Product | Price | Monthly Sales | Reviews | Comprehensive Score | Recommendation Reason |
+| # | ASIN | Product | Price | Monthly Sales | Ratings | Comprehensive Score | Recommendation Reason |
 |---|------|------|------|-------|-------|---------|---------|
 
 ## Action Recommendations
@@ -86,7 +86,7 @@ python scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 5
 
 **Analysis Dimensions**:
 - Chinese sellers count ratio (vs total sellers)
-- Common traits of top Chinese sellers (price range, review count, listing time)
+- Common traits of top Chinese sellers (price range, rating count, listing time)
 - Listing strategies of successful Chinese sellers (can use `product --asin XXX` for details)
 - Replicable strategy points
 
@@ -103,7 +103,7 @@ python scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 5
 | Top Chinese Seller Average Price | $X |
 
 ## Top 5 Chinese Seller Products
-| # | ASIN | Brand | Price | Monthly Sales | Rating | Reviews | Listing Date |
+| # | ASIN | Brand | Price | Monthly Sales | Rating | Ratings | Listing Date |
 |---|------|------|------|-------|------|------|---------|
 
 ## Success Strategy Analysis
@@ -125,17 +125,18 @@ python scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 5
 
 ```bash
 python scripts/apiclaw.py product --asin B09V3KXJPB
-# → Analyze topReviews + ratingBreakdown
+# → Analyze ratingBreakdown from realtime/product
+# → Use reviews/analyze for structured consumer insights
 ```
 
-**Key Information Extracted from topReviews**:
+**Key Information from ratingBreakdown + analyze**:
 
 | Analysis Dimension | Focus Points |
 |---------|-------|
 | Negative review keywords | broke, defect, quality, returned, disappointed, cheap, flimsy, doesn't work |
 | Positive review highlights | easy, great value, love, perfect, amazing, sturdy, well-made, exactly as described |
 | Negative review ratio | 1-2 star ratio in ratingBreakdown (> 20% is high risk) |
-| Improvement opportunities | Specific problems repeatedly mentioned in negative reviews → Product differentiation direction |
+| Improvement opportunities | Specific problems from analyze consumerInsights → Product differentiation direction |
 
 **Output Template**
 
@@ -152,10 +153,10 @@ python scripts/apiclaw.py product --asin B09V3KXJPB
 | 1⭐ | X% | X |
 
 ## Positive Review Themes
-[Extract top 3 positive review themes from topReviews]
+[Extract top 3 positive themes from analyze consumerInsights]
 
 ## Negative Review Pain Points
-[Extract top 3 negative review themes from topReviews → These are differentiation opportunities]
+[Extract top 3 negative themes from analyze consumerInsights → These are differentiation opportunities]
 
 ## Improvement Suggestions
 [Product improvement directions based on pain points]
@@ -182,7 +183,7 @@ python scripts/apiclaw.py product --asin B08YYYYY
 | Monthly Sales | salesMonthly | Demand validation |
 | BSR | bsrRank | Ranking comparison |
 | Rating | rating | Product quality |
-| Review Count | ratingCount | Competition barrier |
+| Rating Count | ratingCount | Competition barrier |
 | Profit Margin | profitMargin | Profitability |
 | Variant Count | variantCount | Product complexity |
 | FBA Fee | fbaFee | Cost comparison |
@@ -212,7 +213,7 @@ python scripts/apiclaw.py competitors --keyword "product keyword" --page-size 20
 | Risk Dimension | Data Source | 🟢 Low Risk | 🟡 Medium Risk | 🔴 High Risk |
 |---------|---------|---------|---------|---------|
 | Competition Intensity | topSalesRate | < 40% | 40-60% | > 60% |
-| Review Barrier | Top average reviewCount | < 200 | 200-1000 | > 1000 |
+| Rating Barrier | Top average ratingCount | < 200 | 200-1000 | > 1000 |
 | Brand Barrier/Moat | topBrandSalesRate | < 30% | 30-50% | > 50% |
 | Price War Risk | Top price variance | High variance (dispersed) | Medium | Low variance (price war) |
 | Compliance Risk | categories category | Regular categories | Requires certification | High-risk categories |
@@ -239,7 +240,7 @@ python scripts/apiclaw.py competitors --keyword "product keyword" --page-size 20
 | Risk Dimension | Risk Level | Description |
 |---------|---------|------|
 | Competition Intensity | 🟢/🟡/🔴 | ... |
-| Review Barrier | 🟢/🟡/🔴 | ... |
+| Rating Barrier | 🟢/🟡/🔴 | ... |
 | Brand Barrier/Moat | 🟢/🟡/🔴 | ... |
 | Price War Risk | 🟢/🟡/🔴 | ... |
 | Compliance Risk | 🟢/🟡/🔴 | ... |
@@ -266,12 +267,12 @@ python scripts/apiclaw.py competitors --asin B09XXXXX
 |-----|---------|------|
 | API Direct Return | `salesMonthly` field | ⭐⭐⭐⭐ Most accurate (BSR model estimation) |
 | BSR Rough Estimate | Monthly sales ≈ 300,000 / BSR^0.65 | ⭐⭐ Rough (due to category differences) |
-| Review Reverse Calculation | Monthly sales ≈ reviewMonthlyNew / Review rate(1-3%) | ⭐⭐ Reference only |
+| Rating Reverse Calculation | Monthly sales ≈ ratingMonthlyNew / Rating rate(1-3%) | ⭐⭐ Reference only |
 
 **Usage Priority**:
 1. Prioritize `salesMonthly` direct return value
 2. If null, use BSR rough estimate
-3. Review reverse calculation only for cross-validation
+3. Rating reverse calculation only for cross-validation
 
 **Note**: Current API has no sales historical trends (14-month curves), only current snapshot, cannot predict growth/decline direction.
 

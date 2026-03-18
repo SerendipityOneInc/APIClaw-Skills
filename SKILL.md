@@ -79,7 +79,7 @@ print(f"API Key saved to {config_path}")
 
 | Scenario | Load File | Reason |
 |----------|-----------|---------|
-| Need to confirm field names | `reference.md` | Avoid field name errors (e.g. ratingCount vs reviewCount)|
+| Need to confirm field names | `reference.md` | Avoid field name errors (e.g. ratingCount vs ratingMonthlyNew)|
 | Need filter parameter details | `reference.md` | Get complete Min/Max parameter list |
 | Pricing strategy analysis | `scenarios.md` | Contains pricing SOP and reference framework |
 | Daily operations analysis | `scenarios.md` | Contains monitoring and alert logic |
@@ -124,7 +124,7 @@ python scripts/apiclaw.py market --category "Pet Supplies,Dogs" --topn 10
 python scripts/apiclaw.py market --keyword "treadmill"
 ```
 
-Key output fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `topSalesRate` (concentration), `topBrandSalesRate`, `sampleNewSkuRate`, `sampleFbaRate`, `sampleBrandCount`
+Key output fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `topSalesRate` (concentration), `topBrandSalesRate`, `sampleNewSkuRate`, `sampleFbaRate`, `sampleBrandCount`, `sampleNewSkuAvgPrice` (new product avg price), `sampleNewSkuAvgMonthlySaleCnt` (new product avg sales), `sampleNewSkuAvgRatingAmt` (new product avg rating), `sampleNewSkuAvgRatingCnt` (new product avg rating count), `sampleNewSkuCount` (new product count), `sampleNewSkuRate` (new product rate)
 
 ### products — Product selection with filters
 
@@ -134,7 +134,7 @@ python scripts/apiclaw.py products --keyword "yoga mat" --mode beginner
 python scripts/apiclaw.py products --keyword "pet toys" --mode high-demand-low-barrier
 
 # Or use explicit filters
-python scripts/apiclaw.py products --keyword "yoga mat" --sales-min 300 --reviews-max 50
+python scripts/apiclaw.py products --keyword "yoga mat" --sales-min 300 --ratings-max 50
 python scripts/apiclaw.py products --keyword "yoga mat" --growth-min 0.1 --listing-age 180
 
 # Combine mode + overrides (overrides win)
@@ -155,7 +155,7 @@ python scripts/apiclaw.py competitors --asin B09V3KXJPB
 
 | ❌ Common Error | ✅ Correct Field | Description |
 |------------|------------|------|
-| `reviewCount` | `ratingCount` | Review count |
+| `reviewMonthlyNew` | `ratingMonthlyNew` | Monthly new ratings (renamed) |
 | `bsr` | `bsrRank` | BSR ranking |
 | `monthlySales` | `salesMonthly` | Monthly sales |
 
@@ -170,7 +170,7 @@ python scripts/apiclaw.py product --asin B09V3KXJPB
 python scripts/apiclaw.py product --asin B09V3KXJPB --marketplace JP
 ```
 
-Returns: title, brand, rating, ratingBreakdown, features (bullets), topReviews, specifications, variants, bestsellersRank, buyboxWinner
+Returns: title, brand, rating, ratingBreakdown, features (bullets), specifications, variants, bestsellersRank, buyboxWinner
 
 ### report — Full market analysis (composite)
 
@@ -234,7 +234,7 @@ jq '.data[:5] | .[] | .title'
 | User Intent | Mode | Filter Conditions |
 |----------|------|----------|
 | "underserved market" / "has pain points" / "can improve" | `--mode underserved` | Monthly sales≥300, rating≤3.7, within 6 months |
-| "high demand low barrier" / "easy to do" / "easy entry" | `--mode high-demand-low-barrier` | Monthly sales≥300, reviews≤50, within 6 months |
+| "high demand low barrier" / "easy to do" / "easy entry" | `--mode high-demand-low-barrier` | Monthly sales≥300, ratings≤50, within 6 months |
 | "beginner friendly" / "suitable for new sellers" / "entry level" | `--mode beginner` | Monthly sales≥300, $15-60, FBA |
 | "fast turnover" / "good sellers" / "hot selling" | `--mode fast-movers` | Monthly sales≥300, growth≥10% |
 | "emerging products" / "rising period" | `--mode emerging` | Monthly sales≤600, growth≥10%, within 6 months |
@@ -244,7 +244,7 @@ jq '.data[:5] | .[] | .title'
 | "low price products" / "cheap" | `--mode low-price` | ≤$10 |
 | "top sellers" / "best sellers" / "top seller" | `--mode top-bsr` | BSR≤1000 |
 | "self-fulfillment friendly" / "FBM" | `--mode fbm-friendly` | Monthly sales≥300, FBM |
-| "broad catalog mode" / "cast wide net" | `--mode broad-catalog` | BSR growth≥99%, reviews≤10, within 90 days |
+| "broad catalog mode" / "cast wide net" | `--mode broad-catalog` | BSR growth≥99%, ratings≤10, within 90 days |
 | "selective catalog" | `--mode selective-catalog` | BSR growth≥99%, within 90 days |
 | "speculative" / "piggyback selling opportunities" | `--mode speculative` | Monthly sales≥600, sellers≥3 |
 | "complete report" / "full report" | `report --keyword XXX` | No |
@@ -283,7 +283,7 @@ jq '.data[:5] | .[] | .title'
 | Metric | High | Medium | Low |
 |--------|------|--------|-----|
 | BSR | Top 1000 | 1000–5000 | > 5000 |
-| Reviews | < 200 | 200–1000 | > 1000 |
+| Rating count | < 200 | 200–1000 | > 1000 |
 | Rating | > 4.3 | 4.0–4.3 | < 4.0 |
 | Negative reviews (1-2 star %) | < 10% | 10–20% | > 20% |
 
@@ -309,7 +309,7 @@ When `salesMonthly` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 | Sampling Method | [sampleType, e.g. by_sale_100] |
 | Top N | [topN value, e.g. 10] |
 | Sort | [sortBy + sortOrder, e.g. monthlySales desc] |
-| Filter Conditions | [Specific parameter values, e.g. monthlySalesMin: 300, reviewCountMax: 50] |
+| Filter Conditions | [Specific parameter values, e.g. monthlySalesMin: 300, ratingCountMax: 50] |
 
 **Data Notes**
 - Monthly sales are **estimated values** based on BSR + sampling model, not official Amazon data
@@ -319,7 +319,7 @@ When `salesMonthly` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 **Rules**:
 1. Must include this block after every analysis
-2. Filter conditions should be specific to parameter values (e.g. `monthlySalesMin: 300, reviewCountMax: 50`)
+2. Filter conditions should be specific to parameter values (e.g. `monthlySalesMin: 300, ratingCountMax: 50`)
 3. If multiple interfaces used, list each one
 4. If data has limitations (e.g. missing historical trends), proactively explain
 
@@ -333,7 +333,7 @@ When `salesMonthly` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 - Traffic source analysis
 - Historical sales trends (14-month curves)
 - Historical price / BSR charts
-- AI review sentiment analysis (use topReviews + ratingBreakdown manually)
+- Raw individual review text (topReviews removed from realtime/product; use reviews/analyze for structured insights)
 
 ### API Data Coverage Boundaries
 
