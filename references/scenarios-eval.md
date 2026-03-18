@@ -10,11 +10,20 @@
 > Trigger: "consumer pain points" / "negative review analysis" / "review insights" / "pain points"
 
 ```bash
+# Step 1 (primary): AI-powered review analysis — covers ALL reviews
+python3 scripts/apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints,issues,positives,improvements
+
+# Step 2 (supplement): Raw review samples for quoting specific examples
 python3 scripts/apiclaw.py product --asin B09V3KXJPB
-# → Analyze topReviews + ratingBreakdown
+# → Use topReviews for specific review quotes to support analyze findings
 ```
 
-**Key Information Extracted from topReviews**:
+**Data combination:**
+- Use `analyze` `consumerInsights` as primary structured findings (covers ALL reviews)
+- Use `realtime/product` `topReviews` for specific quotes to illustrate key pain points
+- Use `analyze` `sentimentDistribution` for overall sentiment overview
+
+**Key Information Extracted from analyze + topReviews**:
 
 | Analysis Dimension | Focus Points |
 |---------|-------|
@@ -92,10 +101,13 @@ python3 scripts/apiclaw.py competitors --keyword "product keyword" --page-size 2
 python3 scripts/apiclaw.py market --category "category path" --topn 10
 # Step 3 (optional): Review details for the target ASIN
 python3 scripts/apiclaw.py product --asin B09XXXXX
+# Step 4 (recommended): Review sentiment for risk signal
+python3 scripts/apiclaw.py analyze --asin B09XXXXX --label-type issues,painPoints
 ```
 
 **⚠️ Note:** Step 1 (`competitors`) provides sales, margins, and seller data needed for risk scoring.
 Step 3 (`product`) only adds review details and listing content — do NOT expect sales/profitMargin from it.
+Step 4 (`analyze`) provides AI-analyzed sentiment distribution and structured issues for risk assessment.
 
 **Six-Dimensional Risk Assessment Matrix**:
 
@@ -106,6 +118,7 @@ Step 3 (`product`) only adds review details and listing content — do NOT expec
 | Brand Barrier/Moat | topBrandSalesRate | < 30% | 30-50% | > 50% |
 | Price War Risk | Top price variance | High variance | Medium | Low variance |
 | Compliance Risk | categories | Regular | Requires certification | High-risk |
+| Review Sentiment | sentimentDistribution (negative) | < 15% | 15-30% | > 30% |
 | Seasonality | AI judgment | Year-round | Seasonal fluctuation | Strong seasonality |
 
 **High-risk Category Compliance Alerts**:
@@ -154,3 +167,70 @@ python3 scripts/apiclaw.py competitors --asin B09XXXXX
 **Usage Priority**: atLeastMonthlySales → BSR estimate → Review reverse calculation
 
 **Note**: `atLeastMonthlySales` is a lower bound — Amazon shows "10,000+ bought in past month", so actual sales may be higher. Current API has no historical trends, only current snapshot.
+
+---
+
+## 4.6 Category Consumer Insights
+
+> Trigger: "category pain points" / "what do users want" / "consumer portrait" / "category user analysis" / "who is buying"
+
+```bash
+python3 scripts/apiclaw.py analyze --category "Pet Supplies,Dogs,Toys" --period 90d
+```
+
+**Use case:** Understand the consumer landscape of a category **before** product selection. Not about specific ASINs, but about what users in this category care about, complain about, and value.
+
+**Key dimensions to analyze:**
+
+| Dimension | labelType | Insight |
+|-----------|-----------|---------|
+| Who is buying | `userProfiles` | Target audience definition |
+| What they want | `buyingFactors` | Key purchase decision drivers |
+| Where/when they use it | `usageLocations`, `usageTimes` | Scene-based marketing angles |
+| What they hate | `painPoints` | Differentiation opportunities |
+| What they love | `positives` | Table-stakes features |
+| How to improve | `improvements` | Product development direction |
+
+**Output Template**
+
+```markdown
+# 👥 [Category] Consumer Insights
+
+## Overview
+| Metric | Value |
+|--------|-------|
+| Reviews Analyzed | [totalReviews] |
+| Avg Rating | [avgRating] |
+| Verified Purchase Ratio | [verifiedRatio] |
+| Sentiment | 👍 [positive]% / 😐 [neutral]% / 👎 [negative]% |
+
+## User Profiles
+[From userProfiles dimension — who is buying]
+
+## Top Pain Points
+| # | Pain Point | Mention % | Avg Rating |
+|---|-----------|-----------|------------|
+[From painPoints dimension]
+
+## Buying Decision Factors
+| # | Factor | Mention % |
+|---|--------|-----------|
+[From buyingFactors dimension]
+
+## Usage Scenarios
+[From scenarios dimension]
+
+## Product Opportunity Signals
+[Cross-reference painPoints + positives → gaps = opportunities]
+```
+
+---
+
+## Flow Guidance
+
+| Current Conclusion | Next Step | Load File |
+|-------------------|-----------|-----------|
+| Want to understand users first | → Category insights | This file → 4.6 |
+| Pain points identified | → Product selection | SKILL.md → products |
+| Product selected, need risk check | → Risk assessment | This file → 4.4 |
+| Need competitive analysis | → Competitor comparison | This file → 4.3 |

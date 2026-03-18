@@ -11,6 +11,7 @@ Usage:
     python apiclaw.py products --keyword "yoga mat" --mode beginner
     python apiclaw.py competitors --keyword "wireless earbuds"
     python apiclaw.py product --asin B09V3KXJPB
+    python apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints
     python apiclaw.py report --keyword "pet supplies"
     python apiclaw.py opportunity --keyword "pet supplies"
 
@@ -140,6 +141,11 @@ def api_call(endpoint: str, params: dict) -> dict:
                     data["_query"] = {
                         "endpoint": endpoint,
                         "params": actual_params,
+                    }
+                    # Inject _credits metadata for usage tracking
+                    data["_credits"] = {
+                        "consumed": data.get("creditsConsumed"),
+                        "remaining": data.get("creditsRemaining"),
                     }
                     return data
                 else:
@@ -397,6 +403,35 @@ def cmd_product(args):
     output(result, args.format)
 
 
+def cmd_analyze(args):
+    """Analyze reviews for ASINs or category with AI-powered insights."""
+    params = {}
+
+    # Determine mode from arguments
+    if args.asin:
+        params["asins"] = [args.asin]
+        params["mode"] = "asin"
+    elif args.asins:
+        params["asins"] = [a.strip() for a in args.asins.split(",")]
+        params["mode"] = "asin"
+    elif args.category:
+        params["categoryPath"] = parse_category(args.category)
+        params["mode"] = "category"
+    elif args.mode:
+        params["mode"] = args.mode
+    else:
+        print("ERROR: --asin, --asins, or --category is required for analyze command.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.label_type:
+        params["labelType"] = args.label_type
+    if args.period:
+        params["period"] = args.period
+
+    result = api_call("reviews/analyze", params)
+    output(result, args.format)
+
+
 def cmd_report(args):
     """
     Composite workflow: Full Market Report.
@@ -574,8 +609,9 @@ def cmd_check(args):
             results[endpoint] = {"status": "error", "message": str(e)}
             all_ok = False
 
-    # Note: realtime/product requires a valid ASIN, skip in self-check
+    # Note: realtime/product and reviews/analyze require valid ASINs, skip in self-check
     print(f"⏭️  realtime/product            (skipped, requires valid ASIN)", file=sys.stderr)
+    print(f"⏭️  reviews/analyze             (skipped, requires valid ASIN or category)", file=sys.stderr)
 
     print("\n" + "=" * 50, file=sys.stderr)
     if all_ok:
@@ -681,6 +717,20 @@ Examples:
     p_single.add_argument("--marketplace", default="US",
                           help="Marketplace: US/UK/DE/FR/IT/ES/JP/CA/AU/IN/MX/BR (default: US)")
     p_single.set_defaults(func=cmd_product)
+
+    # ── analyze (review analysis) ──
+    p_analyze = sub.add_parser("analyze", help="Analyze reviews (sentiment, insights, pain points)")
+    p_analyze.add_argument("--asin", help="Single ASIN to analyze")
+    p_analyze.add_argument("--asins", help="Multiple ASINs (comma-separated, max 100)")
+    p_analyze.add_argument("--category", help="Category path for category-level analysis")
+    p_analyze.add_argument("--label-type",
+                           help="Insight dimension filter: painPoints,issues,positives,improvements,"
+                                "buyingFactors,scenarios,keywords,userProfiles,usageTimes,"
+                                "usageLocations,behaviors")
+    p_analyze.add_argument("--period", help="Time period (e.g. 90d)")
+    p_analyze.add_argument("--mode", choices=["asin", "category"],
+                           help="Query mode (auto-detected from --asin/--category)")
+    p_analyze.set_defaults(func=cmd_analyze)
 
     # ── report (composite) ──
     p_report = sub.add_parser("report", help="Full market analysis report (composite workflow)")

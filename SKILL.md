@@ -1,8 +1,8 @@
 ---
 name: apiclaw-analysis
-version: 1.1.3
+version: 1.1.4
 description: >
-  Find winning Amazon products with 14 battle-tested selection strategies
+  Finds winning Amazon products with 14 battle-tested selection strategies
   & 6-dimension risk assessment. Backed by 200M+ product database.
   Use when user asks about: product selection, finding products to sell, ASIN lookup,
   BSR analysis, competitor lookup, market opportunity, risk assessment, category research,
@@ -33,10 +33,6 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 ```
 
 When user provides a Key, write it to `config.json`. New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
-
-**⚠️ Data persistence notice:** When you provide an API Key, the skill saves it to `config.json` in the skill directory for persistent access across sessions. This file is local-only and listed in `.gitignore` to prevent accidental commits. If you prefer not to store the key on disk, use the environment variable method (`export APICLAW_API_KEY=...`) instead — no file will be created.
-
-**New users:** Get API Key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys).
 
 ## File Map
 
@@ -76,6 +72,33 @@ When user provides a Key, write it to `config.json`. New keys may need 3-5 secon
 - `_query` metadata injection (for query traceability)
 
 **Fallback:** If script fails and can't be quickly fixed, use curl directly. Note "using curl direct call" in output.
+
+---
+
+## Realtime Data Supplementation
+
+When `products` or `competitors` returns ASINs in Full-mode analysis, **automatically call `product --asin` for the top 3-5 most relevant ASINs** to get current real-time data.
+
+| Scenario | Supplement? | How many ASINs |
+|----------|-------------|----------------|
+| Single ASIN lookup (Quick mode) | Already using realtime | — |
+| Market overview (no specific ASINs) | ❌ No | — |
+| Product selection / competitor analysis | ✅ Yes | Top 3 by sales |
+| Risk assessment | ✅ Yes | Target ASIN + top 2 competitors |
+| Multi-product comparison | ✅ Yes | All compared ASINs (max 5) |
+| Listing analysis | Already using realtime | — |
+
+**Handling data conflicts** — `products`/`competitors` has ~T+1 delay; `realtime/product` is live:
+
+| Field | Use from | Reason |
+|-------|----------|--------|
+| Price | **realtime** (`buyboxWinner.price`) | Changes frequently |
+| BSR | **realtime** (`bestsellersRank`) | Updates hourly |
+| Rating / ratingCount | **realtime** | More current |
+| Monthly Sales | **products/competitors** | Realtime doesn't have this |
+| Profit Margin / FBA Fee | **products/competitors** | Realtime doesn't have this |
+
+When realtime data differs significantly, note it: e.g. "⚡ Price updated: database $29.99 → realtime $24.99 (likely promotion)"
 
 ---
 
@@ -153,6 +176,26 @@ python3 scripts/apiclaw.py product --asin B09V3KXJPB
 
 Returns: title, brand, rating, ratingBreakdown, features, topReviews, specifications, variants, bestsellersRank, buyboxWinner
 
+### analyze — Review analysis (sentiment + consumer insights)
+
+```bash
+# Single ASIN
+python3 scripts/apiclaw.py analyze --asin B09V3KXJPB
+
+# Multiple ASINs (competitive review comparison)
+python3 scripts/apiclaw.py analyze --asins B09V3KXJPB,B08YYYYY,B07ZZZZZ
+
+# Category-level insights
+python3 scripts/apiclaw.py analyze --category "Pet Supplies,Dogs,Toys" --period 90d
+
+# Specific insight dimension
+python3 scripts/apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints,buyingFactors
+```
+
+Returns: `totalReviews`, `avgRating`, `sentimentDistribution`, `ratingDistribution`, `consumerInsights` (by labelType), `topKeywords`, `verifiedRatio`
+
+Available labelType: `scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
+
 ### report — Full market analysis (composite)
 
 ```bash
@@ -160,8 +203,6 @@ python3 scripts/apiclaw.py report --keyword "pet supplies"
 ```
 
 Runs: categories → market → products (top 50) → realtime detail (top 1).
-
-**Note:** The realtime detail section has a different field structure than products (no sales/revenue/profitMargin). It provides review details, seller info, and listing content as qualitative supplement.
 
 ### opportunity — Product opportunity discovery (composite)
 
@@ -171,35 +212,38 @@ python3 scripts/apiclaw.py opportunity --keyword "pet supplies" --mode fast-move
 
 Runs: categories → market → products (filtered) → realtime detail (top 3).
 
-**Note:** Same as `report` — realtime detail provides qualitative data only (reviews, features, seller). Sales/revenue come from the products step.
-
 ---
 
 ## ⚠️ Interface Data Differences
 
-The 3 types of interfaces return **different fields**. Do NOT assume they share the same structure.
+The 4 types of interfaces return **different fields**. Do NOT assume they share the same structure.
 
-| Data | `market` | `products` / `competitors` | `realtime/product` |
-|------|----------|---------------------------|-------------------|
-| Monthly Sales | `sampleAvgMonthlySales` | ✅ `atLeastMonthlySales` | ❌ **Not available** |
-| Revenue | `sampleAvgMonthlyRevenue` | `salesRevenue` | ❌ **Not available** |
-| Price | `sampleAvgPrice` | `price` | `buyboxWinner.price` |
-| BSR | `sampleAvgBsr` | `bsrRank` (integer) | `bestsellersRank` (array of {category, rank}) |
-| Rating | `sampleAvgRating` | `rating` | `rating` |
-| Review Count | `sampleAvgReviewCount` | `ratingCount` | `ratingCount` |
-| Review Details | ❌ | ❌ | ✅ `topReviews` + `ratingBreakdown` |
-| Seller | ❌ | `buyboxSeller` (string) | `buyboxWinner` (object with price, fulfillment, seller) |
-| Profit Margin | ❌ | `profitMargin` | ❌ **Not available** |
-| FBA Fee | ❌ | `fbaFee` | ❌ **Not available** |
-| Seller Count | ❌ | `sellerCount` | ❌ **Not available** |
-| Features/Bullets | ❌ | ❌ | ✅ `features` |
-| Variants | ❌ | `variantCount` (integer) | `variants` (full list) |
+| Data | `market` | `products`/`competitors` | `realtime/product` | `reviews/analyze` |
+|------|----------|--------------------------|--------------------|--------------------|
+| Monthly Sales | `sampleAvgMonthlySales` | ✅ `atLeastMonthlySales` | ❌ | ❌ |
+| Revenue | `sampleAvgMonthlyRevenue` | `salesRevenue` | ❌ | ❌ |
+| Price | `sampleAvgPrice` | `price` | `buyboxWinner.price` | ❌ |
+| BSR | `sampleAvgBsr` | `bsrRank` (integer) | `bestsellersRank` (array) | ❌ |
+| Rating | `sampleAvgRating` | `rating` | `rating` | `avgRating` |
+| Review Count | `sampleAvgReviewCount` | `ratingCount` | `ratingCount` | `totalReviews` |
+| Review Details | ❌ | ❌ | ✅ `topReviews` + `ratingBreakdown` | ❌ (no raw reviews) |
+| Sentiment Analysis | ❌ | ❌ | ❌ | ✅ `sentimentDistribution` |
+| Consumer Insights | ❌ | ❌ | ❌ | ✅ `consumerInsights` (11 dimensions) |
+| Pain Points/Issues | ❌ | ❌ | ❌ (manual from topReviews) | ✅ AI-analyzed |
+| Top Keywords | ❌ | ❌ | ❌ | ✅ `topKeywords` |
+| Seller | ❌ | `buyboxSeller` (string) | `buyboxWinner` (object) | ❌ |
+| Profit Margin | ❌ | `profitMargin` | ❌ | ❌ |
+| FBA Fee | ❌ | `fbaFee` | ❌ | ❌ |
+| Seller Count | ❌ | `sellerCount` | ❌ | ❌ |
+| Features/Bullets | ❌ | ❌ | ✅ `features` | ❌ |
+| Variants | ❌ | `variantCount` (integer) | `variants` (full list) | ❌ |
 
 **Usage rule:**
 - Use `products` / `competitors` for **sales, pricing, and competition data**
 - Use `realtime/product` for **review details, listing content, and seller info**
 - Use `market` for **category-level aggregate metrics**
-- For reports: combine `products`/`competitors` (quantitative) + `realtime/product` (qualitative) as evidence
+- Use `reviews/analyze` for **AI-powered review insights** (sentiment, pain points, buying factors — covers all reviews, not just topReviews)
+- For reports: combine `products`/`competitors` (quantitative) + `realtime/product` (qualitative) + `reviews/analyze` (consumer insights) as evidence
 
 ## Data Structure Reminder
 
@@ -214,7 +258,8 @@ All interfaces return `.data` as an **array**. Use `.data[0]` to get the first r
 | "which category has opportunity" | `market` + `categories` | No |
 | "check B09XXX" / "analyze ASIN" | `product --asin XXX` | No |
 | "Chinese seller cases" | `competitors --keyword XXX --page-size 50` | `scenarios-composite.md` → 3.4 |
-| "pain points" / "negative reviews" | `product --asin XXX` | `scenarios-eval.md` → 4.2 |
+| "pain points" / "negative reviews" / "consumer insights" | `analyze --asin XXX` + `product --asin XXX` | `scenarios-eval.md` → 4.2 |
+| "category pain points" / "category user portrait" | `analyze --category XXX` | `scenarios-eval.md` → 4.6 |
 | "compare products" | `competitors` or multiple `product` | `scenarios-eval.md` → 4.3 |
 | "risk assessment" / "can I do this" | `product` + `market` + `competitors` | `scenarios-eval.md` → 4.4 |
 | "monthly sales" / "estimate sales" | `competitors --asin XXX` | `scenarios-eval.md` → 4.5 |
@@ -238,7 +283,7 @@ All interfaces return `.data` as an **array**. Use `.data[0]` to get the first r
 
 | User Intent | Mode | Key Filters |
 |-------------|------|-------------|
-| "beginner friendly" / "new seller" | `--mode beginner` | Sales≥300, growth≥3%, $15-60, FBA, ≤1yr, excl. red ocean keywords |
+| "beginner friendly" / "new seller" | `--mode beginner` | Sales≥300, growth≥3%, $15-60, FBA, ≤1yr, auto-excludes 150+ red ocean keywords |
 | "fast turnover" / "hot selling" | `--mode fast-movers` | Sales≥300, growth≥10% |
 | "emerging" / "rising" | `--mode emerging` | Sales≤600, growth≥10%, ≤180d |
 | "single variant" / "small but beautiful" | `--mode single-variant` | Growth≥20%, variants=1, ≤180d |
@@ -306,32 +351,34 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 - Concentration metrics based on Top N sample; different topN → different results
 ```
 
-**✅ Completed Example (yoga mat market analysis):**
-
-```markdown
----
-**Data Source & Conditions**
-| Item | Value |
-|----|-----|
-| Data Source | APIClaw API |
-| Interface | categories, markets/search, products/search |
-| Category | Sports & Outdoors > Exercise & Fitness > Yoga > Yoga Mats |
-| Time Range | 30d |
-| Sampling | by_sale_100 |
-| Top N | 10 |
-| Sort | atLeastMonthlySales desc |
-| Filters | monthlySalesMin: 300, reviewCountMax: 50 |
-
-**Data Notes**
-- Monthly sales are **lower bound estimates** (Amazon displays "10,000+ bought"), actual may be higher
-- Database data has ~T+1 delay; realtime/product is current real-time data
-```
-
 **Rules**:
 1. Every Full-mode analysis MUST end with this block
 2. Filter conditions MUST list specific parameter values
 3. If multiple interfaces used, list each one
 4. If data has limitations, proactively explain
+
+### API Usage Summary (All Modes)
+
+Every response (Quick or Full mode) MUST end with an API usage summary:
+
+```markdown
+**API Usage**
+| Interface | Calls |
+|-----------|-------|
+| categories | 1 |
+| markets/search | 1 |
+| products/search | 2 |
+| realtime/product | 3 |
+| **Total** | **7** |
+| **Credits consumed** | **7** |
+| **Credits remaining** | **493** |
+```
+
+**Tracking rules:**
+1. Count each `apiclaw.py` execution as 1 call to the corresponding interface
+2. Sum `_credits.consumed` from every API response for total consumed
+3. Use `_credits.remaining` from the **last** API response as remaining balance
+4. If `_credits` fields are null, show "N/A"
 
 ---
 
@@ -343,7 +390,7 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 - Traffic source analysis
 - Historical sales trends (14-month curves)
 - Historical price / BSR charts
-- AI review sentiment analysis (use topReviews + ratingBreakdown manually)
+- Raw individual review text export (use `realtime/product` topReviews for specific review quotes)
 
 ### API Coverage Boundaries
 
@@ -360,13 +407,11 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 ## Error Handling
 
-HTTP errors (401/402/403/404/429) are handled by the script, returning structured JSON with `error.message` and `error.action`.
+HTTP errors (401/402/403/404/429) are handled by the script with structured JSON output.
+Self-check: `python3 scripts/apiclaw.py check`
 
-Self-check: `python3 scripts/apiclaw.py check` — tests 4/5 endpoints, reports availability.
-
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Cannot index array with string` | `.data` is array | Use `.data[0].fieldName` |
-| Empty `data: []` | Keyword no match | Use `categories` to confirm category exists |
-| `atLeastMonthlySales: null` | Missing sales data | BSR estimate: 300,000 / BSR^0.65 |
-| `realtime/product` slow | Real-time scraping | Normal 5-30s, be patient |
+| Error | Fix |
+|-------|-----|
+| `Cannot index array with string` | Use `.data[0].fieldName` (`.data` is array) |
+| Empty `data: []` | Use `categories` to confirm category exists |
+| `atLeastMonthlySales: null` | BSR estimate: 300,000 / BSR^0.65 |

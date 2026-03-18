@@ -16,6 +16,7 @@
 | 3 | `products/competitor-lookup` | Competitor discovery |
 | 4 | `products/search` | Product selection with filters |
 | 5 | `realtime/product` | Live single-ASIN detail |
+| 6 | `reviews/analyze` | AI review analysis (sentiment + insights) |
 
 Base URL: `https://api.apiclaw.io/openapi/v2`
 Auth: `Bearer $APICLAW_API_KEY`
@@ -193,6 +194,54 @@ Same as competitor-lookup plus:
 | buyboxWinner | Buy Box: price, fulfillment, seller |
 | images | All image URLs |
 | dimensions, weight | Physical attributes |
+
+---
+
+## 6. reviews/analyze
+
+AI-powered review analysis. Returns sentiment, rating distribution, and structured consumer insights.
+Requires at least 50 reviews for meaningful analysis.
+
+### Request parameters
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| mode | String | **Yes** | `asin` or `category` |
+| asins | List\<String\> | When mode=asin | Max 100 ASINs |
+| categoryPath | String | When mode=category | Category path |
+| labelType | String | No | Filter to specific dimension. Omit for all |
+| period | String | No | Analysis time range (e.g. `90d`) |
+
+### labelType values
+
+`scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
+
+### Response fields
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| queryMode | String | `asin` or `category` |
+| asins | List | ASINs analyzed |
+| category | String | Category analyzed |
+| totalReviews | Integer | Total reviews analyzed |
+| avgRating | Float | Average rating |
+| verifiedRatio | Float | Verified purchase ratio (decimal) |
+| dateRangeStart | Date | Analysis start date |
+| dateRangeEnd | Date | Analysis end date |
+| ratingDistribution | Object | `{"1": count, "2": count, ..., "5": count}` |
+| sentimentDistribution | Object | `{"positive": ratio, "neutral": ratio, "negative": ratio}` |
+| consumerInsights | List\<InsightItem\> | Structured insights by dimension |
+| topKeywords | List\<InsightItem\> | Top keywords with counts |
+
+### InsightItem fields
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| element | String | Insight text |
+| labelType | String | Dimension (e.g. `painPoints`) |
+| count | Integer | Occurrence count |
+| reviewPercentage | Float | % of reviews mentioning this |
+| avgRating | Float | Avg rating for reviews with this element |
 
 ---
 

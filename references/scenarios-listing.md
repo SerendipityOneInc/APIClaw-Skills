@@ -14,11 +14,16 @@
 > Trigger: "analyze competitor listing" / "their selling points" / "listing comparison" / "what are they saying"
 
 ```bash
-# Pull 2-3 top competitor ASINs for listing content
+# Step 1: Pull 2-3 top competitor ASINs for listing content
 python3 scripts/apiclaw.py product --asin B09XXXXX
 python3 scripts/apiclaw.py product --asin B08YYYYY
 python3 scripts/apiclaw.py product --asin B07ZZZZZ
+
+# Step 2: AI review analysis across all competitors (one call)
+python3 scripts/apiclaw.py analyze --asins B09XXXXX,B08YYYYY,B07ZZZZZ --label-type positives,painPoints,buyingFactors
 ```
+
+**Data source priority:** Use `analyze` consumerInsights for structured findings (covers ALL reviews). Use `realtime/product` features/topReviews for specific listing copy examples and quotes.
 
 **Extract from each ASIN:**
 
@@ -35,6 +40,7 @@ python3 scripts/apiclaw.py product --asin B07ZZZZZ
 1. **Shared selling points** — What do ALL competitors emphasize? (These are table stakes, must include)
 2. **Pain point mining** — What do negative reviews complain about? (These are your differentiation angle)
 3. **White space** — What does NO competitor mention? (These are untapped positioning opportunities)
+4. **AI-validated insights** — What does `analyze` confirm as top buying factors and pain points across all competitors? (data-driven, not manual impression)
 
 **Output Template**
 
@@ -72,9 +78,12 @@ python3 scripts/apiclaw.py product --asin B07ZZZZZ
 
 # Step 2: Get category competitive data
 python3 scripts/apiclaw.py competitors --keyword "product keyword" --page-size 20
+
+# Step 3: Consumer insights for data-driven copy
+python3 scripts/apiclaw.py analyze --asins B09XXXXX,B08YYYYY,B07ZZZZZ --label-type buyingFactors,scenarios,userProfiles
 ```
 
-**⚠️ Important:** Use `realtime/product` for listing content (features, reviews). Use `competitors` for market positioning data (price range, review counts). Do NOT expect sales data from realtime/product.
+**⚠️ Important:** Use `realtime/product` for listing content (features, reviews). Use `competitors` for market positioning data (price range, review counts). Use `analyze` for consumer-driven copy direction (buying factors, scenarios, user profiles). Do NOT expect sales data from realtime/product.
 
 **Before generating, ask the user for:**
 
@@ -100,6 +109,9 @@ python3 scripts/apiclaw.py competitors --keyword "product keyword" --page-size 2
 - Bullet 3-4: Important features (table stakes)
 - Bullet 5: Trust builder (warranty, compatibility, what's in the box)
 - Embed 1-2 search keywords naturally per bullet
+- Use `buyingFactors` from analyze to prioritize which benefits to lead with
+- Use `scenarios` from analyze to craft the product description opening
+- Use `userProfiles` to match tone and language to target audience
 
 ### Product Description
 - Opening: Problem or scenario the customer relates to
@@ -161,9 +173,12 @@ python3 scripts/apiclaw.py competitors --keyword "product keyword" --page-size 1
 python3 scripts/apiclaw.py product --asin [competitor1]
 python3 scripts/apiclaw.py product --asin [competitor2]
 python3 scripts/apiclaw.py product --asin [competitor3]
+
+# Step 3: Review-based competitive intelligence
+python3 scripts/apiclaw.py analyze --asins B09XXXXX,[competitor1],[competitor2] --label-type positives,painPoints
 ```
 
-**⚠️ Note:** `realtime/product` provides listing content for diagnosis. `competitors` provides competitive benchmarks (sales, reviews, price). Both are needed.
+**⚠️ Note:** `realtime/product` provides listing content for diagnosis. `competitors` provides competitive benchmarks (sales, reviews, price). `analyze` provides AI-analyzed consumer insights across your ASIN and competitors. All three are needed for a thorough diagnosis.
 
 **Diagnosis Scorecard:**
 
@@ -177,6 +192,7 @@ python3 scripts/apiclaw.py product --asin [competitor3]
 | Reviews | `ratingCount` vs competitor avg | 🟢 Above avg / 🟡 50-100% of avg / 🔴 Below 50% |
 | Rating | `rating` vs category avg | 🟢 >4.3 / 🟡 4.0-4.3 / 🔴 <4.0 |
 | Negative Review % | `ratingBreakdown` 1+2 star | 🟢 <10% / 🟡 10-20% / 🔴 >20% |
+| Pain Point Coverage | analyze painPoints vs your bullets | 🟢 Addresses top 3 / 🟡 Addresses 1-2 / 🔴 Ignores top pain points |
 
 **Output Template**
 
