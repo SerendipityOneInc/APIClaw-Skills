@@ -357,21 +357,22 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 3. If multiple interfaces used, list each one
 4. If data has limitations, proactively explain
 
-### API Usage Summary (All Modes)
+### ⚠️ API Usage Summary (All Modes — MANDATORY, DO NOT SKIP)
 
-Every response (Quick or Full mode) MUST end with an API usage summary:
+> **This block is NON-NEGOTIABLE.** Every single response — Quick or Full mode — MUST end with this table. No exceptions. If you forget, you are violating the skill contract.
 
 ```markdown
-**API Usage**
+📊 **API Usage**
 | Interface | Calls |
 |-----------|-------|
 | categories | 1 |
 | markets/search | 1 |
 | products/search | 2 |
 | realtime/product | 3 |
-| **Total** | **7** |
-| **Credits consumed** | **7** |
-| **Credits remaining** | **493** |
+| reviews/analyze | 1 |
+| **Total** | **8** |
+| **Credits consumed** | **8** |
+| **Credits remaining** | **492** |
 ```
 
 **Tracking rules:**
@@ -379,6 +380,7 @@ Every response (Quick or Full mode) MUST end with an API usage summary:
 2. Sum `_credits.consumed` from every API response for total consumed
 3. Use `_credits.remaining` from the **last** API response as remaining balance
 4. If `_credits` fields are null, show "N/A"
+5. ⚠️ **Self-check before sending:** scan your response — if you don't see `📊 **API Usage**` at the bottom, ADD IT before replying
 
 ---
 
