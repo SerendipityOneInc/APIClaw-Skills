@@ -327,13 +327,15 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 ---
 
-## Output Standards (Full Mode Only)
+## ⚠️ Output Standards (Full Mode — MANDATORY, DO NOT SKIP)
 
-**MUST include data source block after every Full-mode analysis:**
+> **Two blocks are REQUIRED at the end of every Full-mode analysis: ① Data Source & Conditions, ② API Usage. Missing either one = violating the skill contract.**
+
+### ① Data Source & Conditions (Full Mode Only)
 
 ```markdown
 ---
-**Data Source & Conditions**
+📋 **Data Source & Conditions**
 | Item | Value |
 |----|-----|
 | Data Source | APIClaw API |
@@ -356,6 +358,7 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 2. Filter conditions MUST list specific parameter values
 3. If multiple interfaces used, list each one
 4. If data has limitations, proactively explain
+5. ⚠️ **Self-check:** scan your response — if you don't see `📋 **Data Source & Conditions**`, ADD IT before replying
 
 ### ⚠️ API Usage Summary (All Modes — MANDATORY, DO NOT SKIP)
 
