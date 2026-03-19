@@ -63,6 +63,23 @@ When user provides a Key, write it to `config.json`. New keys may need 3-5 secon
 
 ---
 
+## ⚠️ Pre-Execution Checklist (MANDATORY for Full Mode)
+
+Before running any Full-mode product selection or market analysis, **complete this checklist**:
+
+- [ ] **Step 1 — Mode Selection:** Check the Product Selection Mode Mapping table below. If ANY of the 14 preset modes matches the user's intent, **USE IT** (`--mode xxx`). Do NOT manually piece together filters when a preset mode exists. Common mappings:
+  - Small/lightweight/cheap products → `--mode low-price`
+  - New seller / beginner → `--mode beginner`
+  - Niche / long-tail → `--mode long-tail`
+  - Trending / rising → `--mode emerging`
+- [ ] **Step 2 — Realtime Supplement:** Plan to call `product --asin` for the top 3-5 ASINs from results (see Realtime Data Supplementation below).
+- [ ] **Step 3 — Review Analysis:** Plan to call `analyze --asins` for top ASINs to get consumer insights (especially painPoints, improvements, buyingFactors).
+- [ ] **Step 4 — Output Blocks:** Prepare to include both `📋 Data Source & Conditions` and `📊 API Usage` at the end.
+
+> **Why this exists:** In testing, AI agents repeatedly skipped preset modes, realtime supplements, and review analysis — even though the instructions below clearly describe them. This checklist forces a pause-and-verify before execution.
+
+---
+
 ## Execution Standards
 
 **Prioritize script execution for API calls.** The script includes:
