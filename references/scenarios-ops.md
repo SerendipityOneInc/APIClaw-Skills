@@ -1,5 +1,6 @@
-# APIClaw Scenarios — Daily Operations
+# Amazon Seller Daily Operations & Monitoring
 
+> Monitor Amazon market trends, track competitor pricing and BSR changes, detect anomalies, and automate daily seller operations.
 > Load when handling market monitoring, competitor tracking, or anomaly detection.
 > For API parameters, see `reference.md`.
 >
