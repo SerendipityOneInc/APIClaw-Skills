@@ -1,5 +1,6 @@
-# APIClaw Scenarios — Expansion & Iteration
+# Amazon Product Expansion & Market Trends
 
+> Discover trending Amazon products, expand product lines, find new niche opportunities, and make data-driven discontinuation decisions.
 > Load when handling product expansion, trend discovery, or discontinuation decisions.
 > For API parameters, see `reference.md`.
 >

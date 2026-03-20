@@ -1,5 +1,6 @@
-# APIClaw Scenarios — Composite & Case Study
+# Amazon Seller Comprehensive Analysis & Case Studies
 
+> Amazon product recommendation workflows and real-world FBA/FBM seller case studies.
 > Load when handling comprehensive product recommendations or Chinese seller case studies.
 > For API parameters, see `reference.md`.
 

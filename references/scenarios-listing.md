@@ -1,5 +1,6 @@
-# APIClaw Scenarios — Listing Optimization
+# Amazon Listing Optimization & Content Creation
 
+> Write and optimize Amazon product listings, bullet points, titles, and A+ content for better conversion and search ranking.
 > Load when handling listing writing, bullet points optimization, or product page content creation.
 > For API parameters, see `reference.md`.
 >

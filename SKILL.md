@@ -1,13 +1,17 @@
 ---
-name: apiclaw-analysis
+name: Amazon Product Research & Seller Analytics
 version: 1.1.5
 description: >
-  Finds winning Amazon products with 14 battle-tested selection strategies
-  & 6-dimension risk assessment. Backed by 200M+ product database.
-  Use when user asks about: product selection, finding products to sell, ASIN lookup,
-  BSR analysis, competitor lookup, market opportunity, risk assessment, category research,
-  pricing strategy, review analysis, listing optimization, or any Amazon seller data needs.
-  Powered by APIClaw API (requires APICLAW_API_KEY).
+  Amazon product research and seller analytics for FBA and FBM businesses.
+  Find winning products with 14 selection strategies, track competitors,
+  monitor BSR trends, analyze reviews, estimate monthly sales, optimize
+  listings, and assess market opportunities. Real-time ASIN lookup with
+  200M+ product database. Amazon seller tools, niche research, keyword
+  analysis, pricing strategy, and category insights powered by APIClaw API.
+  Use when user asks about: Amazon product selection, finding products to sell,
+  ASIN lookup, BSR analysis, competitor tracking, market opportunity, risk
+  assessment, FBA research, review analysis, or listing optimization.
+  Requires APICLAW_API_KEY.
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/Amazon-analysis-skill
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
@@ -24,15 +28,13 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 - Required: `APICLAW_API_KEY`
 - Scope: used only for `https://api.apiclaw.io`
-- Resolution order:
-  1. **Environment variable** `APICLAW_API_KEY` (preferred, most secure)
-  2. **Config file** `config.json` in the skill root directory (fallback)
-
-```json
-{ "api_key": "hms_live_xxxxxx" }
-```
-
-When user provides a Key, write it to `config.json`. New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
+- Setup: Guide user to set the environment variable:
+  ```bash
+  export APICLAW_API_KEY='hms_live_xxxxxx'
+  ```
+- Fallback: The script also checks `config.json` in the skill root directory if the env var is not set.
+- **Do NOT write keys to disk files.** Always recommend the environment variable approach.
+- New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
 
 ## File Map
 
@@ -94,7 +96,7 @@ Before running any Full-mode product selection or market analysis, **complete th
 
 ## Realtime Data Supplementation
 
-When `products` or `competitors` returns ASINs in Full-mode analysis, **automatically call `product --asin` for the top 3-5 most relevant ASINs** to get current real-time data.
+When `products` or `competitors` returns ASINs in Full-mode analysis, call `product --asin` for the top 3-5 most relevant ASINs to get current real-time data. For bulk lookups (>3 ASINs), confirm with the user before proceeding.
 
 | Scenario | Supplement? | How many ASINs |
 |----------|-------------|----------------|

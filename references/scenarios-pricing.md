@@ -1,5 +1,6 @@
-# APIClaw Scenarios — Pricing & Listing
+# Amazon Pricing Strategy & Profit Estimation
 
+> Develop competitive Amazon pricing strategies, estimate FBA/FBM profit margins, calculate fees, and benchmark against competitor prices.
 > Load when handling pricing strategy, profit estimation, or listing reference tasks.
 > For API parameters, see `reference.md`.
 
