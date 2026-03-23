@@ -2,8 +2,9 @@
 name: APIClaw — Commerce Data for AI Agents
 version: 1.0.0
 description: >
+  General overview, 6 API endpoints.
   AI-powered commerce data infrastructure with 200M+ Amazon products.
-  6 API endpoints: category browsing, market metrics, product search,
+  Endpoints: category browsing, market metrics, product search,
   competitor lookup, realtime ASIN detail, and AI review analysis.
   Use when user asks: what APIClaw can do, available API endpoints,
   how to get started, API capabilities overview, credit usage, or

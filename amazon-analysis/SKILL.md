@@ -2,6 +2,7 @@
 name: Amazon Product Research & Seller Analytics
 version: 1.1.5
 description: >
+  Deep analysis, 14 selection strategies.
   Amazon product research and seller analytics for FBA and FBM businesses.
   Find winning products with 14 selection strategies, track competitors,
   monitor BSR trends, analyze reviews, estimate monthly sales, optimize
