@@ -56,7 +56,7 @@ We use conventional commits:
 ## Questions?
 
 - Join our [Discord](https://discord.com/invite/aYcJDbvK)
-- Open a [Discussion](https://github.com/SerendipityOneInc/APIClaw-Skills/issues)
+- [Open an Issue](https://github.com/SerendipityOneInc/APIClaw-Skills/issues)
 
 ## License
 

@@ -84,7 +84,7 @@ curl -X POST 'https://api.apiclaw.io/openapi/v2/products/search' \
   }'
 ```
 
-Response:
+Example response (simplified):
 
 ```json
 {
@@ -97,12 +97,14 @@ Response:
       "ratingCount": 12847,
       "bsrRank": 15,
       "atLeastMonthlySales": 8500,
-      "brand": "ExampleBrand",
+      "brand": "SoundCore",
       "profitMargin": 0.42
     }
   ]
 }
 ```
+
+> **Note:** This is a simplified example. Actual responses include additional fields. See [API reference](apiclaw/references/openapi-reference.md) for full field list.
 
 ## API Endpoints
 
