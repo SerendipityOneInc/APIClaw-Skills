@@ -40,16 +40,17 @@ This repo contains **two agent skills** that let any AI assistant use APIClaw in
 
 ### 1. Install the Skills
 
-**General skill** (lightweight overview):
 ```bash
-git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
-# Point your agent to: APIClaw-Skills/apiclaw/SKILL.md
+npx skills add SerendipityOneInc/APIClaw-Skills
 ```
 
-**Amazon deep analysis skill** (full toolkit):
+You'll be prompted to select which skills to install:
+- **APIClaw — Commerce Data for AI Agents** (general overview, 6 endpoints)
+- **Amazon Product Research & Seller Analytics** (deep analysis, 14 strategies)
+
+Or clone manually:
 ```bash
 git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
-# Point your agent to: APIClaw-Skills/amazon-analysis/SKILL.md
 ```
 
 ### 2. Set Your API Key

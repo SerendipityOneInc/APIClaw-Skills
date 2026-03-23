@@ -1,7 +1,15 @@
 ---
-name: apiclaw
+name: APIClaw — Commerce Data for AI Agents
 version: 1.0.0
-description: "APIClaw API platform overview — AI-powered commerce data infrastructure. Provides programmatic access to 200M+ Amazon products with real-time data across 6 endpoints: category browsing, market metrics, product search, competitor lookup, realtime ASIN detail, and AI review analysis. Use when user asks: what APIClaw can do, available API endpoints, how to get started, API capabilities overview, credit usage, or general commerce data questions. For deep Amazon product selection strategies and analysis workflows, use the Amazon-analysis-skill instead. Requires APICLAW_API_KEY."
+description: >
+  AI-powered commerce data infrastructure with 200M+ Amazon products.
+  6 API endpoints: category browsing, market metrics, product search,
+  competitor lookup, realtime ASIN detail, and AI review analysis.
+  Use when user asks: what APIClaw can do, available API endpoints,
+  how to get started, API capabilities overview, credit usage, or
+  general commerce data questions. For deep Amazon product selection
+  strategies and analysis workflows, use the Amazon-analysis-skill instead.
+  Requires APICLAW_API_KEY.
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
