@@ -24,12 +24,12 @@ New keys need 3-5 seconds to activate. If 403, wait and retry.
 
 | # | Endpoint | What It Does | Key Output |
 |---|----------|-------------|------------|
-| 1 | `categories` | Browse Amazon category tree | categoryName, productCount, hasChildren |
-| 2 | `markets/search` | Market-level aggregate metrics | avg sales, avg price, brand count, concentration, FBA rate |
-| 3 | `products/search` | Product search with 14 preset strategies | ASIN, title, price, BSR, monthly sales, rating, reviews |
+| 1 | `categories` | Browse Amazon category tree | categoryName, categoryPath, productCount, hasChildren |
+| 2 | `markets/search` | Market-level aggregate metrics | sampleAvgMonthlySales, sampleAvgPrice, sampleBrandCount, topSalesRate, sampleFbaRate |
+| 3 | `products/search` | Product search with 14 preset strategies | asin, title, price, bsrRank, atLeastMonthlySales, rating, ratingCount |
 | 4 | `products/competitor-lookup` | Competitor analysis by keyword/ASIN | competitive products with sales, revenue, seller info |
-| 5 | `realtime/product` | Live single-ASIN detail | price, BSR, reviews, features, variants, buy box |
-| 6 | `reviews/analyze` | AI-powered review insights | sentiment, pain points, buying factors, user profiles |
+| 5 | `realtime/product` | Live single-ASIN detail | title, rating, features, variants, bestsellersRank, buyboxWinner |
+| 6 | `reviews/analyze` | AI-powered review insights | sentimentDistribution, consumerInsights (painPoints, buyingFactors, etc.) |
 
 ## Endpoint Details
 
@@ -37,17 +37,20 @@ New keys need 3-5 seconds to activate. If 403, wait and retry.
 Browse or search Amazon's category hierarchy.
 ```
 POST /openapi/v2/categories
-{"keyword": "pet supplies"}         # search by keyword
-{"parentCategoryName": "Pet Supplies"}  # browse children
+{"categoryKeyword": "pet supplies"}                    # search by keyword
+{"parentCategoryPath": ["Pet Supplies"]}               # browse children
 ```
+⚠️ Use `categoryKeyword` (not `keyword`) and `parentCategoryPath` (not `parentCategoryName`).
 
-### 2. Market
+### 2. Markets
 Category-level market metrics — answer "Is this market worth entering?"
 ```
 POST /openapi/v2/markets/search
-{"category": "Pet Supplies,Dogs,Toys", "topN": 10}
+{"categoryPath": ["Pet Supplies", "Dogs", "Toys"], "topN": "10"}
 ```
-Returns: avg monthly sales, avg price, brand count, seller count, concentration ratios, new SKU rate, FBA rate.
+⚠️ `topN` must be a **string** (`"3"`, `"5"`, `"10"`, `"20"`), NOT an integer.
+
+Returns: sampleAvgMonthlySales, sampleAvgPrice, sampleBrandCount, sampleSellerCount, topSalesRate (concentration), sampleNewSkuRate, sampleFbaRate.
 
 ### 3. Products
 Product search with filters or 14 built-in selection modes.
@@ -57,7 +60,7 @@ POST /openapi/v2/products/search
 ```
 **14 modes**: beginner, fast-movers, emerging, long-tail, underserved, new-release, fbm-friendly, low-price, single-variant, high-demand-low-barrier, broad-catalog, selective-catalog, speculative, top-bsr.
 
-Monthly sales field: `atLeastMonthlySales` (lower-bound estimate).
+Key fields: `atLeastMonthlySales` (lower-bound estimate), `bsrRank` (integer), `ratingCount` (not reviewCount), `price`, `profitMargin`, `fbaFee`.
 
 ### 4. Competitors
 Competitor discovery by keyword, brand, or specific ASIN.
@@ -66,46 +69,105 @@ POST /openapi/v2/products/competitor-lookup
 {"keyword": "wireless earbuds"}
 {"asin": "B09V3KXJPB"}
 ```
+Returns same product fields as `products/search`.
 
 ### 5. Realtime Product
-Live data for a single ASIN — current price, BSR, reviews, features, variants.
+Live data for a single ASIN — current listing content and pricing.
 ```
 POST /openapi/v2/realtime/product
 {"asin": "B09V3KXJPB"}
 ```
-⚠️ Does NOT return monthly sales or profit margin. Use products/competitors for those.
+
+Key response fields:
+| Field | Type | Note |
+|-------|------|------|
+| `title`, `brand` | String | Basic info |
+| `rating`, `ratingCount` | Float/Int | Rating data |
+| `ratingBreakdown` | Object | `{five_star: {percentage, count}, ...}` |
+| `features` | List | Bullet points |
+| `bestsellersRank` | Array | `[{category, rank}, ...]` — NOT a single integer |
+| `buyboxWinner` | Object | `{price, fulfillment, seller}` — price is nested here |
+| `topReviews` | List | Top reviews with title, body, rating |
+| `variants` | List | All variants with dimensions |
+
+⚠️ Does **NOT** return: `atLeastMonthlySales`, `profitMargin`, `fbaFee`, `sellerCount`. Use `products/competitor-lookup` for those.
+⚠️ Price is nested: `buyboxWinner.price`, NOT top-level `price`.
 
 ### 6. Review Analysis
 AI-powered consumer insights from customer reviews.
 ```
 POST /openapi/v2/reviews/analyze
-{"asin": "B09V3KXJPB"}
-{"asins": ["B09V3KXJPB", "B08YYYYY"]}          # compare products
-{"category": "Pet Supplies,Dogs,Toys", "period": "90d"}  # category-level
+
+# Single or multiple ASINs (mode + asins required)
+{"mode": "asin", "asins": ["B09V3KXJPB"]}
+{"mode": "asin", "asins": ["B09V3KXJPB", "B08YYYYY"]}
+
+# Category-level insights
+{"mode": "category", "categoryPath": "Pet Supplies,Dogs,Toys", "period": "90d"}
+
+# Filter to specific dimensions
+{"mode": "asin", "asins": ["B09V3KXJPB"], "labelType": "painPoints"}
 ```
-11 insight dimensions: painPoints, improvements, buyingFactors, issues, positives, scenarios, keywords, userProfiles, usageTimes, usageLocations, behaviors.
+
+⚠️ `mode` is **required** (`"asin"` or `"category"`).
+⚠️ Use `asins` (plural, array), NOT `asin` (singular string).
+
+11 insight dimensions (labelType): `painPoints`, `improvements`, `buyingFactors`, `issues`, `positives`, `scenarios`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`.
+
+Returns: `totalReviews`, `avgRating`, `sentimentDistribution`, `ratingDistribution`, `consumerInsights`, `topKeywords`, `verifiedRatio`.
+
+## ⚠️ Field Differences Across Endpoints
+
+The 4 endpoint types return **different fields**. Do NOT assume they share the same structure.
+
+| Data | `markets` | `products`/`competitors` | `realtime/product` | `reviews/analyze` |
+|------|-----------|--------------------------|--------------------|--------------------|
+| Monthly Sales | sampleAvgMonthlySales | ✅ atLeastMonthlySales | ❌ | ❌ |
+| Price | sampleAvgPrice | price | buyboxWinner.price | ❌ |
+| BSR | sampleAvgBsr | bsrRank (integer) | bestsellersRank (array) | ❌ |
+| Rating | sampleAvgRating | rating | rating | avgRating |
+| Review Count | sampleAvgReviewCount | ratingCount | ratingCount | totalReviews |
+| Sentiment | ❌ | ❌ | ❌ | ✅ sentimentDistribution |
+| Consumer Insights | ❌ | ❌ | ❌ | ✅ consumerInsights |
+| Pain Points | ❌ | ❌ | ❌ (manual from topReviews) | ✅ AI-analyzed |
+| Profit Margin | ❌ | profitMargin | ❌ | ❌ |
+| FBA Fee | ❌ | fbaFee | ❌ | ❌ |
+| Features/Bullets | ❌ | ❌ | ✅ features | ❌ |
+| Variants | ❌ | variantCount (integer) | variants (full list) | ❌ |
 
 ## What Each Endpoint Is Best For
 
 | Need | Use This |
 |------|----------|
-| Sales & competition data | `products` / `competitors` |
+| Sales, pricing, competition data | `products/search` or `products/competitor-lookup` |
 | Live pricing, reviews, listing content | `realtime/product` |
 | Category-level market sizing | `markets/search` |
-| Consumer pain points & insights | `reviews/analyze` |
+| Consumer pain points, sentiment, buying factors | `reviews/analyze` |
 | Category browsing / validation | `categories` |
+| Full product picture | Combine `products` (quantitative) + `realtime` (qualitative) + `reviews` (insights) |
+
+## Known Quirks
+
+1. `topN` and `newProductPeriod` are **strings** — use `"10"` not `10`
+2. `listingAge` is a **string** — use `"180"` not `180`
+3. All response `.data` is an **array** — use `.data[0]` not `.data.fieldName`
+4. `ratingCount` not `reviewCount` — the field is called `ratingCount` everywhere
+5. `bsrRank` (integer) in products/competitors vs `bestsellersRank` (array) in realtime
+6. Rate limit: 100 req/min, 10 req/sec burst
 
 ## Credits
 
 - Each API call consumes credits
-- Response includes `_credits.consumed` and `_credits.remaining`
+- Response includes `meta.creditsConsumed` and `meta.creditsRemaining`
+- Minimum 50 reviews required for `reviews/analyze` (returns `INSUFFICIENT_REVIEWS` error otherwise)
 - Plans & rates: [apiclaw.io/pricing](https://apiclaw.io/pricing)
 
 ## Data Notes
 
-- **Monthly sales** (`atLeastMonthlySales`) is a lower-bound estimate — variance across tools is normal
+- **Monthly sales** (`atLeastMonthlySales`) is a lower-bound estimate — actual may be higher
 - **Realtime vs database**: `realtime/product` is live; `products`/`competitors` have ~T+1 delay
 - **Currently Amazon US only** (amazon.com) — more marketplaces planned
+- **Sales estimation fallback**: When `atLeastMonthlySales` is null → Monthly sales ≈ 300,000 / BSR^0.65
 
 ## Go Deeper
 
@@ -119,5 +181,5 @@ clawhub install Amazon-analysis-skill
 
 - **Website**: [apiclaw.io](https://apiclaw.io)
 - **API Docs**: [api.apiclaw.io/api-docs](https://api.apiclaw.io/api-docs)
-- **GitHub**: [github.com/SerendipityOneInc](https://github.com/SerendipityOneInc/Amazon-analysis-skill)
+- **GitHub**: [github.com/SerendipityOneInc](https://github.com/SerendipityOneInc/APIClaw-Skills)
 - **Support**: support@apiclaw.io

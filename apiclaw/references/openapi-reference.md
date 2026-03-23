@@ -1,114 +1,126 @@
-# APIClaw OpenAPI Quick Reference
+# APIClaw API Quick Reference
 
-> Load this only when you need exact field names, parameter types, or response structure.
+> Concise field reference for all 6 endpoints. Load when you need exact parameter/field names.
+>
+> **OpenAPI Spec (live)**: https://apiclaw.io/api/v1/openapi-spec
 
 Base URL: `https://api.apiclaw.io/openapi/v2`
-Auth: `Authorization: Bearer $APICLAW_API_KEY`
-All endpoints: POST with JSON body
+Auth: `Bearer $APICLAW_API_KEY`
+Method: All POST with JSON body
 
 ---
 
 ## 1. categories
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| keyword | string | Search categories by keyword |
-| parentCategoryName | string | Get child categories |
+| Parameter | Type | Note |
+|-----------|------|------|
+| categoryKeyword | String | Search by keyword |
+| categoryPath | String | Exact path lookup |
+| parentCategoryPath | List\<String\> | Browse children |
+| _(no params)_ | — | Returns root categories |
 
-Response fields: `categoryName`, `categoryPath`, `productCount`, `hasChildren`
+Response: `categoryId`, `categoryName`, `categoryPath`, `hasChildren`, `isRoot`, `level`, `productCount`, `link`
 
 ---
 
 ## 2. markets/search
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| category | string | Category path (comma or ` > ` separated) |
-| topN | int | Top N for concentration metrics (default 10) |
-| sampleType | string | Sample type |
-| dateRange | string | Date range |
-| sortBy | string | Sort field |
-| sortOrder | string | asc / desc |
+| Parameter | Type | Note |
+|-----------|------|------|
+| categoryPath | List\<String\> | e.g. `["Pet Supplies", "Dogs"]` |
+| categoryKeyword | String | Keyword match across levels |
+| topN | **String** | `"3"` / `"5"` / `"10"` / `"20"` ⚠️ must be string |
+| newProductPeriod | **String** | `"1"` / `"3"` / `"6"` / `"12"` ⚠️ must be string |
+| sampleType | String | `by_sale_100` / `by_bsr_100` / `avg` |
+| dateRange | String | default `30d` |
+| pageSize | Integer | default 20 |
+| sortBy | String | default `sampleAvgMonthlySaleAmt` |
+| sortOrder | String | `asc` / `desc` |
 
-Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgBsr`, `sampleAvgRating`, `sampleAvgReviewCount`, `sampleBrandCount`, `topSalesRate`, `topBrandSalesRate`, `sampleNewSkuRate`, `sampleFbaRate`, `sampleAvgMonthlyRevenue`
-
----
-
-## 3. products/search
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| keyword | string | Search keyword |
-| category | string | Category path |
-| mode | string | Preset mode (14 options) |
-| keywordMatchType | string | fuzzy / exact / phrase |
-| salesMin / salesMax | int | Monthly sales range |
-| priceMin / priceMax | float | Price range |
-| reviewsMin / reviewsMax | int | Review count range |
-| ratingMin / ratingMax | float | Rating range |
-| bsrMin / bsrMax | int | BSR range |
-| growthMin | float | Growth rate minimum |
-| pageSize | int | Results per page |
-| sortBy | string | Sort field |
-| sortOrder | string | asc / desc |
-
-Product fields: `asin`, `title`, `brand`, `price`, `bsrRank`, `atLeastMonthlySales`, `rating`, `ratingCount`, `variantCount`, `buyboxSeller`, `profitMargin`, `fbaFee`, `salesRevenue`, `sellerCount`
-
-**14 modes**: beginner, fast-movers, emerging, long-tail, underserved, new-release, fbm-friendly, low-price, single-variant, high-demand-low-barrier, broad-catalog, selective-catalog, speculative, top-bsr
+Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgMonthlyRevenue`, `sampleBrandCount`, `sampleSellerCount`, `sampleFbaRate`, `sampleNewSkuRate`, `topSalesRate`, `topBrandSalesRate`, `topSellerSalesRate`, `totalSkuCount`
 
 ---
 
-## 4. products/competitor-lookup
+## 3. products/competitor-lookup
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| keyword | string | Search keyword |
-| asin | string | Specific ASIN |
-| brand | string | Brand name |
-| pageSize | int | Results per page |
+| Parameter | Type | Note |
+|-----------|------|------|
+| keyword | String | Search keyword |
+| brand | String | Brand filter |
+| seller | String | Seller filter |
+| asin | String | ASIN filter |
+| categoryPath | List\<String\> | Category filter |
+| sortBy | String | `atLeastMonthlySales` / `atLeastMonthlyRevenue` / `bsr` / `price` / `rating` / `reviewCount` / `listingDate` |
+| sortOrder | String | `asc` / `desc` |
+| pageSize | Integer | default 20 |
 
-Returns same product fields as products/search.
+---
+
+## 4. products/search
+
+Same as competitor-lookup, plus:
+
+| Parameter | Type | Note |
+|-----------|------|------|
+| mode | String | 14 preset modes (see SKILL.md) |
+| keywordMatchType | String | `fuzzy` / `phrase` / `exact` |
+| listingAge | **String** | Max age in days ⚠️ must be string |
+
+Filter pairs (all optional, Min/Max): `monthlySales`, `revenue`, `salesGrowthRate`, `bsr`, `subBsr`, `bsrGrowthRate`, `price`, `rating`, `reviewCount`, `fbaShipping`, `variantCount`, `grossMargin`, `sellerCount`
+
+Additional: `includeBrands`, `excludeBrands`, `fulfillment` (`["FBA"]`/`["FBM"]`), `badges` (`["New Release"]`/`["Best Seller"]`)
 
 ---
 
 ## 5. realtime/product
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| asin | string | ASIN to look up |
+| Parameter | Required | Note |
+|-----------|----------|------|
+| asin | **Yes** | Product ASIN |
+| marketplace | No | `US`/`UK`/`DE`/`FR`/`IT`/`ES`/`JP`/`CA`/`AU`/`IN`/`MX`/`BR` (default: US) |
 
-Response fields: `title`, `brand`, `rating`, `ratingCount`, `ratingBreakdown`, `features` (array), `topReviews` (array), `specifications`, `variants` (array), `bestsellersRank` (array of {category, rank}), `buyboxWinner` ({price, seller, fulfillment})
+Response fields: `asin`, `title`, `brand`, `rating`, `ratingCount`, `ratingBreakdown`, `features`, `description`, `specifications`, `categories`, `variants`, `topReviews`, `bestsellersRank` (array), `buyboxWinner` (object with price), `images`, `dimensions`, `weight`
 
-⚠️ No: atLeastMonthlySales, profitMargin, fbaFee
+⚠️ Does NOT have: `atLeastMonthlySales`, `profitMargin`, `fbaFee`, `sellerCount`
 
 ---
 
 ## 6. reviews/analyze
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| asin | string | Single ASIN |
-| asins | array | Multiple ASINs (comparison) |
-| category | string | Category path (category-level analysis) |
-| period | string | Time period (e.g. "90d") |
-| labelType | string | Comma-separated dimensions to analyze |
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| mode | String | **Yes** | `asin` or `category` |
+| asins | List\<String\> | When mode=asin | ⚠️ plural, array format |
+| categoryPath | String | When mode=category | Category path |
+| labelType | String | No | Filter to dimension |
+| period | String | No | e.g. `90d` |
 
-Response fields: `totalReviews`, `avgRating`, `sentimentDistribution`, `ratingDistribution`, `consumerInsights` (keyed by labelType), `topKeywords`, `verifiedRatio`
+labelType values: `scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
 
-11 labelType options: painPoints, improvements, buyingFactors, issues, positives, scenarios, keywords, userProfiles, usageTimes, usageLocations, behaviors
+Response: `totalReviews`, `avgRating`, `verifiedRatio`, `ratingDistribution`, `sentimentDistribution`, `consumerInsights` (list of InsightItem), `topKeywords`
+
+InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
 
 ---
 
-## Common Response Structure
+## Shared Product Object (products/search & competitor-lookup)
 
-All endpoints return:
-```json
-{
-  "success": true,
-  "data": [ ... ],
-  "_query": { ... },
-  "_credits": { "consumed": 1, "remaining": 499 }
-}
-```
-
-`.data` is always an **array**. Use `.data[0]` for single results.
+| Field | Type | Note |
+|-------|------|------|
+| asin | String | |
+| title | String | |
+| brand | String | |
+| price | Float | Top-level (unlike realtime) |
+| bsrRank | Integer | BSR rank (NOT `bsr` or `bestsellersRank`) |
+| atLeastMonthlySales | Integer | Lower-bound monthly sales |
+| salesRevenue | Float | Monthly revenue |
+| salesGrowthRate | Float | Growth rate |
+| rating | Float | 0-5 |
+| ratingCount | Integer | NOT `reviewCount` |
+| profitMargin | Float | |
+| fbaFee | Float | |
+| sellerCount | Integer | |
+| variantCount | Integer | |
+| fulfillment | String | FBA/FBM/AMZ |
+| listingDate | String | |
+| buyboxSeller | String | |
