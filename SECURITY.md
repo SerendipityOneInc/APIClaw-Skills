@@ -32,4 +32,3 @@ This security policy covers:
 - **API Key Storage:** Keys can be stored via environment variable (`APICLAW_API_KEY`, preferred) or `config.json` (fallback). The `config.json` file is listed in `.gitignore` to prevent accidental commits.
 - **Network:** The script only communicates with `https://api.apiclaw.io`. No other external endpoints are contacted.
 - **No Telemetry:** This skill does not collect or transmit usage data.
-data.

@@ -1,0 +1,13 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://api.apiclaw.io"
+    },
+    {
+      "pattern": "^https://apiclaw.io/api-keys"
+    }
+  ],
+  "timeout": "10s",
+  "retryOn429": true,
+  "aliveStatusCodes": [200, 206, 301, 302, 403]
+}
