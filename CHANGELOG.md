@@ -31,7 +31,7 @@ Each entry notes which skill or the repo itself was affected.
 
 ### apiclaw v1.0.0
 - Initial release of general skill — lightweight overview of all 6 API endpoints
-- Published to ClawHub
+- Published general skill
 
 ## 2026-03-13
 

@@ -24,7 +24,7 @@ What actually happened.
 - Python version:
 - OS:
 - Skill version:
-- How installed: (ClawHub / manual clone)
+- How installed: (git clone / other)
 
 ## Additional Context
 Any other context, screenshots, or error messages.

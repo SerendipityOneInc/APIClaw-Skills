@@ -38,16 +38,18 @@ This repo contains **two agent skills** that let any AI assistant use APIClaw in
 
 ## Quick Start
 
-### 1. Install the Skill
+### 1. Install the Skills
 
-```bash
-npx clawhub install Amazon-analysis-skill
-```
-
-Or clone manually:
-
+**General skill** (lightweight overview):
 ```bash
 git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
+# Point your agent to: APIClaw-Skills/apiclaw/SKILL.md
+```
+
+**Amazon deep analysis skill** (full toolkit):
+```bash
+git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
+# Point your agent to: APIClaw-Skills/amazon-analysis/SKILL.md
 ```
 
 ### 2. Set Your API Key

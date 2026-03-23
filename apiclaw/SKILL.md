@@ -175,7 +175,8 @@ The 4 endpoint types return **different fields**. Do NOT assume they share the s
 For advanced Amazon product research — 14 selection strategies, risk assessment, pricing analysis, listing optimization, and operational monitoring — install the dedicated skill:
 
 ```bash
-clawhub install Amazon-analysis-skill
+git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
+# Point your agent to: APIClaw-Skills/amazon-analysis/SKILL.md
 ```
 
 ## Links
