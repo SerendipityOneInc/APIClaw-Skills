@@ -4,8 +4,9 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.1.x   | ✅ Yes    |
-| < 1.1   | ❌ No     |
+| amazon-analysis 1.1.x | ✅ Yes |
+| apiclaw 1.x           | ✅ Yes |
+| older versions         | ❌ No  |
 
 ## Reporting a Vulnerability
 
