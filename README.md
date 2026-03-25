@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <b>Amazon commerce data skills for AI agents.</b><br/>
-  Backed by 200M+ products. Structured, real-time, AI-ready.
+  <b>Agent skills for the Amazon commerce data layer.</b><br/>
+  200M+ products. 1B+ reviews. Real-time signals. Structured for AI, not humans.
 </p>
 
 <p align="center">
@@ -31,14 +31,14 @@
 
 ## What is APIClaw?
 
-[APIClaw](https://apiclaw.io) provides structured Amazon commerce data for AI agents — product search, market analysis, competitor lookup, real-time details, and AI-powered review insights. No scraping, no HTML parsing, just clean JSON.
+[APIClaw](https://apiclaw.io) is the data infrastructure built for agents. Not a scraping API. Not a human dashboard. A purpose-built data layer that gives your AI agents direct access to Amazon commerce signals — 200M+ indexed products, 2+ years of history, and 1B+ reviews pre-processed into structured insights. Clean JSON, real-time, agent-ready.
 
 This repo contains **two agent skills** that let any AI assistant use APIClaw instantly:
 
 | Skill | Description | Best For |
 |-------|------------|----------|
-| 📦 **[`apiclaw/`](apiclaw/)** | Platform overview, 6 endpoints, quick start | Getting started, general queries |
-| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 selection strategies, risk assessment, competitor analysis, listing optimization | Serious product research, FBA/FBM sourcing |
+| 📦 **[`apiclaw/`](apiclaw/)** | Data layer overview, 6 API endpoints, quick integration | Getting started, agent tool-calling |
+| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 selection strategies, market validation, competitor intelligence, risk assessment | Deep product research, autonomous sourcing agents |
 
 ## Quick Start
 

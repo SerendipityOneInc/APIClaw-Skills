@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <b>面向 AI Agent 的亚马逊电商数据技能包</b><br/>
-  覆盖 2 亿+ 商品，结构化、实时、AI 就绪。
+  <b>面向 AI Agent 的亚马逊电商数据层技能包。</b><br/>
+  200M+ 商品、1B+ 评论、实时信号 — 为 AI 结构化，而非为人类设计。
 </p>
 
 <p align="center">
@@ -31,14 +31,14 @@
 
 ## 什么是 APIClaw？
 
-[APIClaw](https://apiclaw.io) 为 AI Agent 提供结构化的亚马逊电商数据——商品搜索、市场分析、竞品查询、实时详情和 AI 驱动的评论洞察。无需爬虫，无需解析 HTML，直接拿到干净的 JSON。
+[APIClaw](https://apiclaw.io) 是专为 Agent 构建的数据基础设施。不是爬虫 API，不是人类仪表盘，而是让你的 AI Agent 直接访问亚马逊电商信号的数据层 — 200M+ 已索引商品、2+ 年历史数据、1B+ 评论预处理为结构化洞察。干净 JSON，实时更新，Agent 即用。
 
 本仓库包含 **两个 Agent 技能**，让任何 AI 助手都能即插即用地调用 APIClaw：
 
 | 技能 | 说明 | 适用场景 |
 |------|------|----------|
-| 📦 **[`apiclaw/`](apiclaw/)** | 平台概览，6 个接口，快速入门 | 快速上手，常规查询 |
-| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 种选品策略，风险评估，竞品分析，Listing 优化 | 深度选品调研，FBA/FBM 货源开发 |
+| 📦 **[`apiclaw/`](apiclaw/)** | 数据层概览，6 个 API 接口，快速集成 | 快速上手，Agent tool-calling |
+| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 种选品策略，市场验证，竞品情报，风险评估 | 深度选品调研，自主选品 Agent |
 
 ## 快速开始
 
