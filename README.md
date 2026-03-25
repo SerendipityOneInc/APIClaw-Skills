@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <b>Agent skills for the Amazon commerce data layer.</b><br/>
-  200M+ products. 1B+ reviews. Real-time signals. Structured for AI, not humans.
+  <b>The data infrastructure built for agents.</b><br/>
+  Currently powering Amazon commerce with 200M+ products, 1B+ reviews, and real-time signals.
 </p>
 
 <p align="center">
@@ -192,6 +192,11 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 - 💬 [Discord](https://discord.com/invite/aYcJDbvK) — Chat, get help, share what you're building
 - 🐛 [Issues](https://github.com/SerendipityOneInc/APIClaw-Skills/issues) — Bug reports and feature requests
+- 📖 [API Docs](https://apiclaw.io) — Full API documentation
+
+## License
+
+[MIT](LICENSE) © [SerendipityOne Inc.](https://apiclaw.io)
 - 📖 [API Docs](https://apiclaw.io) — Full API documentation
 
 ## License
