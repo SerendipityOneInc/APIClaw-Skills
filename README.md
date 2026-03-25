@@ -1,3 +1,7 @@
+<p align="right">
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a>
+</p>
+
 <p align="center">
   <h1 align="center">APIClaw Skills</h1>
 </p>

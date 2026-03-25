@@ -14,4 +14,4 @@ Closes #
 - [ ] I have tested my changes
 - [ ] I have updated documentation if needed
 - [ ] My code follows the project style guidelines
-- [ ] I have read [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md)
