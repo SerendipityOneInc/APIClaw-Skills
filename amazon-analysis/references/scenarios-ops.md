@@ -4,7 +4,9 @@
 > Load when handling market monitoring, competitor tracking, or anomaly detection.
 > For API parameters, see `reference.md`.
 >
-> **Limitation**: Snapshot data only, no historical comparison. Run periodically and compare manually for continuous monitoring.
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
+>
+> **Limitation**: Snapshot data only for most endpoints. Use `product-history` for historical trends on specific ASINs.
 
 ---
 
@@ -60,7 +62,17 @@ python3 scripts/apiclaw.py products --category "Pet Supplies,Dogs,Toys" --listin
 | High concentration | Step 1 `topSalesRate` | Currently > 60% (Warning threshold from evaluation criteria) |
 | Low new SKU rate | Step 1 `sampleNewSkuRate` | Currently < 5% (market may be frozen) or > 30% (flooding) |
 
-**For continuous monitoring:** Run this workflow periodically (weekly/monthly) and compare results manually across snapshots. The API does not provide historical trend data.
+**For continuous monitoring:** Run this workflow periodically (weekly/monthly) and compare results manually across snapshots. Use `product-history` for historical trend data on specific ASINs.
+
+## 6.5 Historical Trend Analysis (New Endpoints)
+
+```bash
+# Track ASIN price/BSR/sales history
+python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+
+# Brand-level competitor deep dive
+python3 scripts/apiclaw.py brand-detail --keyword "dog toys" --brand "CompetitorBrand" --page-size 20
+```
 
 **Output Template**
 

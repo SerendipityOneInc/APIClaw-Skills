@@ -3,6 +3,8 @@
 > Evaluate Amazon products for FBA selling potential, assess competition risks, analyze customer reviews, and compare multiple ASINs.
 > Load when handling product evaluation, risk assessment, review analysis, or multi-product comparison.
 > For API parameters, see `reference.md`.
+>
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
 
 ---
 

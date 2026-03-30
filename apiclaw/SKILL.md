@@ -1,11 +1,12 @@
 ---
 name: APIClaw — Commerce Data for AI Agents
-version: 1.2.1
+version: 2.0.0
 description: >
-  General overview, 6 API endpoints.
+  General overview, 11 API endpoints.
   AI-powered commerce data infrastructure with 200M+ Amazon products.
   Endpoints: category browsing, market metrics, product search,
-  competitor lookup, realtime ASIN detail, and AI review analysis.
+  competitor lookup, realtime ASIN detail, AI review analysis,
+  price band overview/detail, brand overview/detail, and product history.
   Use when user asks: what APIClaw can do, available API endpoints,
   how to get started, API capabilities overview, credit usage, or
   general commerce data questions. For deep Amazon product selection
@@ -16,7 +17,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 # APIClaw — Commerce Data Infrastructure for AI Agents
 
-> Real-time access to 200M+ Amazon products. 6 endpoints, one API key.
+> Real-time access to 200M+ Amazon products. 11 endpoints, one API key.
 >
 > **Language rule**: Respond in the user's language.
 
@@ -40,6 +41,11 @@ New keys need 3-5 seconds to activate. If 403, wait and retry.
 | 4 | `products/competitor-lookup` | Competitor analysis by keyword/ASIN | competitive products with sales, revenue, seller info |
 | 5 | `realtime/product` | Live single-ASIN detail | title, rating, features, variants, bestsellersRank, buyboxWinner |
 | 6 | `reviews/analyze` | AI-powered review insights | sentimentDistribution, consumerInsights (painPoints, buyingFactors, etc.) |
+| 7 | `products/price-band-overview` | Price band summary with best opportunity | sampleMedianPrice, hottestBand, bestOpportunityBand |
+| 8 | `products/price-band-detail` | Full 5-band price distribution | priceBands (array of 5 band objects with sales, brands, ratings) |
+| 9 | `products/brand-overview` | Top-brand concentration metrics | sampleBrandCount, sampleTop10BrandSalesRate (CR10), sampleTop10AvgRating |
+| 10 | `products/brand-detail` | Per-brand breakdown with products | brands (array with sales, revenue, pricing, top products) |
+| 11 | `products/product-history` | Historical daily snapshots for ASINs | daily price, bsrRank, subBsrRank, recentSales |
 
 ## Endpoint Details
 
@@ -126,24 +132,88 @@ POST /openapi/v2/reviews/analyze
 
 Returns: `totalReviews`, `avgRating`, `sentimentDistribution`, `ratingDistribution`, `consumerInsights`, `topKeywords`, `verifiedRatio`.
 
+### 7. Price Band Overview
+Quick summary of price distribution — find the hottest and best-opportunity price bands.
+```
+POST /openapi/v2/products/price-band-overview
+{"keyword": "yoga mat"}
+```
+
+Returns: `sampleMedianPrice`, `hottestBand`, `bestOpportunityBand`.
+
+Each band object contains: `bandIdx`, `bandLabel`, `sampleBandMinPrice`, `sampleBandMaxPrice`, `sampleSkuCount`, `sampleSalesRate`, `sampleBrandCount`, `sampleTop3BrandSalesRate`, `sampleAvgRating`, `sampleOpportunityIndex`.
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath` filtering.
+
+### 8. Price Band Detail
+Full 5-band price distribution with per-band competition and sales data.
+```
+POST /openapi/v2/products/price-band-detail
+{"keyword": "yoga mat"}
+```
+
+Returns: `sampleSkuCount`, `sampleTotalMonthlySales`, `priceBands` (array of 5 band objects).
+
+Each band object has the same structure as Price Band Overview: `bandIdx`, `bandLabel`, `sampleBandMinPrice`, `sampleBandMaxPrice`, `sampleSkuCount`, `sampleSalesRate`, `sampleBrandCount`, `sampleTop3BrandSalesRate`, `sampleAvgRating`, `sampleOpportunityIndex`.
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath` filtering.
+
+### 9. Brand Overview
+Top-brand concentration metrics — answer "How dominated is this market?"
+```
+POST /openapi/v2/products/brand-overview
+{"keyword": "yoga mat"}
+```
+
+Returns: `sampleBrandCount`, `sampleTop10BrandSalesRate` (CR10 — top 10 brands' share of total sales), `sampleTop10AvgRating`, `sampleTop10AvgPrice`.
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath` filtering.
+
+### 10. Brand Detail
+Per-brand breakdown with individual brand metrics and sample products.
+```
+POST /openapi/v2/products/brand-detail
+{"keyword": "yoga mat"}
+```
+
+Returns: `sampleSkuCount`, `sampleTotalMonthlySales`, `sampleBrandCount`, `brands` (array).
+
+Each brand object: `brandName`, `sampleSkuCount`, `sampleGroupMonthlySales`, `sampleGroupMonthlyRevenue`, `sampleSalesRate`, `sampleAvgPrice`, `minPrice`, `maxPrice`, `sampleAvgRating`, `sampleAvgRatingCount`, `sampleProducts` (array of Product objects).
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath` filtering.
+
+### 11. Product History
+Historical daily snapshots for one or more ASINs over a date range.
+```
+POST /openapi/v2/products/product-history
+{"asins": ["B09V3KXJPB"], "startDate": "2026-03-01", "endDate": "2026-03-30"}
+```
+
+⚠️ Uses `startDate`/`endDate` (NOT `dateRange`). Date format: `YYYY-MM-DD`.
+
+Returns daily snapshots per ASIN: `asin`, `price`, `bsrRank`, `subBsrRank`, `recentSales`, `updatedAt`.
+
 ## ⚠️ Field Differences Across Endpoints
 
-The 4 endpoint types return **different fields**. Do NOT assume they share the same structure.
+The endpoint types return **different fields**. Do NOT assume they share the same structure.
 
-| Data | `markets` | `products`/`competitors` | `realtime/product` | `reviews/analyze` |
-|------|-----------|--------------------------|--------------------|--------------------|
-| Monthly Sales | sampleAvgMonthlySales | ✅ atLeastMonthlySales | ❌ | ❌ |
-| Price | sampleAvgPrice | price | buyboxWinner.price | ❌ |
-| BSR | sampleAvgBsr | bsrRank (integer) | bestsellersRank (array) | ❌ |
-| Rating | sampleAvgRating | rating | rating | avgRating |
-| Review Count | sampleAvgReviewCount | ratingCount | ratingCount | totalReviews |
-| Sentiment | ❌ | ❌ | ❌ | ✅ sentimentDistribution |
-| Consumer Insights | ❌ | ❌ | ❌ | ✅ consumerInsights |
-| Pain Points | ❌ | ❌ | ❌ (manual from topReviews) | ✅ AI-analyzed |
-| Profit Margin | ❌ | profitMargin | ❌ | ❌ |
-| FBA Fee | ❌ | fbaFee | ❌ | ❌ |
-| Features/Bullets | ❌ | ❌ | ✅ features | ❌ |
-| Variants | ❌ | variantCount (integer) | variants (full list) | ❌ |
+| Data | `markets` | `products`/`competitors` | `realtime/product` | `reviews/analyze` | `price-band-*` | `brand-*` | `product-history` |
+|------|-----------|--------------------------|--------------------|--------------------|-----------------|-----------|-------------------|
+| Monthly Sales | sampleAvgMonthlySales | ✅ atLeastMonthlySales | ❌ | ❌ | sampleSalesRate (per band) | sampleGroupMonthlySales | recentSales |
+| Price | sampleAvgPrice | price | buyboxWinner.price | ❌ | sampleBandMinPrice/MaxPrice | sampleAvgPrice, minPrice, maxPrice | price |
+| BSR | sampleAvgBsr | bsrRank (integer) | bestsellersRank (array) | ❌ | ❌ | ❌ | bsrRank, subBsrRank |
+| Rating | sampleAvgRating | rating | rating | avgRating | sampleAvgRating (per band) | sampleAvgRating | ❌ |
+| Review Count | sampleAvgReviewCount | ratingCount | ratingCount | totalReviews | ❌ | sampleAvgRatingCount | ❌ |
+| Brand Count | sampleBrandCount | ❌ | ❌ | ❌ | sampleBrandCount (per band) | sampleBrandCount | ❌ |
+| Sentiment | ❌ | ❌ | ❌ | ✅ sentimentDistribution | ❌ | ❌ | ❌ |
+| Consumer Insights | ❌ | ❌ | ❌ | ✅ consumerInsights | ❌ | ❌ | ❌ |
+| Pain Points | ❌ | ❌ | ❌ (manual from topReviews) | ✅ AI-analyzed | ❌ | ❌ | ❌ |
+| Profit Margin | ❌ | profitMargin | ❌ | ❌ | ❌ | ❌ | ❌ |
+| FBA Fee | ❌ | fbaFee | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Features/Bullets | ❌ | ❌ | ✅ features | ❌ | ❌ | ❌ | ❌ |
+| Variants | ❌ | variantCount (integer) | variants (full list) | ❌ | ❌ | ❌ | ❌ |
+| Opportunity Index | ❌ | ❌ | ❌ | ❌ | sampleOpportunityIndex | ❌ | ❌ |
+| Brand Concentration | topSalesRate | ❌ | ❌ | ❌ | sampleTop3BrandSalesRate | sampleTop10BrandSalesRate (CR10) | ❌ |
 
 ## What Each Endpoint Is Best For
 
@@ -154,6 +224,11 @@ The 4 endpoint types return **different fields**. Do NOT assume they share the s
 | Category-level market sizing | `markets/search` |
 | Consumer pain points, sentiment, buying factors | `reviews/analyze` |
 | Category browsing / validation | `categories` |
+| Quick pricing strategy guidance | `products/price-band-overview` |
+| Detailed price tier analysis & opportunity finding | `products/price-band-detail` |
+| Market brand concentration / dominance check | `products/brand-overview` |
+| Individual brand competitive breakdown | `products/brand-detail` |
+| Price/BSR/sales trend over time | `products/product-history` |
 | Full product picture | Combine `products` (quantitative) + `realtime` (qualitative) + `reviews` (insights) |
 
 ## Known Quirks
@@ -164,6 +239,10 @@ The 4 endpoint types return **different fields**. Do NOT assume they share the s
 4. `ratingCount` not `reviewCount` — the field is called `ratingCount` everywhere
 5. `bsrRank` (integer) in products/competitors vs `bestsellersRank` (array) in realtime
 6. Rate limit: 100 req/min, 10 req/sec burst
+7. `reviewCountMin`/`reviewCountMax` filters are currently broken — API accepts them silently but does not apply filtering (API-56)
+8. Keyword search uses broad fuzzy matching — results may include unrelated products. Use `categoryPath` parameter to filter when precision matters (API-57)
+9. `reviews/analyze` may return HTTP 500 for certain ASINs due to serialization bug (API-58). Retry with different ASIN or use `realtime/product` topReviews as fallback.
+10. Price-band and brand endpoints only accept `keyword` (not `categoryPath`) — cross-validate returned products' categories to filter noise.
 
 ## Credits
 
@@ -178,6 +257,13 @@ The 4 endpoint types return **different fields**. Do NOT assume they share the s
 - **Realtime vs database**: `realtime/product` is live; `products`/`competitors` have ~T+1 delay
 - **Currently Amazon US only** (amazon.com) — more marketplaces planned
 - **Sales estimation fallback**: When `atLeastMonthlySales` is null → Monthly sales ≈ 300,000 / BSR^0.65
+
+## ⚠️ Data Quality Advisory
+
+- **Keyword search pollution**: Broad keyword matching may include unrelated products in results. For precise analysis, always use `categoryPath` from the `categories` endpoint to filter.
+- **Aggregated endpoints hide noise**: `price-band` and `brand` endpoints return aggregated statistics. If the underlying keyword search includes irrelevant products, these aggregations will be silently polluted. Always validate with `categoryPath` when available.
+- **Sales figures are estimates**: `atLeastMonthlySales` is a lower-bound estimate. Actual sales may be significantly higher.
+- **Confidence labeling recommended**: When using APIClaw data for business decisions, distinguish between data-backed facts, reasonable inferences, and directional guesses.
 
 ## Go Deeper
 

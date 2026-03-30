@@ -3,6 +3,8 @@
 > Develop competitive Amazon pricing strategies, estimate FBA/FBM profit margins, calculate fees, and benchmark against competitor prices.
 > Load when handling pricing strategy, profit estimation, or listing reference tasks.
 > For API parameters, see `reference.md`.
+>
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
 
 ---
 
@@ -60,3 +62,20 @@ python3 scripts/apiclaw.py product --asin B09XXXXX
 - Image count and types
 - A+ content presence
 - Variant strategy
+
+---
+
+## 5.4 Price Band Analysis (New Endpoints)
+
+```bash
+# Step 1: Overview — which price bands have opportunity
+python3 scripts/apiclaw.py price-band-overview --keyword "yoga mat"
+
+# Step 2: Drill into a promising band
+python3 scripts/apiclaw.py price-band-detail --keyword "yoga mat" --price-min 20 --price-max 40
+
+# Step 3: Historical price trends for key ASINs
+python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+```
+
+**Key metrics**: `sampleOpportunityIndex` > 1.0 = underserved band, Sales/Competition Ratio = Avg Monthly Sales / Avg Review Count (higher = easier entry).

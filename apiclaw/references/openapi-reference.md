@@ -1,6 +1,6 @@
 # APIClaw API Quick Reference
 
-> Concise field reference for all 6 endpoints. Load when you need exact parameter/field names.
+> Concise field reference for all 11 endpoints. Load when you need exact parameter/field names.
 >
 > **OpenAPI Spec (live)**: https://apiclaw.io/api/v1/openapi-spec
 
@@ -103,7 +103,137 @@ InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
 
 ---
 
-## Shared Product Object (products/search & competitor-lookup)
+## 7. products/price-band-overview
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| keyword | String | **Yes** | Search keyword |
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath`.
+
+**Response (top-level):**
+
+| Field | Type | Note |
+|-------|------|------|
+| sampleMedianPrice | Float | Median price across sampled products |
+| hottestBand | BandObject | Band with highest sales rate |
+| bestOpportunityBand | BandObject | Band with highest opportunity index |
+
+**BandObject:**
+
+| Field | Type | Note |
+|-------|------|------|
+| bandIdx | Integer | Band index (0-4) |
+| bandLabel | String | e.g. "$10-$20" |
+| sampleBandMinPrice | Float | Band minimum price |
+| sampleBandMaxPrice | Float | Band maximum price |
+| sampleSkuCount | Integer | Number of SKUs in this band |
+| sampleSalesRate | Float | Share of total sales in this band |
+| sampleBrandCount | Integer | Number of brands in this band |
+| sampleTop3BrandSalesRate | Float | Top 3 brands' share within this band |
+| sampleAvgRating | Float | Average rating in this band |
+| sampleOpportunityIndex | Float | Composite opportunity score |
+
+---
+
+## 8. products/price-band-detail
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| keyword | String | **Yes** | Search keyword |
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath`.
+
+**Response:**
+
+| Field | Type | Note |
+|-------|------|------|
+| sampleSkuCount | Integer | Total sampled SKUs |
+| sampleTotalMonthlySales | Integer | Total monthly sales across all bands |
+| priceBands | Array\<BandObject\> | Array of 5 band objects (same structure as §7) |
+
+---
+
+## 9. products/brand-overview
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| keyword | String | **Yes** | Search keyword |
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath`.
+
+**Response:**
+
+| Field | Type | Note |
+|-------|------|------|
+| sampleBrandCount | Integer | Total number of brands found |
+| sampleTop10BrandSalesRate | Float | CR10 — top 10 brands' share of total sales |
+| sampleTop10AvgRating | Float | Average rating of top 10 brands |
+| sampleTop10AvgPrice | Float | Average price of top 10 brands |
+
+---
+
+## 10. products/brand-detail
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| keyword | String | **Yes** | Search keyword |
+
+⚠️ Only accepts `keyword` — does NOT support `categoryPath`.
+
+**Response (top-level):**
+
+| Field | Type | Note |
+|-------|------|------|
+| sampleSkuCount | Integer | Total sampled SKUs |
+| sampleTotalMonthlySales | Integer | Total monthly sales |
+| sampleBrandCount | Integer | Total brands found |
+| brands | Array\<BrandObject\> | Per-brand breakdown |
+
+**BrandObject:**
+
+| Field | Type | Note |
+|-------|------|------|
+| brandName | String | Brand name |
+| sampleSkuCount | Integer | SKUs for this brand |
+| sampleGroupMonthlySales | Integer | Monthly unit sales |
+| sampleGroupMonthlyRevenue | Float | Monthly revenue |
+| sampleSalesRate | Float | Share of total sales |
+| sampleAvgPrice | Float | Average price |
+| minPrice | Float | Lowest price product |
+| maxPrice | Float | Highest price product |
+| sampleAvgRating | Float | Average rating |
+| sampleAvgRatingCount | Integer | Average review count |
+| sampleProducts | Array\<ProductObject\> | Sample products from this brand |
+
+**ProductObject** (within sampleProducts): Same fields as Shared Product Object below.
+
+---
+
+## 11. products/product-history
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| asins | List\<String\> | **Yes** | One or more ASINs |
+| startDate | String | **Yes** | Start date `YYYY-MM-DD` |
+| endDate | String | **Yes** | End date `YYYY-MM-DD` |
+
+⚠️ Uses `startDate`/`endDate` — NOT `dateRange`. Date format is `YYYY-MM-DD`.
+
+**Response:** Array of daily snapshot objects per ASIN.
+
+| Field | Type | Note |
+|-------|------|------|
+| asin | String | Product ASIN |
+| price | Float | Price on that date |
+| bsrRank | Integer | BSR rank on that date |
+| subBsrRank | Integer | Sub-category BSR rank |
+| recentSales | Integer | Recent sales estimate |
+| updatedAt | String | Timestamp of the snapshot |
+
+---
+
+## Shared Product Object (products/search, competitor-lookup & brand-detail sampleProducts)
 
 | Field | Type | Note |
 |-------|------|------|

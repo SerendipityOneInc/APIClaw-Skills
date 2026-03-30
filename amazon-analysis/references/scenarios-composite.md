@@ -3,6 +3,8 @@
 > Amazon product recommendation workflows and real-world FBA/FBM seller case studies.
 > Load when handling comprehensive product recommendations or Chinese seller case studies.
 > For API parameters, see `reference.md`.
+>
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
 
 ---
 
@@ -33,7 +35,13 @@ python3 scripts/apiclaw.py market --category "Pet Supplies,Dogs,Toys" --topn 10
 python3 scripts/apiclaw.py products --keyword "pet toys" --mode beginner --page-size 20
 python3 scripts/apiclaw.py products --keyword "pet toys" --mode high-demand-low-barrier --page-size 20
 
-# Step 4: AI weighted scoring → Top 5 recommendation
+# Step 4: Brand landscape check
+python3 scripts/apiclaw.py brand-overview --keyword "pet toys"
+
+# Step 5: Price band opportunity scan
+python3 scripts/apiclaw.py price-band-overview --keyword "pet toys"
+
+# Step 6: AI weighted scoring → Top 5 recommendation
 ```
 
 **AI Weighted Scoring Dimensions**:
@@ -116,3 +124,43 @@ python3 scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 
 ## Action Recommendations
 [Specific recommendations based on Chinese seller cases]
 ```
+
+---
+
+## 3.5 Full Market Cross-Validation (All Endpoints)
+
+> Trigger: "full picture" / "cross-validate" / "comprehensive market analysis"
+
+```bash
+# Step 1: Category resolution
+python3 scripts/apiclaw.py categories --keyword "yoga mat"
+
+# Step 2: Market aggregate
+python3 scripts/apiclaw.py market --category "Sports & Outdoors,Exercise & Fitness,Yoga,Yoga Mats" --topn 10
+
+# Step 3: Product landscape
+python3 scripts/apiclaw.py products --keyword "yoga mat" --category "Sports & Outdoors,Exercise & Fitness,Yoga,Yoga Mats" --page-size 30
+
+# Step 4: Price band analysis
+python3 scripts/apiclaw.py price-band-overview --keyword "yoga mat"
+python3 scripts/apiclaw.py price-band-detail --keyword "yoga mat" --price-min 20 --price-max 40
+
+# Step 5: Brand landscape
+python3 scripts/apiclaw.py brand-overview --keyword "yoga mat"
+python3 scripts/apiclaw.py brand-detail --keyword "yoga mat" --brand "TopBrand"
+
+# Step 6: Realtime deep dive on top ASINs
+python3 scripts/apiclaw.py product --asin B09XXXXX
+
+# Step 7: Historical validation
+python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+
+# Step 8: Consumer insights
+python3 scripts/apiclaw.py analyze --category "Sports & Outdoors,Exercise & Fitness,Yoga,Yoga Mats" --period 90d
+```
+
+**Cross-validation checks:**
+- Market avg price vs price-band distribution (consistency check)
+- Brand concentration from `market` vs `brand-overview` (should align)
+- Top products from `products` should appear in best price band from `price-band-detail`
+- Historical trend from `product-history` should support growth claims from `products`

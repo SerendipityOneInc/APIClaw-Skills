@@ -4,7 +4,9 @@
 > Load when handling product expansion, trend discovery, or discontinuation decisions.
 > For API parameters, see `reference.md`.
 >
-> **Limitation**: No historical data comparison. "Trends" based on current snapshot growth rate fields.
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
+>
+> **Note**: Use `product-history` for ASIN-level historical trends. Use `brand-overview` for market scanning.
 
 ---
 
@@ -77,6 +79,23 @@ python3 scripts/apiclaw.py market --category "category path" --topn 10
 **[Continue / Adjust / Discontinue]**
 [Reasons and alternatives]
 ```
+
+---
+
+## 7.5 Market Scanning with Brand & Price Analysis (New Endpoints)
+
+```bash
+# Brand landscape — who dominates this category
+python3 scripts/apiclaw.py brand-overview --keyword "pet toys"
+
+# Price band scan — where are the gaps
+python3 scripts/apiclaw.py price-band-overview --keyword "pet toys"
+
+# Historical validation for specific expansion candidates
+python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+```
+
+**Expansion evaluation**: Combine `brand-overview` (low concentration = easier entry) with `price-band-overview` (high opportunity index bands) to identify the best entry points.
 
 ---
 

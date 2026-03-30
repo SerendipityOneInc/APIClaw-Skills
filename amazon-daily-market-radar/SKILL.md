@@ -1,0 +1,262 @@
+---
+name: Amazon Daily Market Radar
+version: 1.0.0
+description: >
+  Automated daily market monitoring and alert system for Amazon sellers.
+  Tracks price changes, new competitors, BSR movements, review spikes,
+  stock-out signals, and market shifts. Designed for unattended agent automation.
+  Uses all 11 APIClaw API endpoints with cross-validation.
+  Use when user asks about: daily monitoring, market alerts, track competitors,
+  price monitoring, BSR tracking, market changes, daily briefing, market watch,
+  competitor alerts, review monitoring, stock alerts, market dashboard,
+  daily report, market updates, what changed today.
+  Requires APICLAW_API_KEY.
+author: SerendipityOneInc
+homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+---
+
+# APIClaw — Amazon Daily Market Radar
+
+> Set it. Forget it. Get alerted when it matters.
+>
+> **Language rule**: Always respond in the user's language. Chinese input → Chinese output.
+> All API calls go through `scripts/apiclaw.py`.
+
+## Credentials
+
+- Required: `APICLAW_API_KEY`
+- Scope: used only for `https://api.apiclaw.io`
+- Setup: Guide user to set the environment variable:
+  ```bash
+  export APICLAW_API_KEY='hms_live_xxxxxx'
+  ```
+- Get a free key at [apiclaw.io/api-keys](https://apiclaw.io/api-keys) (1,000 free credits on signup, no credit card required)
+- Fallback: The script also checks `config.json` in the skill root directory if the env var is not set.
+- **Do NOT write keys to disk files.** Always recommend the environment variable approach.
+- New keys may need 3-5 seconds to activate — if first call returns 403, wait 3 seconds and retry (max 2 retries).
+
+## File Map
+
+| File | When to Load |
+|------|-------------|
+| `SKILL.md` (this file) | Always — execution flow + alert rules |
+| `scripts/apiclaw.py` | **Execute** for all API calls (do NOT read into context) |
+| `references/reference.md` | Need exact field names or response structure |
+
+## Setup — First Run
+
+On first use, collect the user's watchlist:
+- **my_asins**: user's own product ASINs (1-10)
+- **competitor_asins**: key competitors to track (up to 20)
+- **keywords**: category keywords for market-level monitoring (1-5)
+- **alert_preferences**: which alerts matter most (price/BSR/reviews/competitors)
+
+**Input Collection:** If required inputs are missing, ask the user in ONE message:
+"To produce a reliable analysis, I need:
+ ✅ Required: my_asins + keyword
+ 💡 Recommended (significantly improves accuracy): competitor_asins
+ 📌 Optional: alert_preferences"
+
+Do NOT proceed until all required inputs are collected.
+
+Store the watchlist and each run's snapshot data in a `data/` directory (e.g. `data/watchlist.json`, `data/last-run.json`). On repeat runs, load the previous snapshot for change detection. Without a previous run, first run establishes the baseline — no "new competitor" alerts will fire.
+
+## Execution Flow
+
+### Step 0.5 — Category Resolution (mandatory, do not skip)
+
+Before any data collection, lock down the exact product category:
+
+1. **Query categories endpoint** — try the user's keyword first:
+   ```bash
+   python3 scripts/apiclaw.py categories --keyword "{keyword}"
+   ```
+2. **If empty or too broad** — split/broaden the keyword and retry (e.g. "yoga mat" → "yoga", then drill into subcategories). Try up to 3 variations.
+3. **If still no match** — use realtime/product on a known ASIN to extract categoryPath from its bestsellersRank field.
+4. **Validate the categoryPath** — ensure it matches the user's intended product type, not a tangentially related category.
+
+Once a precise categoryPath is confirmed, use it as the primary filter for all subsequent API calls:
+- `markets/search` → use `--category "{categoryPath}"`
+- `products/search` → add `--category "{categoryPath}"` alongside keyword
+- For endpoints that only accept keyword (brand-overview, brand-detail, price-band), apply **post-retrieval category validation**: check each returned product's/brand's sampleProducts categoryPath against the target category. Exclude mismatches silently.
+
+Record in the final report's Data Provenance section: the final categoryPath used, how it was resolved, and how many results were filtered out.
+
+### Pre-Execution Checklist
+
+Before proceeding to data collection, verify:
+- ✓ `APICLAW_API_KEY` is set and valid
+- ✓ categoryPath is locked (from Step 0.5)
+- ✓ All required inputs collected (from Step 0)
+If any check fails, stop and resolve before continuing.
+
+### Step 1 — Realtime Snapshot for All Tracked ASINs (5-15 calls)
+
+```bash
+python3 scripts/apiclaw.py product --asin {my_asin_1}
+python3 scripts/apiclaw.py product --asin {my_asin_2}
+python3 scripts/apiclaw.py product --asin {comp_1}
+python3 scripts/apiclaw.py product --asin {comp_2}
+# ... all tracked ASINs
+```
+
+For each: current price, rating, ratingCount, BSR, BuyBox winner, availability.
+
+**DB + Realtime cross-reference principle:** Database data (products/search) provides broad quantitative metrics with ~T+1 delay. Realtime data (realtime/product) provides current qualitative content. Always compare both — discrepancies reveal promotions, listing changes, or data lag. Flag differences explicitly in the report (e.g. "DB price: $21.58, Realtime: $14.43 — likely active promotion").
+
+### Step 2 — Historical Comparison (1-2 calls)
+
+```bash
+python3 scripts/apiclaw.py product-history --asins "{all_tracked}" --start-date "{7d_ago}" --end-date "{today}"
+```
+
+Compare today's snapshot vs 7-day history. Detect: price changes >5%, BSR moves >20%, sales spikes/drops.
+
+**Quantify trends, don't just label them.** Instead of "price stable" or "BSR rising", calculate and report:
+- Price change rate: (latest - earliest) / earliest × 100%
+- BSR volatility: (max - min) / average × 100%
+- Sales trend direction: regression slope over the period
+Use these numbers to support trend labels.
+
+**Growth signal validation:** When flagging BSR improvements or sales spikes, distinguish between:
+- 📊 **Sustained trend** — multiple data points over 7+ days showing consistent direction
+- 🔍 **Possible signal** — 2-3 days of change, needs more observation
+- 💡 **Single-day spike** — could be promotion, restock, or data lag; do not alert as RED/YELLOW without confirmation
+
+**Note:** The most recent day's history data often has `bsrRank: null, recentSales: null` (scrape not yet completed). Use the most recent non-null entry as the historical baseline. Step 1 realtime data serves as the authoritative current snapshot.
+
+### Step 3 — Market Pulse (3 calls per keyword)
+
+```bash
+python3 scripts/apiclaw.py market --category "{categoryPath}" --topn 10
+python3 scripts/apiclaw.py brand-overview --keyword "{keyword}"
+python3 scripts/apiclaw.py brand-detail --keyword "{keyword}"
+```
+
+**Category validation:** Cross-check sampleProducts from brand-detail against the target product's categoryPath. Exclude brands whose products are primarily in unrelated categories (e.g. flip-flop brand appearing for "yoga mat" keyword due to title stuffing). This is critical for automated runs — off-topic brands would poison the daily briefing.
+
+Check: market size changes, new brands entering, brand share shifts. Use sampleProducts from brand-detail to detect new product launches from tracked brands.
+
+### Step 4 — New Competitor Detection (1 call per keyword)
+
+```bash
+python3 scripts/apiclaw.py products --keyword "{keyword}" --page-size 20
+```
+
+Compare today's top 20 against previous run. Flag any new ASINs not seen before.
+
+### Step 5 — Price Landscape Check (2 calls per keyword)
+
+```bash
+python3 scripts/apiclaw.py price-band-overview --keyword "{keyword}"
+python3 scripts/apiclaw.py price-band-detail --keyword "{keyword}"
+```
+
+Detect: shifts in price band distribution, opportunity index changes.
+
+### Step 6 — Category Context (1 call, optional)
+
+```bash
+python3 scripts/apiclaw.py categories --keyword "{keyword}"
+```
+
+If categories returns empty (common for multi-word keywords like "yoga mat"), skip this step — category path is already available from Step 1 realtime product data (`bestsellersRank` field).
+
+### Step 7 — Review Pulse (1-3 calls)
+
+```bash
+python3 scripts/apiclaw.py analyze --asin {my_asin}
+```
+
+Track: review count velocity, sentiment shifts, new pain points emerging. If API fails, silently use topReviews from Step 1.
+
+### Step 8 — Generate Daily Briefing
+
+**First-run detection:** If `data/last-run.json` does not exist, this is the first run. Output a "Baseline Established" template instead of a change-detection briefing:
+- State clearly: "This is the first run — baseline data has been captured. Change detection and alerts will be available starting from the next run."
+- Still output the KPI Dashboard (current snapshot) and Market Shifts (current state) sections
+- Save current data to `data/last-run.json` for future comparison
+- Do NOT generate RED/YELLOW/GREEN alerts (no baseline to compare against)
+
+**Subsequent runs:** Compile all changes into alert-prioritized briefing.
+
+## Alert Rules
+
+| Alert Level | Trigger | Example |
+|------------|---------|---------|
+| RED | Price drop >10% by competitor | Comp X dropped from $19.99 to $14.99 |
+| RED | BSR crash >50% (your product) | Your BSR went from #23 to #60 |
+| RED | 1-star review spike (3+ in 24h) | 4 new 1-star reviews detected |
+| YELLOW | New competitor in Top 20 | New ASIN B0XXX entered Top 20 |
+| YELLOW | Competitor price change 5-10% | Comp Y raised price by 8% |
+| YELLOW | BSR change 20-50% | Your BSR moved from #23 to #35 |
+| YELLOW | Brand share shift >2% | Brand Z gained 3% market share |
+| GREEN | Competitor stock-out detected | Comp W BuyBox shows "Currently unavailable" |
+| GREEN | Your review velocity up | 15% more reviews this week vs last |
+| GREEN | Price band opportunity shift | New opportunity in $15-$20 band (opp 1.3→1.5) |
+
+**Output confidence context with every recommendation:**
+- State the recommendation with its confidence label (📊/🔍/💡)
+- Include: "Based on [X] data points from [Y] endpoints, sample of [Z] products"
+- For scores: append "(Confidence: High/Medium/Low — [brief reason])"
+- Acknowledge specific data gaps that may affect the conclusion
+- End with: "Recommended next step: [specific validation action] before committing resources."
+
+## Output Format
+
+**Every report must begin with this disclaimer:**
+
+> ⚠️ **Important**: This analysis is based on APIClaw API data as of [date]. Sales figures are lower-bound estimates. Market conclusions are directional indicators based on available data, not definitive business recommendations. Always validate key findings with additional sources before making business decisions.
+
+**Confidence labels — every conclusion or recommendation must be tagged with one of:**
+**Confidence labels — tag every conclusion with one of:**
+- 📊 **Data-backed** / **数据验证** — Supported by API data with cross-validation
+- 🔍 **Inferred** / **合理推断** — Reasonable inference, not directly measured
+- 💡 **Directional** / **方向参考** — Hypothesis only, verify before acting
+
+Use the label in the user's language: English output → "📊 Data-backed", Chinese output → "📊 数据验证".
+
+**Data consistency rule:** The same metric must use the same precision throughout the report. Do NOT use "10K+" in one table and "47,000" in another for the same product. Pick one level of precision and apply it consistently across all sections.
+
+**Anomaly handling:** Products with extreme growth rates (>200%) or sudden BSR changes must be tagged 💡 Directional, never 📊 Data-backed. Do NOT claim "proves innovation works" or "confirms market opportunity" based on a single product's spike. State: "Product X showed [metric], which MAY indicate [hypothesis]. Further validation needed."
+
+Daily briefing (all sections, omit any with no alerts):
+1. **Alert Summary** — Count of RED/YELLOW/GREEN alerts
+2. **RED Alerts** — Immediate action required, with specific recommendations
+3. **YELLOW Alerts** — Monitor closely, suggested response if trend continues
+4. **GREEN Opportunities** — Positive changes to capitalize on
+5. **KPI Dashboard** — Your ASINs: price, BSR, rating, reviews (today vs yesterday)
+6. **Competitor Movement** — Price/BSR/review changes for tracked competitors
+7. **Market Shifts** — Category-level changes (size, concentration, new entrants)
+8. **Action Items** — Prioritized to-do list based on alerts
+
+**Scope acknowledgment:** End every strategy/recommendation section with: "This analysis covers [list dimensions covered]. Dimensions not covered by this data include: advertising costs (CPC/ACoS), search keyword competition, supply chain logistics, and regulatory compliance. Consider supplementing with additional tools before final decisions."
+9. **📋 Data Provenance** — Query conditions (keyword, locked categoryPath, marketplace, timestamp), sample coverage (total returned vs post-filter valid vs analyzed), data freshness (DB ~T+1 vs realtime), DB-vs-Realtime discrepancies found, known limitations of this specific analysis
+
+**Sample bias disclosure:** Clearly state in the report body (not just Data Provenance): "This analysis is based on Top [N] products by sales volume, which skews toward established products. New or niche products may be underrepresented."
+10. **📊 API Usage & Sample Quality** — Per-endpoint call count with success/fail, total credits consumed, effective sample size after deduplication and category filtering
+
+## API Budget: ~15-30 credits (depends on watchlist size)
+
+| Step | Calls | Credits |
+|------|-------|---------|
+| 1 Realtime snapshot | realtime/product × (my + comp ASINs) | 5-15 |
+| 2 Historical comparison | product-history × 1-2 | 1-2 |
+| 3 Market pulse | market + brand-overview + brand-detail | 3 |
+| 4 New competitor detection | products/search | 1 |
+| 5 Price landscape | price-band-overview + detail | 2 |
+| 6 Category context | categories | 1 |
+| 7 Review pulse | reviews/analyze × 1-3 | 1-3 |
+| **Total** | | **15-30** |
+
+## Important Notes
+
+- Designed for daily automated runs — no user interaction needed after initial setup
+- **Never show empty data rows** — omit alerts with no changes
+- **Never expose internal errors** — silently fall back to alternative data
+- **FORBIDDEN in output**: "fallback", "degraded", "API error", "500", "failed", "insufficient reviews"
+- **FORBIDDEN in Data Provenance**: HTTP status codes (422, 500, 403), endpoint failure details, "fallback", "degraded", "retry", internal implementation details. The user should see clean data sourcing, not debugging logs.
+- Compare against previous run data when available; first run has no comparison baseline
+- Highest retention skill — users come back daily. Keep output concise and actionable
+- For agent automation: can be triggered by cron/scheduler with saved watchlist

@@ -4,6 +4,8 @@
 > Load when handling listing writing, bullet points optimization, or product page content creation.
 > For API parameters, see `reference.md`.
 >
+> ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
+>
 > **Data source:** `realtime/product` provides features, description, topReviews, ratingBreakdown.
 > `competitors`/`products` provides sales, pricing, and competitive data.
 > Combine both for data-driven listing creation.
