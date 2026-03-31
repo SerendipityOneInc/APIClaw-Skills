@@ -165,20 +165,44 @@ python3 scripts/apiclaw.py price-band-overview --keyword "{keyword}" --category 
 python3 scripts/apiclaw.py price-band-detail --keyword "{keyword}" --category "{categoryPath}"
 ```
 
-### Step 6 — Review Intelligence (2 calls)
+### Step 6 — Review Intelligence (2-5 calls)
 
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — ASIN mode (try this first):**
 ```bash
+# my_asin and top_leader must each have ratingCount ≥ 50
 python3 scripts/apiclaw.py analyze --asin {my_asin}
 python3 scripts/apiclaw.py analyze --asin {top_leader}
 ```
+⚠️ Each ASIN must have ratingCount ≥ 50. If an ASIN has <50 reviews, pick a different leader with more reviews.
 
-Extract keywords customers use in reviews → compare with title/bullet keywords. If API fails, silently use topReviews from realtime.
+**Priority 2 — Category mode fallback (ONLY if ASIN mode fails):**
+```bash
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
+```
+
+**Priority 3 — Realtime topReviews (ONLY if both ASIN AND category modes fail):**
+- Extract keywords, pain points, and sentiment from the topReviews text from Step 1/3 realtime data
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2.**
+
+Extract keywords customers use in reviews → compare with title/bullet keywords.
 
 ### Step 7 — Trend Context (1 call)
 
 ```bash
 python3 scripts/apiclaw.py product-history --asins "{my_asin},{leader1},{leader2}" --start-date "{30d_ago}" --end-date "{today}"
 ```
+
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
 
 ### Step 8 — Score & Report
 

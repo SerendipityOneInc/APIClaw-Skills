@@ -199,6 +199,12 @@ Cross-validate database data vs realtime. Flag significant discrepancies.
 python3 scripts/apiclaw.py product-history --asins "{top1},{top2},{top3},{top4},{top5}" --start-date "{30d_ago}" --end-date "{today}"
 ```
 
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+
 Determine if each candidate is rising, stable, or declining.
 
 **Category-level growth validation:** A single product's high growth rate (e.g. +900%) may be seasonal rebound, restock recovery, or promotion spike — not a market trend. To validate category-level growth:
@@ -207,20 +213,39 @@ Determine if each candidate is rising, stable, or declining.
 - Flag seasonal patterns explicitly: "This growth coincides with [season], which may be temporary"
 - Mark single-product growth signals as 💡 **Directional** / **方向参考**, not 📊 **Data-backed** / **数据验证**
 
-### Step 6 — Consumer Insights for Top 3 (1-3 calls)
+### Step 6 — Consumer Insights for Top 3 (3-9 calls)
 
+**⚠️ MANDATORY: You MUST attempt category mode FIRST. Do NOT skip to ASIN mode or topReviews fallback without trying category mode.**
+
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — Category mode (ALWAYS try this first, 3 calls):**
 ```bash
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
+```
+Category mode analyzes ALL reviews in the category (can be 100K+ reviews). This is the richest data source for opportunity discovery.
+
+**Priority 2 — ASIN mode (ONLY if ALL 3 category calls fail):**
+```bash
+# Pick Top 3 ASINs with ratingCount > 50 from Step 1/4
 python3 scripts/apiclaw.py analyze --asin {top1}
 python3 scripts/apiclaw.py analyze --asin {top2}
 python3 scripts/apiclaw.py analyze --asin {top3}
 ```
+⚠️ ASIN mode requires the selected ASINs to have ≥50 reviews EACH. Check ratingCount from Step 1/4 data before selecting. If an ASIN has <50 reviews, pick a different one.
+
+**Priority 3 — Realtime topReviews (ONLY if both category AND ASIN modes fail):**
+- Extract pain points, buying factors, and sentiment from the topReviews text of Top 5 candidates (from Step 4 realtime/product data)
+- Use ratingBreakdown (star distribution) to gauge satisfaction patterns
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2. Every report MUST show which priority level was used and why higher priorities failed (if applicable).**
 
 Extract pain points and differentiation opportunities.
 
-If reviews/analyze returns INSUFFICIENT_REVIEWS (common for new/emerging candidates with <50 reviews), fall back to topReviews from Step 4 realtime/product data:
-- Extract pain points, buying factors, and sentiment from the topReviews text
-- Use ratingBreakdown (star distribution) to gauge satisfaction patterns
-- This ensures consumer insights are available even for low-review opportunity candidates
+**Always report pain points with proportion.** Do NOT say "Top pain point: durability issues". Instead: "Top pain point: durability issues — mentioned in 27/471 reviews (5.7%), avg rating 2.4 when mentioned." Raw count + total sample + percentage = credibility.
 
 ### Step 7 — Competitor Density Check (1+ calls)
 

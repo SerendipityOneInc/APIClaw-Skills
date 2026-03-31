@@ -125,9 +125,13 @@ If category given, also get category context:
 python3 scripts/apiclaw.py categories --keyword "{keyword}"
 ```
 
-### Step 2 — Full Review Analysis (3-5 calls, core)
+### Step 2 — Full Review Analysis (3-16 calls, core)
 
-For primary ASIN — get ALL 11 dimensions. **Use individual label-type calls** (multi-label comma-separated calls may not work reliably):
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — ASIN mode (try this first):**
+
+For primary ASIN — get ALL 11 dimensions. The target ASIN must have ratingCount ≥ 50 (check from Step 1 data). **Use individual label-type calls:**
 ```bash
 python3 scripts/apiclaw.py analyze --asin {target} --label-type painPoints
 python3 scripts/apiclaw.py analyze --asin {target} --label-type positives
@@ -144,14 +148,26 @@ python3 scripts/apiclaw.py analyze --asin {target} --label-type behaviors
 
 Alternatively, call without `--label-type` to get all dimensions in one call (if supported). If it returns no data, fall back to individual calls above.
 
-For competitor ASINs (up to 5):
+For competitor ASINs (up to 5) — each must have ratingCount ≥ 50:
 ```bash
 python3 scripts/apiclaw.py analyze --asin {comp1}
 python3 scripts/apiclaw.py analyze --asin {comp2}
 # ... up to 5 competitors
 ```
 
-If reviews/analyze fails (insufficient reviews), silently fall back to topReviews from realtime.
+**Priority 2 — Category mode fallback (ONLY if ASIN mode fails):**
+```bash
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
+```
+
+**Priority 3 — Realtime topReviews (ONLY if both ASIN AND category modes fail):**
+- Extract pain points, buying factors, and sentiment from the topReviews text from Step 3 realtime/product data
+- Use ratingBreakdown (star distribution) to gauge overall satisfaction
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2. Every report MUST show which priority level was used and why higher priorities failed (if applicable).**
 
 **Always report pain points with proportion.** Do NOT say "Top pain point: durability issues". Instead: "Top pain point: durability issues — mentioned in 27/471 reviews (5.7%), avg rating 2.4 when mentioned." Raw count + total sample + percentage = credibility.
 
@@ -190,6 +206,12 @@ python3 scripts/apiclaw.py price-band-overview --keyword "{keyword}" --category 
 python3 scripts/apiclaw.py price-band-detail --keyword "{keyword}" --category "{categoryPath}"
 python3 scripts/apiclaw.py product-history --asins "{target},{comp1},{comp2}" --start-date "{30d_ago}" --end-date "{today}"
 ```
+
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
 
 Correlate: do price changes affect review sentiment? Is rating trending up or down?
 

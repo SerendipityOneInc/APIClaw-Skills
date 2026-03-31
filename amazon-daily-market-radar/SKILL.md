@@ -117,6 +117,12 @@ For each: current price, rating, ratingCount, BSR, BuyBox winner, availability.
 python3 scripts/apiclaw.py product-history --asins "{all_tracked}" --start-date "{7d_ago}" --end-date "{today}"
 ```
 
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+
 Compare today's snapshot vs 7-day history. Detect: price changes >5%, BSR moves >20%, sales spikes/drops.
 
 **Quantify trends, don't just label them.** Instead of "price stable" or "BSR rising", calculate and report:
@@ -171,11 +177,23 @@ If categories returns empty (common for multi-word keywords like "yoga mat"), sk
 
 ### Step 7 — Review Pulse (1-3 calls)
 
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — ASIN mode (try this first):**
 ```bash
+# my_asin must have ratingCount ≥ 50
 python3 scripts/apiclaw.py analyze --asin {my_asin}
 ```
+⚠️ The ASIN must have ratingCount ≥ 50. If <50 reviews, pick a different tracked ASIN with more reviews.
 
-Track: review count velocity, sentiment shifts, new pain points emerging. If API fails, silently use topReviews from Step 1.
+**Priority 2 — Realtime topReviews (ONLY if ASIN mode fails):**
+- Extract sentiment shifts and new pain points from the topReviews text from Step 1 realtime/product data
+- Use ratingBreakdown (star distribution) to gauge satisfaction trends
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to topReviews without attempting ASIN mode first.**
+
+Track: review count velocity, sentiment shifts, new pain points emerging.
 
 ### Step 8 — Generate Daily Briefing
 

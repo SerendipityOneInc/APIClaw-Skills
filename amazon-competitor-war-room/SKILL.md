@@ -176,6 +176,12 @@ Cross-validate realtime price/rating/BSR against Step 1 database data. Note disc
 python3 scripts/apiclaw.py product-history --asins "{comp1},{comp2},...,{comp10}" --start-date "{30d_ago}" --end-date "{today}"
 ```
 
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+
 For each competitor: price trend, BSR trend, sales trend. Who is rising? Who is falling?
 
 **Quantify trends, don't just label them.** Instead of "price stable" or "BSR rising", calculate and report:
@@ -184,18 +190,33 @@ For each competitor: price trend, BSR trend, sales trend. Who is rising? Who is 
 - Sales trend direction: regression slope over the period
 Use these numbers to support trend labels.
 
-### Step 6 — Review Intelligence (5 calls)
+### Step 6 — Review Intelligence (5-8 calls)
 
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — ASIN mode (try this first):**
 ```bash
-# Analyze top 5 competitors individually
+# Analyze top 5 competitors individually — each ASIN must have ratingCount ≥ 50
 python3 scripts/apiclaw.py analyze --asin {comp1}
 python3 scripts/apiclaw.py analyze --asin {comp2}
 python3 scripts/apiclaw.py analyze --asin {comp3}
 python3 scripts/apiclaw.py analyze --asin {comp4}
 python3 scripts/apiclaw.py analyze --asin {comp5}
 ```
+⚠️ Each ASIN must have ratingCount ≥ 50 (check from Step 1/4 data). If an ASIN has <50 reviews, pick a different competitor with more reviews.
 
-If reviews/analyze fails for an ASIN (insufficient reviews), silently use topReviews from Step 4 realtime data instead. Never expose API errors to user.
+**Priority 2 — Category mode fallback (ONLY if ASIN mode fails for most competitors):**
+```bash
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
+```
+
+**Priority 3 — Realtime topReviews (ONLY if both ASIN AND category modes fail):**
+- Extract pain points, buying factors, and sentiment from the topReviews text from Step 4 realtime/product data
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2.**
 
 **Always report pain points with proportion.** Do NOT say "Top pain point: durability issues". Instead: "Top pain point: durability issues — mentioned in 27/471 reviews (5.7%), avg rating 2.4 when mentioned." Raw count + total sample + percentage = credibility.
 

@@ -151,6 +151,12 @@ Extract: market avg price, top brand avg price, margin benchmarks. Use samplePro
 python3 scripts/apiclaw.py product-history --asins "{my_asin},{comp1},{comp2},{comp3},{comp4}" --start-date "{30d_ago}" --end-date "{today}"
 ```
 
+**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
+1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
+2. **Try up to 3 rounds** of different ASIN combinations before giving up.
+3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
+4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+
 For each: price trend, BSR response to price changes, sales impact. Detect if competitors ran promotions.
 
 ### Step 6 — Realtime Competitor Deep-Dive (5 calls)
@@ -167,16 +173,32 @@ Cross-validate prices (database vs realtime). Get BuyBox details, fulfillment me
 
 **DB + Realtime cross-reference principle:** Database data (products/search) provides broad quantitative metrics with ~T+1 delay. Realtime data (realtime/product) provides current qualitative content. Always compare both — discrepancies reveal promotions, listing changes, or data lag. Flag differences explicitly in the report (e.g. "DB price: $21.58, Realtime: $14.43 — likely active promotion").
 
-### Step 7 — Review Context (1-3 calls)
+### Step 7 — Review Context (2-5 calls)
 
+**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
+
+**Priority 1 — ASIN mode (try this first):**
 ```bash
+# my_asin and top_comp must each have ratingCount ≥ 50
 python3 scripts/apiclaw.py analyze --asin {my_asin}
 python3 scripts/apiclaw.py analyze --asin {top_comp}
 ```
+⚠️ Each ASIN must have ratingCount ≥ 50. If an ASIN has <50 reviews, pick a different competitor with more reviews.
+
+**Priority 2 — Category mode fallback (ONLY if ASIN mode fails):**
+```bash
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
+```
+
+**Priority 3 — Realtime topReviews (ONLY if both ASIN AND category modes fail):**
+- Extract pain points, buying factors, and sentiment from the topReviews text from Step 1/6 realtime data
+- Tag all insights as 💡 Directional — this is the weakest data source
+
+**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2.**
 
 Correlate: does higher price = higher rating? Are low-price competitors getting complaints about quality? Price-quality perception mapping.
-
-If reviews/analyze fails, silently use topReviews from Step 1/6 realtime data.
 
 ### Step 8 — Price Drill-Down (1 call)
 
