@@ -144,10 +144,10 @@ Request params: `keyword`, `brand`, `asin`, `categoryPath`, `sortBy`, `pageSize`
 - `mode`: `"asin"` or `"category"`
 - `asins`: List<String> (when mode=asin)
 - `categoryPath`: String (when mode=category)
-- `labelType`: filter to specific dimensions
+- `labelType`: filter to specific dimensions. **⚠️ Only ONE value per call — do NOT comma-separate multiple types.** Make separate calls for each labelType needed.
 - `period`: e.g. `"1m"` / `"3m"` / `"6m"` / `"1y"` / `"2y"`
 
-**labelType values:** `scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
+**labelType values (one per call):** `scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
 
 **Response:**
 | Field | Type | Used For |

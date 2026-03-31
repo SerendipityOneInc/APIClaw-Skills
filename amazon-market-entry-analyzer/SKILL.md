@@ -182,7 +182,10 @@ Use these numbers to support trend labels.
 
 ```bash
 # 6a. Review analysis — pain points + buying factors
-python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints,buyingFactors,improvements
+# ⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
+python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
 ```
 
 If category mode fails, fall back to top 3 ASINs:
