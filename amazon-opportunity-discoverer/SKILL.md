@@ -135,12 +135,37 @@ If any check fails, stop and resolve before continuing.
 
 Run the `opportunity-scan` composite command to automatically collect ALL data:
 
+**Two scanning approaches — choose based on user needs:**
+
+**Approach A — Preset Modes** (user says "find me blue ocean products"):
 ```bash
-python3 scripts/apiclaw.py opportunity-scan --keyword "{keyword}" --category "{categoryPath}" > /tmp/opportunity-scan-data.json 2> /tmp/opportunity-scan-log.txt
+python3 scripts/apiclaw.py opportunity-scan --keyword "{keyword}" --category "{categoryPath}" --modes "beginner,emerging,underserved" > /tmp/opportunity-scan-data.json 2> /tmp/opportunity-scan-log.txt
 ```
 
+**Approach B — Custom Filters** (user has specific criteria like "月销300+、评论<100、$15-35"):
+```bash
+python3 scripts/apiclaw.py opportunity-scan --keyword "{keyword}" --category "{categoryPath}" --sales-min 300 --ratings-max 100 --price-min 15 --price-max 35 --rating-max 4.3 > /tmp/opportunity-scan-data.json 2> /tmp/opportunity-scan-log.txt
+```
+
+**Approach C — Combined** (preset modes + custom overrides):
+```bash
+python3 scripts/apiclaw.py opportunity-scan --keyword "{keyword}" --category "{categoryPath}" --modes "high-demand-low-barrier,emerging" --price-min 15 --price-max 35 > /tmp/opportunity-scan-data.json 2> /tmp/opportunity-scan-log.txt
+```
+
+**⚠️ IMPORTANT: Always translate user's criteria into the corresponding filter params:**
+
+| User Says | Param |
+|-----------|-------|
+| "月销300+" / "at least 300 sales" | `--sales-min 300` |
+| "评论不超过100" / "less than 100 reviews" | `--ratings-max 100` |
+| "价格$15-35" / "between $15 and $35" | `--price-min 15 --price-max 35` |
+| "评分4.3以下" / "rating below 4.3" | `--rating-max 4.3` |
+| "找蓝海" (no specific criteria) | Use default modes: beginner,emerging,underserved |
+
+**If user provides specific numeric criteria, ALWAYS use custom filters (Approach B/C).** Do NOT ignore user criteria and use default modes instead.
+
 This single command automatically executes:
-- **Multi-mode scan**: products/search × 3 modes × 3 pages (beginner/emerging/underserved)
+- **Product scan**: products/search × 5 pages per mode/filter (up to 100 products per scan)
 - **Market context**: markets/search + brand-overview + brand-detail
 - **Price opportunity**: price-band-overview + price-band-detail
 - **Realtime validation**: realtime/product × Top 10 candidates (deduplicated)
