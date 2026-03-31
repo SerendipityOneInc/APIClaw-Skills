@@ -15,14 +15,14 @@
   <a href="https://github.com/SerendipityOneInc/APIClaw-Skills/actions/workflows/ci.yml"><img src="https://github.com/SerendipityOneInc/APIClaw-Skills/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <a href="https://apiclaw.io"><img src="https://img.shields.io/badge/API-apiclaw.io-orange" alt="API" /></a>
-  <a href="https://discord.com/invite/aYcJDbvK"><img src="https://img.shields.io/badge/Discord-Join-7289da?logo=discord&logoColor=white" alt="Discord" /></a>
+  <a href="https://discord.gg/YfDFU9BDp5"><img src="https://img.shields.io/badge/Discord-Join-7289da?logo=discord&logoColor=white" alt="Discord" /></a>
   <a href="https://github.com/SerendipityOneInc/APIClaw-Skills/stargazers"><img src="https://img.shields.io/github/stars/SerendipityOneInc/APIClaw-Skills?style=social" alt="Stars" /></a>
 </p>
 
 <p align="center">
   <a href="https://apiclaw.io">Website</a> •
-  <a href="https://apiclaw.io/api-keys">Get API Key</a> •
-  <a href="https://discord.com/invite/aYcJDbvK">Discord</a> •
+  <a href="https://apiclaw.io/en/api-keys">Get API Key</a> •
+  <a href="https://discord.gg/YfDFU9BDp5">Discord</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#api-endpoints">API Reference</a>
 </p>
@@ -60,7 +60,7 @@ git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
 ### 2. Set Your API Key
 
 ```bash
-export APICLAW_API_KEY='hms_live_xxx'   # Get yours free at apiclaw.io/api-keys
+export APICLAW_API_KEY='hms_live_xxx'   # Get yours free at apiclaw.io/en/api-keys
 ```
 
 > 🎁 **Free tier**: 1,000 credits on signup. 1 credit = 1 API call. No credit card required.
@@ -182,7 +182,7 @@ The `products/search` endpoint supports 14 preset modes for different research s
 ## Requirements
 
 - Python 3.8+ (stdlib only, zero pip dependencies)
-- APIClaw API Key ([get one free](https://apiclaw.io/api-keys))
+- APIClaw API Key ([get one free](https://apiclaw.io/en/api-keys))
 
 ## Contributing
 
@@ -190,7 +190,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## Community
 
-- 💬 [Discord](https://discord.com/invite/aYcJDbvK) — Chat, get help, share what you're building
+- 💬 [Discord](https://discord.gg/YfDFU9BDp5) — Chat, get help, share what you're building
 - 🐛 [Issues](https://github.com/SerendipityOneInc/APIClaw-Skills/issues) — Bug reports and feature requests
 - 📖 [API Docs](https://apiclaw.io) — Full API documentation
 

@@ -22,7 +22,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 ## Quick Start
 
-1. Get API key: [apiclaw.io/api-keys](https://apiclaw.io/api-keys)
+1. Get API key: [apiclaw.io/en/api-keys](https://apiclaw.io/en/api-keys)
 2. Set env: `export APICLAW_API_KEY='hms_live_xxx'`
 3. Base URL: `https://api.apiclaw.io/openapi/v2`
 4. Auth: `Authorization: Bearer YOUR_API_KEY`

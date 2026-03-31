@@ -15,14 +15,14 @@
   <a href="https://github.com/SerendipityOneInc/APIClaw-Skills/actions/workflows/ci.yml"><img src="https://github.com/SerendipityOneInc/APIClaw-Skills/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
   <a href="https://apiclaw.io"><img src="https://img.shields.io/badge/API-apiclaw.io-orange" alt="API" /></a>
-  <a href="https://discord.com/invite/aYcJDbvK"><img src="https://img.shields.io/badge/Discord-Join-7289da?logo=discord&logoColor=white" alt="Discord" /></a>
+  <a href="https://discord.gg/YfDFU9BDp5"><img src="https://img.shields.io/badge/Discord-Join-7289da?logo=discord&logoColor=white" alt="Discord" /></a>
   <a href="https://github.com/SerendipityOneInc/APIClaw-Skills/stargazers"><img src="https://img.shields.io/github/stars/SerendipityOneInc/APIClaw-Skills?style=social" alt="Stars" /></a>
 </p>
 
 <p align="center">
   <a href="https://apiclaw.io">官网</a> •
-  <a href="https://apiclaw.io/api-keys">获取 API Key</a> •
-  <a href="https://discord.com/invite/aYcJDbvK">Discord</a> •
+  <a href="https://apiclaw.io/en/api-keys">获取 API Key</a> •
+  <a href="https://discord.gg/YfDFU9BDp5">Discord</a> •
   <a href="#快速开始">快速开始</a> •
   <a href="#api-接口">API 参考</a>
 </p>
@@ -62,7 +62,7 @@ git clone https://github.com/SerendipityOneInc/APIClaw-Skills.git
 ### 2. 设置 API Key
 
 ```bash
-export APICLAW_API_KEY='hms_live_xxx'   # 在 apiclaw.io/api-keys 免费获取
+export APICLAW_API_KEY='hms_live_xxx'   # 在 apiclaw.io/en/api-keys 免费获取
 ```
 
 > 🎁 **免费额度**：注册即送 1,000 credits，1 credit = 1 次 API 调用，无需信用卡。
@@ -184,7 +184,7 @@ curl -X POST 'https://api.apiclaw.io/openapi/v2/products/search' \
 ## 环境要求
 
 - Python 3.8+（仅依赖标准库，零 pip 依赖）
-- APIClaw API Key（[免费获取](https://apiclaw.io/api-keys)）
+- APIClaw API Key（[免费获取](https://apiclaw.io/en/api-keys)）
 
 ## 参与贡献
 
@@ -192,7 +192,7 @@ curl -X POST 'https://api.apiclaw.io/openapi/v2/products/search' \
 
 ## 社区
 
-- 💬 [Discord](https://discord.com/invite/aYcJDbvK) — 聊天、提问、分享你在做的东西
+- 💬 [Discord](https://discord.gg/YfDFU9BDp5) — 聊天、提问、分享你在做的东西
 - 🐛 [Issues](https://github.com/SerendipityOneInc/APIClaw-Skills/issues) — Bug 反馈和功能建议
 - 📖 [API 文档](https://apiclaw.io) — 完整 API 文档
 
