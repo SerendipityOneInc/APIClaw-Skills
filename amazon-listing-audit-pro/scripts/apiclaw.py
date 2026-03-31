@@ -224,12 +224,20 @@ def output(data, fmt="json"):
 # ─── Helper: parse category string ──────────────────────────────────────────
 
 def parse_category(cat_str: str) -> list:
-    """Parse 'Pet Supplies,Dogs,Toys' or 'Pet Supplies > Dogs > Toys' into a list."""
+    """Parse category path string into a list.
+    
+    Supported formats:
+      - 'Pet Supplies,Dogs,Toys'           (comma-separated)
+      - 'Pet Supplies > Dogs > Toys'       (spaced arrow)
+      - 'Pet Supplies>Dogs>Toys'           (bare arrow, no spaces)
+    """
     if not cat_str:
         return []
-    # Support both comma and ' > ' separators
+    # Support comma, ' > ' (spaced), and '>' (bare) separators
     if " > " in cat_str:
         return [c.strip() for c in cat_str.split(" > ")]
+    if ">" in cat_str:
+        return [c.strip() for c in cat_str.split(">")]
     return [c.strip() for c in cat_str.split(",")]
 
 
