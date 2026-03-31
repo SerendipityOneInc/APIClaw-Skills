@@ -40,13 +40,13 @@ PRODUCT_MODES = {
     "fast-movers":              {"monthlySalesMin": 300, "salesGrowthRateMin": 0.1},
     "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180"},
     "single-variant":           {"salesGrowthRateMin": 0.2, "variantCountMax": 1, "listingAge": "180"},
-    "high-demand-low-barrier":  {"monthlySalesMin": 300, "reviewCountMax": 50, "listingAge": "180"},
+    "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
     "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1, "monthlySalesMax": 300},
     "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180"},
     "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"], "fulfillment": ["FBA", "FBM"]},
     "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"], "listingAge": "180"},
     "low-price":                {"priceMax": 10},
-    "broad-catalog":            {"bsrGrowthRateMin": 0.99, "reviewCountMax": 10, "listingAge": "90"},
+    "broad-catalog":            {"bsrGrowthRateMin": 0.99, "ratingCountMax": 10, "listingAge": "90"},
     "selective-catalog":        {"bsrGrowthRateMin": 0.99, "listingAge": "90"},
     "speculative":              {"monthlySalesMin": 600, "sellerCountMin": 3, "listingAge": "180"},
     "beginner":                 {"monthlySalesMin": 300, "priceMin": 15, "priceMax": 60, "fulfillment": ["FBA"],
@@ -608,7 +608,7 @@ def cmd_analyze(args):
         params["asins"] = [a.strip() for a in args.asins.split(",")]
         params["mode"] = "asin"
     elif args.category:
-        params["categoryPath"] = args.category
+        params["categoryPath"] = parse_category(args.category)
         params["mode"] = "category"
     else:
         print("ERROR: --asin, --asins, or --category is required.", file=sys.stderr)
