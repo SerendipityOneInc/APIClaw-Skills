@@ -143,8 +143,12 @@ def api_call(endpoint: str, params: dict) -> dict:
                     return data
                 else:
                     err = data.get("error", {})
-                    print(f"API error: {err.get('code', 'unknown')} — {err.get('message', json.dumps(err))}", file=sys.stderr)
-                    sys.exit(1)
+                    err_msg = err.get('message', json.dumps(err))
+                    print(f"API error: {err.get('code', 'unknown')} — {err_msg}", file=sys.stderr)
+                    # Return error as structured result instead of exiting
+                    # This allows composite commands to continue with other steps
+                    data["_query"] = {"endpoint": endpoint, "params": actual_params}
+                    return data
         except urllib.error.HTTPError as e:
             status = e.code
             if status == 401:
@@ -521,6 +525,184 @@ def cmd_opportunity(args):
     output(results, args.format)
 
 
+def cmd_pricing_analysis(args):
+    """
+    Composite workflow: Pricing Analysis.
+    Runs: realtime(my_asin) → price-band → products/competitors → market/brand → history → realtime(top5) → reviews
+    """
+    my_asin = args.my_asin
+    keyword = args.keyword
+    category = args.category
+
+    if not my_asin:
+        print("ERROR: --my-asin is required.", file=sys.stderr)
+        sys.exit(1)
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"my_asin": my_asin, "keyword": keyword, "category": category, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Step 0.5: Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Current Price Snapshot
+    log("Step 1/8: Current price snapshot...")
+    results["my_product"] = safe_call("realtime/product", {"asin": my_asin, "marketplace": "US"}, f"realtime {my_asin}")
+    results["meta"]["steps_completed"].append("price_snapshot")
+
+    # Step 2: Price Band Intelligence
+    log("Step 2/8: Price band intelligence...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "price-band-overview")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat-only)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "price-band-detail")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat-only)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_bands")
+
+    # Step 3: Competitor Price Landscape
+    log("Step 3/8: Competitor price landscape...")
+    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        prod_params["keyword"] = keyword
+    if category_path:
+        prod_params["categoryPath"] = category_path
+    results["products"] = safe_call("products/search", prod_params, "products")
+
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["meta"]["steps_completed"].append("competitor_landscape")
+
+    # Step 4: Market Benchmarks
+    log("Step 4/8: Market benchmarks...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat-only)")
+    results["brand_overview"] = r
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_benchmarks")
+
+    # Step 5: Historical Price Trends
+    log("Step 5/8: Historical price trends...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    
+    comp_data = results["products"].get("data", [])
+    comp_asins = []
+    seen = set()
+    for p in (comp_data if isinstance(comp_data, list) else []):
+        parent = p.get("parentAsin") or p.get("asin")
+        asin = p.get("asin")
+        if parent not in seen and asin != my_asin:
+            seen.add(parent)
+            comp_asins.append(asin)
+        if len(comp_asins) >= 4:
+            break
+
+    history_asins = [my_asin] + comp_asins
+    r = safe_call("products/product-history", {
+        "asins": history_asins, "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins}
+    results["meta"]["steps_completed"].append("price_trends")
+
+    # Step 6: Realtime Competitor Deep-Dive (Top 5)
+    log("Step 6/8: Realtime competitor deep-dive...")
+    comp_realtime = []
+    for asin in comp_asins[:5]:
+        log(f"  → Realtime: {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+        comp_realtime.append({"asin": asin, "result": r})
+    results["comp_realtime"] = comp_realtime
+    results["meta"]["steps_completed"].append("comp_deepdive")
+
+    # Step 7: Review Context
+    log("Step 7/8: Review context...")
+    review_results = {}
+    my_rc = results["my_product"].get("data", {}).get("ratingCount", 0)
+    if my_rc and my_rc >= 50:
+        review_results["my_asin"] = safe_call("reviews/analyze", {
+            "asins": [my_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {my_asin}")
+    if comp_asins:
+        review_results["top_comp"] = safe_call("reviews/analyze", {
+            "asins": [comp_asins[0]], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {comp_asins[0]}")
+    if not review_results and category_path:
+        for lt in ["painPoints", "buyingFactors"]:
+            review_results[lt] = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews cat {lt}")
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_context")
+
+    # Step 8: Price Drill-Down (opportunity band)
+    log("Step 8/8: Price drill-down...")
+    pbo_data = results.get("price_band_overview", {}).get("data", {})
+    best_band = pbo_data.get("bestOpportunityBand", {}) if pbo_data else {}
+    if best_band and best_band.get("sampleBandMinPrice") and best_band.get("sampleBandMaxPrice"):
+        drill_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc",
+                        "priceMin": best_band["sampleBandMinPrice"], "priceMax": best_band["sampleBandMaxPrice"]}
+        if keyword:
+            drill_params["keyword"] = keyword
+        if category_path:
+            drill_params["categoryPath"] = category_path
+        results["price_drilldown"] = safe_call("products/search", drill_params, "price drill-down")
+    results["meta"]["steps_completed"].append("price_drilldown")
+
+    log(f"\n✅ Pricing analysis complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    output(results, args.format)
+
+
 def cmd_check(args):
     """
     API self-check: verify API connectivity and available endpoints.
@@ -783,6 +965,13 @@ Examples:
     p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
+
+    # ── pricing-analysis (composite) ──
+    p_pa = sub.add_parser("pricing-analysis", help="Full pricing analysis with competitor benchmarking")
+    p_pa.add_argument("--my-asin", required=True, help="Your product ASIN")
+    p_pa.add_argument("--keyword", help="Product keyword for market context")
+    p_pa.add_argument("--category", help="Category path")
+    p_pa.set_defaults(func=cmd_pricing_analysis)
 
     # ── analyze (reviews) ──
     p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")

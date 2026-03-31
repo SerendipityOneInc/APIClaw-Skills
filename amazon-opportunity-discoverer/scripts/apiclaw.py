@@ -143,8 +143,12 @@ def api_call(endpoint: str, params: dict) -> dict:
                     return data
                 else:
                     err = data.get("error", {})
-                    print(f"API error: {err.get('code', 'unknown')} — {err.get('message', json.dumps(err))}", file=sys.stderr)
-                    sys.exit(1)
+                    err_msg = err.get('message', json.dumps(err))
+                    print(f"API error: {err.get('code', 'unknown')} — {err_msg}", file=sys.stderr)
+                    # Return error as structured result instead of exiting
+                    # This allows composite commands to continue with other steps
+                    data["_query"] = {"endpoint": endpoint, "params": actual_params}
+                    return data
         except urllib.error.HTTPError as e:
             status = e.code
             if status == 401:
@@ -521,6 +525,234 @@ def cmd_opportunity(args):
     output(results, args.format)
 
 
+def cmd_opportunity_scan(args):
+    """
+    Composite workflow: Opportunity Discovery.
+    Supports TWO scanning approaches:
+    1. Mode-based: uses 14 preset modes (beginner, emerging, underserved, etc.)
+    2. Custom filters: user-defined criteria (sales-min, ratings-max, price-min/max, rating-max)
+    Both can be combined — mode presets + custom overrides.
+    """
+    keyword = args.keyword
+    category = args.category
+    modes_str = getattr(args, 'modes', None)
+    
+    # Custom filter params
+    sales_min = getattr(args, 'sales_min', None)
+    sales_max = getattr(args, 'sales_max', None)
+    ratings_max = getattr(args, 'ratings_max', None)
+    price_min = getattr(args, 'price_min', None)
+    price_max = getattr(args, 'price_max', None)
+    rating_max = getattr(args, 'rating_max', None)
+    rating_min = getattr(args, 'rating_min', None)
+
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine scan strategy
+    has_custom_filters = any(v is not None for v in [sales_min, sales_max, ratings_max, price_min, price_max, rating_max, rating_min])
+    
+    if modes_str:
+        modes = [m.strip() for m in modes_str.split(",")]
+    elif has_custom_filters:
+        modes = ["custom"]  # Custom-only scan
+    else:
+        modes = ["beginner", "emerging", "underserved"]  # Default modes
+    
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"keyword": keyword, "category": category, "modes": modes, 
+                        "custom_filters": {k: v for k, v in {"sales_min": sales_min, "sales_max": sales_max,
+                            "ratings_max": ratings_max, "price_min": price_min, "price_max": price_max,
+                            "rating_max": rating_max, "rating_min": rating_min}.items() if v is not None},
+                        "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Product Scan (mode-based + custom filters)
+    scan_label = f"{len(modes)} modes" if "custom" not in modes else "custom filters"
+    log(f"Step 1/6: Product scan ({scan_label})...")
+    all_candidates = {}  # asin → product data (deduplicated)
+    mode_results = {}
+    
+    # Build custom filter params (applied to ALL scans)
+    custom_params = {}
+    if sales_min is not None:
+        custom_params["monthlySalesMin"] = sales_min
+    if sales_max is not None:
+        custom_params["monthlySalesMax"] = sales_max
+    if ratings_max is not None:
+        custom_params["ratingCountMax"] = ratings_max
+    if price_min is not None:
+        custom_params["priceMin"] = price_min
+    if price_max is not None:
+        custom_params["priceMax"] = price_max
+    if rating_max is not None:
+        custom_params["ratingMax"] = rating_max
+    if rating_min is not None:
+        custom_params["ratingMin"] = rating_min
+    
+    for mode in modes:
+        log(f"  → {'Custom filters' if mode == 'custom' else f'Mode: {mode}'}")
+        mode_products = []
+        for page in range(1, 6):  # 5 pages per mode (100 products max)
+            prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            if keyword:
+                prod_params["keyword"] = keyword
+            if category_path:
+                prod_params["categoryPath"] = category_path
+            # Apply mode preset (skip for "custom" mode)
+            if mode != "custom" and mode in PRODUCT_MODES:
+                prod_params.update(PRODUCT_MODES[mode])
+            # Apply custom filters ON TOP of mode (custom overrides mode defaults)
+            prod_params.update(custom_params)
+            r = safe_call("products/search", prod_params, f"products {mode} p{page}")
+            items = r.get("data", [])
+            if isinstance(items, list):
+                mode_products.extend(items)
+            if not items:
+                break
+        mode_results[mode] = mode_products
+        for p in mode_products:
+            asin = p.get("asin")
+            if asin and asin not in all_candidates:
+                all_candidates[asin] = p
+        log(f"    → {len(mode_products)} products, {len(all_candidates)} unique total")
+    
+    # Log actual search parameters for transparency
+    if custom_params:
+        log(f"  → Custom filters applied: {custom_params}")
+    
+    results["scan_results"] = {m: len(ps) for m, ps in mode_results.items()}
+    results["meta"]["total_candidates"] = len(all_candidates)
+    results["meta"]["steps_completed"].append("product_scan")
+
+    # Step 2: Market Context
+    log("Step 2/6: Market context...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat)")
+    results["brand_overview"] = r
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_context")
+
+    # Step 3: Price Opportunity
+    log("Step 3/6: Price opportunity...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "pbo")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "pbd")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_opportunity")
+
+    # Step 4: Realtime Validation for Top 10
+    log("Step 4/6: Realtime validation (Top 10)...")
+    sorted_candidates = sorted(all_candidates.values(), key=lambda x: x.get("atLeastMonthlySales") or 0, reverse=True)
+    seen = set()
+    top_asins = []
+    for p in sorted_candidates:
+        parent = p.get("parentAsin") or p.get("asin")
+        if parent not in seen:
+            seen.add(parent)
+            top_asins.append(p.get("asin"))
+        if len(top_asins) >= 10:
+            break
+
+    realtime_details = []
+    for asin in top_asins:
+        log(f"  → {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"rt {asin}")
+        realtime_details.append({"asin": asin, "result": r})
+    results["realtime"] = realtime_details
+    results["meta"]["steps_completed"].append("realtime_validation")
+
+    # Step 5: Trend Check (Top 5)
+    log("Step 5/6: Trend check...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    r = safe_call("products/product-history", {
+        "asins": top_asins[:5], "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": top_asins[:5]}
+    results["meta"]["steps_completed"].append("trend_check")
+
+    # Step 6: Consumer Insights (Top 3, category mode first)
+    log("Step 6/6: Consumer insights...")
+    review_results = {}
+    if category_path:
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            log(f"  → category mode: {lt}")
+            r = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews {lt}")
+            if r.get("data") and r.get("data", {}).get("consumerInsights"):
+                review_results[lt] = r
+            else:
+                break
+    if not review_results:
+        log("  → Falling back to ASIN mode...")
+        review_asins = [a for a in top_asins[:3]]
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            r = safe_call("reviews/analyze", {
+                "asins": review_asins, "mode": "asin", "labelType": lt, "period": "6m"
+            }, f"reviews ASIN {lt}")
+            review_results[lt] = r
+    results["reviews"] = review_results
+    results["meta"]["review_mode"] = "category" if category_path and review_results.get("painPoints", {}).get("data", {}).get("consumerInsights") else "asin"
+    results["meta"]["steps_completed"].append("consumer_insights")
+
+    # All candidates as structured list
+    results["all_candidates"] = sorted_candidates[:50]  # Top 50 for report
+
+    log(f"\n✅ Opportunity scan complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Modes: {modes} | Candidates: {len(all_candidates)} | Realtime: {len(realtime_details)}")
+    output(results, args.format)
+
+
 def cmd_check(args):
     """
     API self-check: verify API connectivity and available endpoints.
@@ -783,6 +1015,20 @@ Examples:
     p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
+
+    # ── opportunity-scan (composite) ──
+    p_os = sub.add_parser("opportunity-scan", help="Multi-mode product opportunity discovery")
+    p_os.add_argument("--keyword", help="Category keyword to scan")
+    p_os.add_argument("--category", help="Category path")
+    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. beginner,emerging,underserved). Omit to use custom filters only.")
+    p_os.add_argument("--sales-min", type=int, help="Min monthly sales (e.g. 300)")
+    p_os.add_argument("--sales-max", type=int, help="Max monthly sales")
+    p_os.add_argument("--ratings-max", type=int, help="Max review count (e.g. 100 for blue ocean)")
+    p_os.add_argument("--price-min", type=float, help="Min price (e.g. 15)")
+    p_os.add_argument("--price-max", type=float, help="Max price (e.g. 35)")
+    p_os.add_argument("--rating-max", type=float, help="Max rating (e.g. 4.3 for improvement opportunity)")
+    p_os.add_argument("--rating-min", type=float, help="Min rating")
+    p_os.set_defaults(func=cmd_opportunity_scan)
 
     # ── analyze (reviews) ──
     p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")

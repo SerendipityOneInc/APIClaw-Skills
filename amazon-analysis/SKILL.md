@@ -58,7 +58,7 @@ print(f"API Key saved to {config_path}")
 
 **New users please first obtain API Key:**
 
-1. Visit [APIClaw Console](https://apiclaw.io/en/api-keys) to register account
+1. Visit [APIClaw Console](https://apiclaw.io/api-keys) to register account
 2. Create API Key, copy it (format: `hms_live_xxxxxx`)
 3. Tell the AI your Key in conversation, AI will automatically save it to config file
 
@@ -387,6 +387,15 @@ python3 scripts/apiclaw.py analyze --asin {asin3}
 4. **Never report "no trend data available" without trying at least 5 different ASINs.**
 
 ---
+
+## Data Field Usage (MANDATORY)
+**Always use API-provided fields directly. Do NOT calculate metrics when the API already provides them:**
+- Revenue → use `sampleAvgMonthlyRevenue`, **NEVER** calculate as avgPrice × totalSales
+- Opportunity → use `sampleOpportunityIndex`, **NEVER** invent your own formula
+- Concentration → use `sampleTop10BrandSalesRate` or `topBrandSalesRate` directly
+
+## User Decision Standards (MANDATORY)
+**If the user specifies decision criteria, STRICTLY evaluate against data. Do NOT override with your own judgment.**
 
 ## Error Handling & Self-Check
 

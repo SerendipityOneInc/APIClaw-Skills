@@ -15,7 +15,7 @@ Usage:
     python apiclaw.py opportunity --keyword "pet supplies"
 
 Environment:
-    APICLAW_API_KEY — Required. Get one at https://apiclaw.io/en/api-keys
+    APICLAW_API_KEY — Required. Get one at https://apiclaw.io/api-keys
 """
 
 import argparse
@@ -41,18 +41,16 @@ PRODUCT_MODES = {
     "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180"},
     "single-variant":           {"salesGrowthRateMin": 0.2, "variantCountMax": 1, "listingAge": "180"},
     "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
-    "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1, "monthlySalesMax": 300},
+    "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1},
     "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180"},
-    "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"], "fulfillment": ["FBA", "FBM"]},
-    "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"], "listingAge": "180"},
+    "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"]},
+    "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"]},
     "low-price":                {"priceMax": 10},
     "broad-catalog":            {"bsrGrowthRateMin": 0.99, "ratingCountMax": 10, "listingAge": "90"},
     "selective-catalog":        {"bsrGrowthRateMin": 0.99, "listingAge": "90"},
-    "speculative":              {"monthlySalesMin": 600, "sellerCountMin": 3, "listingAge": "180"},
-    "beginner":                 {"monthlySalesMin": 300, "priceMin": 15, "priceMax": 60, "fulfillment": ["FBA"],
-                                 "salesGrowthRateMin": 0.03, "listingAge": "365",
-                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
-    "top-bsr":                  {"subBsrMax": 1000},
+    "speculative":              {"monthlySalesMin": 600, "sellerCountMin": 3},
+    "beginner":                 {"monthlySalesMin": 300, "priceMin": 15, "priceMax": 60, "fulfillment": ["FBA"]},
+    "top-bsr":                  {"bsrMax": 1000},
 }
 
 # ─── API Client ──────────────────────────────────────────────────────────────
@@ -96,7 +94,7 @@ def get_api_key():
     print("  Method 2: Environment variable", file=sys.stderr)
     print("    export APICLAW_API_KEY='hms_live_yourkey'", file=sys.stderr)
     print("", file=sys.stderr)
-    print("Get a free key at https://apiclaw.io/en/api-keys", file=sys.stderr)
+    print("Get a free key at https://apiclaw.io/api-keys", file=sys.stderr)
     sys.exit(1)
 
 
@@ -143,17 +141,19 @@ def api_call(endpoint: str, params: dict) -> dict:
                     return data
                 else:
                     err = data.get("error", {})
-                    print(f"API error: {err.get('code', 'unknown')} — {err.get('message', json.dumps(err))}", file=sys.stderr)
-                    sys.exit(1)
+                    err_msg = err.get('message', json.dumps(err))
+                    print(f"API error: {err.get('code', 'unknown')} — {err_msg}", file=sys.stderr)
+                    data["_query"] = {"endpoint": endpoint, "params": actual_params}
+                    return data
         except urllib.error.HTTPError as e:
             status = e.code
             if status == 401:
                 return _error_result(401, "API Key invalid or expired",
-                    "Check your API Key or get a new one at https://apiclaw.io/en/api-keys",
+                    "Check your API Key or get a new one at https://apiclaw.io/api-keys",
                     endpoint, actual_params)
             elif status == 402:
                 return _error_result(402, "API quota exhausted or subscription expired",
-                    "Check your plan at https://apiclaw.io/en/api-keys or provide a new Key",
+                    "Check your plan at https://apiclaw.io/api-keys or provide a new Key",
                     endpoint, actual_params)
             elif status == 429:
                 if attempt < MAX_RETRIES:
@@ -224,20 +224,12 @@ def output(data, fmt="json"):
 # ─── Helper: parse category string ──────────────────────────────────────────
 
 def parse_category(cat_str: str) -> list:
-    """Parse category path string into a list.
-    
-    Supported formats:
-      - 'Pet Supplies,Dogs,Toys'           (comma-separated)
-      - 'Pet Supplies > Dogs > Toys'       (spaced arrow)
-      - 'Pet Supplies>Dogs>Toys'           (bare arrow, no spaces)
-    """
+    """Parse 'Pet Supplies,Dogs,Toys' or 'Pet Supplies > Dogs > Toys' into a list."""
     if not cat_str:
         return []
-    # Support comma, ' > ' (spaced), and '>' (bare) separators
+    # Support both comma and ' > ' separators
     if " > " in cat_str:
         return [c.strip() for c in cat_str.split(" > ")]
-    if ">" in cat_str:
-        return [c.strip() for c in cat_str.split(">")]
     return [c.strip() for c in cat_str.split(",")]
 
 
@@ -339,32 +331,11 @@ def cmd_products(args):
     if args.exclude_brands:
         params["excludeBrands"] = args.exclude_brands
 
-    params["sortBy"] = args.sort or "atLeastMonthlySales"
+    params["sortBy"] = args.sort or "monthlySales"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
 
     result = api_call("products/search", params)
-
-    # Client-side filter: reviewCountMin/Max not enforced by API (known bug)
-    # Apply filtering locally to ensure mode presets work correctly
-    if result and result.get("success") and isinstance(result.get("data"), list):
-        rc_min = params.get("ratingCountMin") or params.get("reviewCountMin")
-        rc_max = params.get("ratingCountMax") or params.get("reviewCountMax")
-        if rc_min is not None or rc_max is not None:
-            original_count = len(result["data"])
-            filtered = result["data"]
-            if rc_max is not None:
-                filtered = [p for p in filtered if (p.get("ratingCount") or 0) <= rc_max]
-            if rc_min is not None:
-                filtered = [p for p in filtered if (p.get("ratingCount") or 0) >= rc_min]
-            result["data"] = filtered
-            if len(filtered) < original_count:
-                result["_clientFilter"] = {
-                    "reason": "reviewCount filter applied client-side (API bug workaround)",
-                    "before": original_count,
-                    "after": len(filtered)
-                }
-
     output(result, args.format)
 
 
@@ -380,10 +351,7 @@ def cmd_competitors(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
 
-    params["dateRange"] = args.date_range or "30d"
-    params["marketplace"] = args.marketplace or "US"
-    params["page"] = args.page or 1
-    params["sortBy"] = args.sort or "atLeastMonthlySales"
+    params["sortBy"] = args.sort or "monthlySales"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
 
@@ -546,13 +514,13 @@ def cmd_check(args):
                 pass
 
     if api_key:
-        
+        masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
         source_label = "~/.apiclaw/config.json" if key_source == "config" else "env"
         print(f"✅ API Key ({source_label}): {masked}", file=sys.stderr)
     else:
         print("❌ API Key: Not found", file=sys.stderr)
         print("   Checked: $APICLAW_API_KEY, ~/.apiclaw/config.json", file=sys.stderr)
-        print("   Get one at: https://apiclaw.io/en/api-keys", file=sys.stderr)
+        print("   Get one at: https://apiclaw.io/api-keys", file=sys.stderr)
         sys.exit(1)
 
     print(f"\nTesting endpoints on {BASE_URL}...\n", file=sys.stderr)
@@ -594,95 +562,6 @@ def cmd_check(args):
     print(f"\nAPI Docs: {API_DOCS}", file=sys.stderr)
 
     output({"check": "complete", "endpoints": results}, args.format)
-
-
-# ─── Review Analysis Command ─────────────────────────────────────────────────
-
-def cmd_analyze(args):
-    """Analyze reviews for ASINs or category with AI-powered insights."""
-    params = {}
-    if args.asin:
-        params["asins"] = [args.asin]
-        params["mode"] = "asin"
-    elif args.asins:
-        params["asins"] = [a.strip() for a in args.asins.split(",")]
-        params["mode"] = "asin"
-    elif args.category:
-        params["categoryPath"] = parse_category(args.category)
-        params["mode"] = "category"
-    else:
-        print("ERROR: --asin, --asins, or --category is required.", file=sys.stderr)
-        sys.exit(1)
-
-    if args.label_type:
-        params["labelType"] = args.label_type
-    if args.period:
-        params["period"] = args.period
-
-    result = api_call("reviews/analyze", params)
-    output(result, args.format)
-
-
-# ─── New Endpoint Commands (price-band, brand, history) ──────────────────────
-
-def cmd_price_band_overview(args):
-    """Get price band overview — hottest and best opportunity bands."""
-    params = {}
-    if args.keyword:
-        params["keyword"] = args.keyword
-    if args.category:
-        params["categoryPath"] = parse_category(args.category)
-    params["pageSize"] = args.page_size or 20
-    result = api_call("products/price-band-overview", params)
-    output(result, args.format)
-
-
-def cmd_price_band_detail(args):
-    """Get price band detailed breakdown — all bands with stats."""
-    params = {}
-    if args.keyword:
-        params["keyword"] = args.keyword
-    if args.category:
-        params["categoryPath"] = parse_category(args.category)
-    params["pageSize"] = args.page_size or 20
-    result = api_call("products/price-band-detail", params)
-    output(result, args.format)
-
-
-def cmd_brand_overview(args):
-    """Get brand landscape overview — brand count, CR10, top brand stats."""
-    params = {}
-    if args.keyword:
-        params["keyword"] = args.keyword
-    if args.category:
-        params["categoryPath"] = parse_category(args.category)
-    params["pageSize"] = args.page_size or 20
-    result = api_call("products/brand-overview", params)
-    output(result, args.format)
-
-
-def cmd_brand_detail(args):
-    """Get brand ranking with per-brand statistics."""
-    params = {}
-    if args.keyword:
-        params["keyword"] = args.keyword
-    if args.category:
-        params["categoryPath"] = parse_category(args.category)
-    params["pageSize"] = args.page_size or 20
-    result = api_call("products/brand-detail", params)
-    output(result, args.format)
-
-
-def cmd_product_history(args):
-    """Get historical data (price, BSR, sales) for ASINs over a date range."""
-    asins = [a.strip() for a in args.asins.split(",")]
-    params = {
-        "asins": asins,
-        "startDate": args.start_date,
-        "endDate": args.end_date,
-    }
-    result = api_call("products/product-history", params)
-    output(result, args.format)
 
 
 # ─── CLI Setup ───────────────────────────────────────────────────────────────
@@ -758,11 +637,8 @@ Examples:
     p_comp.add_argument("--brand", help="Brand filter")
     p_comp.add_argument("--asin", help="ASIN filter")
     p_comp.add_argument("--category", help="Category path (comma-separated)")
-    p_comp.add_argument("--date-range", default="30d", help="Date range (default: 30d)")
-    p_comp.add_argument("--marketplace", default="US", help="Marketplace (default: US)")
-    p_comp.add_argument("--page", type=int, default=1, help="Page number")
     p_comp.add_argument("--page-size", type=int, default=20)
-    p_comp.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
+    p_comp.add_argument("--sort", help="Sort field (default: monthlySales)")
     p_comp.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_comp.set_defaults(func=cmd_competitors)
 
@@ -784,50 +660,6 @@ Examples:
     p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
-
-    # ── analyze (reviews) ──
-    p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")
-    p_analyze.add_argument("--asin", help="Single ASIN")
-    p_analyze.add_argument("--asins", help="Multiple ASINs (comma-separated)")
-    p_analyze.add_argument("--category", help="Category path")
-    p_analyze.add_argument("--label-type", help="Filter dimensions (comma-separated)")
-    p_analyze.add_argument("--period", help="Time period: 1m, 3m, 6m, 1y, 2y", default="6m")
-    p_analyze.set_defaults(func=cmd_analyze)
-
-    # ── price-band-overview ──
-    p_pbo = sub.add_parser("price-band-overview", help="Price band overview (hottest & best opportunity)")
-    p_pbo.add_argument("--keyword", help="Search keyword")
-    p_pbo.add_argument("--category", help="Category path")
-    p_pbo.add_argument("--page-size", type=int, default=20)
-    p_pbo.set_defaults(func=cmd_price_band_overview)
-
-    # ── price-band-detail ──
-    p_pbd = sub.add_parser("price-band-detail", help="Price band detailed breakdown")
-    p_pbd.add_argument("--keyword", help="Search keyword")
-    p_pbd.add_argument("--category", help="Category path")
-    p_pbd.add_argument("--page-size", type=int, default=20)
-    p_pbd.set_defaults(func=cmd_price_band_detail)
-
-    # ── brand-overview ──
-    p_bo = sub.add_parser("brand-overview", help="Brand landscape overview")
-    p_bo.add_argument("--keyword", help="Search keyword")
-    p_bo.add_argument("--category", help="Category path")
-    p_bo.add_argument("--page-size", type=int, default=20)
-    p_bo.set_defaults(func=cmd_brand_overview)
-
-    # ── brand-detail ──
-    p_bd = sub.add_parser("brand-detail", help="Brand ranking with per-brand stats")
-    p_bd.add_argument("--keyword", help="Search keyword")
-    p_bd.add_argument("--category", help="Category path")
-    p_bd.add_argument("--page-size", type=int, default=20)
-    p_bd.set_defaults(func=cmd_brand_detail)
-
-    # ── product-history ──
-    p_ph = sub.add_parser("product-history", help="Historical data for ASINs")
-    p_ph.add_argument("--asins", required=True, help="ASINs (comma-separated)")
-    p_ph.add_argument("--start-date", required=True, help="Start date (YYYY-MM-DD)")
-    p_ph.add_argument("--end-date", required=True, help="End date (YYYY-MM-DD)")
-    p_ph.set_defaults(func=cmd_product_history)
 
     # ── check (API self-check) ──
     p_check = sub.add_parser("check", help="Fetch latest OpenAPI spec to verify available endpoints")

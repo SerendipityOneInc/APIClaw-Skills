@@ -113,108 +113,39 @@ Before proceeding to data collection, verify:
 - ✓ All required inputs collected (from Step 0)
 If any check fails, stop and resolve before continuing.
 
-### Step 1 — Target Identification (1-2 calls)
+### Step 1 — Automated Data Collection (ONE command)
 
-If keyword given, find top products first:
-```bash
-python3 scripts/apiclaw.py products --keyword "{keyword}" --category "{categoryPath}" --page-size 20
-```
-
-If category given, also get category context:
-```bash
-python3 scripts/apiclaw.py categories --keyword "{keyword}"
-```
-
-### Step 2 — Full Review Analysis (3-16 calls, core)
-
-**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
-
-**Priority 1 — ASIN mode (try this first):**
-
-For primary ASIN — get ALL 11 dimensions. The target ASIN must have ratingCount ≥ 50 (check from Step 1 data). **Use individual label-type calls:**
-```bash
-python3 scripts/apiclaw.py analyze --asin {target} --label-type painPoints
-python3 scripts/apiclaw.py analyze --asin {target} --label-type positives
-python3 scripts/apiclaw.py analyze --asin {target} --label-type buyingFactors
-python3 scripts/apiclaw.py analyze --asin {target} --label-type improvements
-python3 scripts/apiclaw.py analyze --asin {target} --label-type userProfiles
-python3 scripts/apiclaw.py analyze --asin {target} --label-type scenarios
-python3 scripts/apiclaw.py analyze --asin {target} --label-type issues
-python3 scripts/apiclaw.py analyze --asin {target} --label-type keywords
-python3 scripts/apiclaw.py analyze --asin {target} --label-type usageTimes
-python3 scripts/apiclaw.py analyze --asin {target} --label-type usageLocations
-python3 scripts/apiclaw.py analyze --asin {target} --label-type behaviors
-```
-
-Alternatively, call without `--label-type` to get all dimensions in one call (if supported). If it returns no data, fall back to individual calls above.
-
-For competitor ASINs (up to 5) — each must have ratingCount ≥ 50:
-```bash
-python3 scripts/apiclaw.py analyze --asin {comp1}
-python3 scripts/apiclaw.py analyze --asin {comp2}
-# ... up to 5 competitors
-```
-
-**Priority 2 — Category mode fallback (ONLY if ASIN mode fails):**
-```bash
-python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type painPoints
-python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type buyingFactors
-python3 scripts/apiclaw.py analyze --category "{categoryPath}" --label-type improvements
-```
-
-**Priority 3 — Realtime topReviews (ONLY if both ASIN AND category modes fail):**
-- Extract pain points, buying factors, and sentiment from the topReviews text from Step 3 realtime/product data
-- Use ratingBreakdown (star distribution) to gauge overall satisfaction
-- Tag all insights as 💡 Directional — this is the weakest data source
-
-**⚠️ FORBIDDEN: Skipping directly to Priority 3 without attempting Priority 1 and 2. Every report MUST show which priority level was used and why higher priorities failed (if applicable).**
-
-**Always report pain points with proportion.** Do NOT say "Top pain point: durability issues". Instead: "Top pain point: durability issues — mentioned in 27/471 reviews (5.7%), avg rating 2.4 when mentioned." Raw count + total sample + percentage = credibility.
-
-**Important: Analyze each brand/competitor independently.** Do NOT combine multiple ASINs from different brands in a single analyze call. Each brand must be analyzed separately to enable accurate cross-brand comparison of pain points, buying factors, and user profiles. Mixing ASINs produces averaged insights that cannot be attributed to any specific brand.
-
-**If a user-provided competitor ASIN returns INSUFFICIENT_REVIEWS or null data (product doesn't exist):** Auto-select replacement competitors from Step 1 product search results — pick the top 1-2 ASINs that are in the same subcategory but different brand from the target. Re-run analyze + realtime for the replacements. Do not produce a one-sided report without competitor comparison.
-
-### Step 3 — Realtime Product Detail (1-6 calls)
+Run the `review-deepdive` composite command to automatically collect ALL data:
 
 ```bash
-python3 scripts/apiclaw.py product --asin {target}
-python3 scripts/apiclaw.py product --asin {comp1}
-# ... for each ASIN being compared
+python3 scripts/apiclaw.py review-deepdive --target-asin "{target_asin}" --keyword "{keyword}" --category "{categoryPath}" > /tmp/review-deepdive-data.json 2> /tmp/review-deepdive-log.txt
 ```
 
-Extract: ratingBreakdown (star distribution), topReviews (raw review text), features (current bullets).
-**DB + Realtime cross-reference principle:** Database data (products/search) provides broad quantitative metrics with ~T+1 delay. Realtime data (realtime/product) provides current qualitative content. Always compare both — discrepancies reveal promotions, listing changes, or data lag. Flag differences explicitly in the report (e.g. "DB price: $21.58, Realtime: $14.43 — likely active promotion").
+This single command automatically executes:
+- **Target identification**: realtime/product (or auto-discover from keyword)
+- **Full review analysis**: reviews/analyze × 11 dimensions for target ASIN
+- **Competitor comparison**: reviews/analyze (painPoints + positives) for up to 2 competitors
+- **Realtime detail**: realtime/product for competitors
+- **Market context**: markets/search + brand-overview + competitor-lookup
+- **Price & trend**: price-band-overview + product-history
 
-Cross-validate: AI-analyzed sentiment vs actual star distribution. Specifically: compare positive_sentiment% from reviews/analyze against (4+5 star)% from ratingBreakdown. If the gap exceeds 15%, flag a discrepancy and note possible causes (review manipulation, rating inflation, or sample window difference between 6-month analyze vs all-time ratingBreakdown).
+Optional: add `--comp-asins "{asin1},{asin2}"` for competitor comparison.
 
-### Step 4 — Market & Competitive Context (4 calls)
+**Total: all relevant endpoints, fully automated with fallback logic.**
 
+After running, check the log:
 ```bash
-python3 scripts/apiclaw.py market --category "{categoryPath}" --topn 10
-python3 scripts/apiclaw.py brand-overview --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py brand-detail --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py competitors --keyword "{keyword}" --category "{categoryPath}" --page-size 20
+cat /tmp/review-deepdive-log.txt
 ```
 
-Context: how does this product's review profile compare to category averages? Use sampleProducts from brand-detail to find other products from the same brand for expanded review comparison.
-
-### Step 5 — Price & Trend Context (3 calls)
-
+Then load data for analysis:
 ```bash
-python3 scripts/apiclaw.py price-band-overview --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py price-band-detail --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py product-history --asins "{target},{comp1},{comp2}" --start-date "{30d_ago}" --end-date "{today}"
+cat /tmp/review-deepdive-data.json
 ```
 
-**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
-1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
-2. **Try up to 3 rounds** of different ASIN combinations before giving up.
-3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
-4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+**⚠️ JSON is large (~300-700KB). Use targeted extraction, not full file read.**
 
-Correlate: do price changes affect review sentiment? Is rating trending up or down?
-
+### Step 2 — Analysis & Report
 ### Step 6 — Synthesize Insights
 
 Combine review data with market context. Generate actionable recommendations.
@@ -232,13 +163,29 @@ Combine review data with market context. Generate actionable recommendations.
 
 > ⚠️ **Important**: This analysis is based on APIClaw API data as of [date]. Sales figures are lower-bound estimates. Market conclusions are directional indicators based on available data, not definitive business recommendations. Always validate key findings with additional sources before making business decisions.
 
-**Confidence labels — every conclusion or recommendation must be tagged with one of:**
-**Confidence labels — tag every conclusion with one of:**
-- 📊 **Data-backed** / **数据验证** — Supported by API data with cross-validation
-- 🔍 **Inferred** / **合理推断** — Reasonable inference, not directly measured
-- 💡 **Directional** / **方向参考** — Hypothesis only, verify before acting
+**Confidence labels — EVERY conclusion, data point, and recommendation MUST be tagged with exactly one of:**
+- 📊 **Data-backed** / **数据验证** — Direct API data (numbers, metrics, rankings)
+- 🔍 **Inferred** / **合理推断** — Logical reasoning based on data (comparisons, cause-effect, pattern recognition)
+- 💡 **Directional** / **方向参考** — Suggestions, hypotheses, predictions (entry strategy, pricing advice, budget estimates)
 
 Use the label in the user's language: English output → "📊 Data-backed", Chinese output → "📊 数据验证".
+
+**⚠️ Tagging rules (MANDATORY — do NOT over-use 📊):**
+
+| Content Type | Correct Tag | Examples |
+|-------------|------------|---------|
+| Raw API metrics | 📊 | CR10=73.4%, FBA率=98%, 月销=2000, 新品率=14% |
+| Rankings and lists from API | 📊 | Top 10 品牌表, 价格带数据, 评论痛点排名 |
+| Comparisons and patterns | 🔍 | "无大牌壁垒", "市场在扩张", "评论壁垒低" |
+| Cause-effect reasoning | 🔍 | "头部做促销说明市场在增长", "新品率高意味着进入机会大" |
+| Cross-data validation conclusions | 🔍 | "DB价格 vs 实时价格差异说明有促销活动" |
+| Entry strategy recommendations | 💡 | 建议入场价, 目标月销, 差异化方向 |
+| Budget and timeline estimates | 💡 | 启动预算, 投资回收周期 |
+| Supply chain and sourcing advice | 💡 | "义乌供应链优势", "供应链成本低" |
+| Risk assessment | 🔍 or 💡 | 基于数据的风险=🔍, 泛化假设=💡 |
+| Scoring rationale | 📊 + 🔍 | 数字部分=📊, 解释部分=🔍 |
+
+**⚠️ FORBIDDEN: Tagging strategy recommendations or subjective conclusions as 📊 Data-backed. If it involves any interpretation, comparison, or suggestion, it MUST be 🔍 or 💡.**
 
 **Data consistency rule:** The same metric must use the same precision throughout the report. Do NOT use "10K+" in one table and "47,000" in another for the same product. Pick one level of precision and apply it consistently across all sections.
 
@@ -275,6 +222,26 @@ Report sections (all required, omit any with no data):
 | **Total** | | **20-30** |
 
 ## Important Notes
+
+### User Decision Standards (MANDATORY)
+**If the user specifies decision criteria (e.g. "CR10 < 50%", "margin > 30%", "monthly sales > 1000"), you MUST:**
+1. Explicitly evaluate each criterion against the data
+2. If ANY criterion is NOT met, mark as ⚠️ CAUTION or 🔴 AVOID — do NOT override with your own judgment
+3. Present the evaluation in a clear pass/fail table before giving your recommendation
+4. **FORBIDDEN: Recommending GO when user-defined criteria are not met, regardless of your own analysis**
+
+### Data Field Usage (MANDATORY)
+**Always use API-provided fields directly. Do NOT calculate metrics when the API already provides them:**
+- Revenue → use `sampleAvgMonthlyRevenue` or `sampleGroupMonthlyRevenue`, **NEVER** calculate as avgPrice × totalSales (overestimates 30-70%)
+- Opportunity → use `sampleOpportunityIndex` from price-band endpoints, **NEVER** invent your own formula
+- Concentration → use `sampleTop10BrandSalesRate` or `topBrandSalesRate` directly
+- Sales → use `atLeastMonthlySales` directly, label as "lower bound estimate"
+
+### Data Provenance (MANDATORY)
+**Every key data point MUST be traceable:**
+- Reference specific endpoint and parameters for each major finding
+- If you performed any manual calculation, show the formula AND the raw API fields used
+- **FORBIDDEN: Presenting numbers without indicating which API endpoint they came from**
 
 - reviews/analyze needs 50+ reviews for meaningful analysis; use topReviews from realtime as fallback
 - **Never show empty data rows** — omit dimensions with no data

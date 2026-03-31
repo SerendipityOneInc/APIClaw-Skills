@@ -143,8 +143,12 @@ def api_call(endpoint: str, params: dict) -> dict:
                     return data
                 else:
                     err = data.get("error", {})
-                    print(f"API error: {err.get('code', 'unknown')} — {err.get('message', json.dumps(err))}", file=sys.stderr)
-                    sys.exit(1)
+                    err_msg = err.get('message', json.dumps(err))
+                    print(f"API error: {err.get('code', 'unknown')} — {err_msg}", file=sys.stderr)
+                    # Return error as structured result instead of exiting
+                    # This allows composite commands to continue with other steps
+                    data["_query"] = {"endpoint": endpoint, "params": actual_params}
+                    return data
         except urllib.error.HTTPError as e:
             status = e.code
             if status == 401:
@@ -521,6 +525,160 @@ def cmd_opportunity(args):
     output(results, args.format)
 
 
+def cmd_review_deepdive(args):
+    """
+    Composite workflow: Review Intelligence Deep Dive.
+    Full 11-dimension review analysis with market context.
+    """
+    target_asin = args.target_asin
+    keyword = args.keyword
+    category = args.category
+    comp_asins_str = getattr(args, 'comp_asins', None)
+
+    if not target_asin and not keyword:
+        print("ERROR: --target-asin or --keyword is required.", file=sys.stderr)
+        sys.exit(1)
+
+    comp_asins = [a.strip() for a in comp_asins_str.split(",") if a.strip()] if comp_asins_str else []
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"target_asin": target_asin, "keyword": keyword, "comp_asins": comp_asins, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Category Resolution
+    if not category_path:
+        if keyword:
+            log("Step 0: Resolving category...")
+            cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+            results["categories"] = cat_result
+            cat_data = cat_result.get("data", [])
+            if cat_data:
+                category_path = cat_data[0].get("categoryPath")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Target Identification
+    log("Step 1/5: Target identification...")
+    if target_asin:
+        results["target_realtime"] = safe_call("realtime/product", {"asin": target_asin, "marketplace": "US"}, f"realtime {target_asin}")
+    if not target_asin and keyword:
+        prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+        if keyword:
+            prod_params["keyword"] = keyword
+        if category_path:
+            prod_params["categoryPath"] = category_path
+        results["products"] = safe_call("products/search", prod_params, "products")
+        # Pick top product as target
+        items = results["products"].get("data", [])
+        if isinstance(items, list) and items:
+            target_asin = items[0].get("asin")
+            results["target_realtime"] = safe_call("realtime/product", {"asin": target_asin, "marketplace": "US"}, f"realtime {target_asin}")
+    results["meta"]["resolved_target"] = target_asin
+    results["meta"]["steps_completed"].append("target_identification")
+
+    # Step 2: Full Review Analysis (11 dimensions for target + comparison)
+    log("Step 2/5: Full review analysis (11 dimensions)...")
+    label_types = ["painPoints", "positives", "buyingFactors", "improvements", "userProfiles",
+                   "scenarios", "issues", "keywords", "usageTimes", "usageLocations", "behaviors"]
+    
+    review_results = {}
+    # Target ASIN reviews
+    if target_asin:
+        for lt in label_types:
+            log(f"  → {target_asin}: {lt}")
+            r = safe_call("reviews/analyze", {
+                "asins": [target_asin], "mode": "asin", "labelType": lt, "period": "6m"
+            }, f"reviews {lt}")
+            review_results[f"target_{lt}"] = r
+    
+    # Competitor comparison (top 2)
+    for comp_asin in comp_asins[:2]:
+        log(f"  → Competitor {comp_asin}: painPoints + positives")
+        review_results[f"comp_{comp_asin}_painPoints"] = safe_call("reviews/analyze", {
+            "asins": [comp_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews comp {comp_asin}")
+        review_results[f"comp_{comp_asin}_positives"] = safe_call("reviews/analyze", {
+            "asins": [comp_asin], "mode": "asin", "labelType": "positives", "period": "6m"
+        }, f"reviews comp+ {comp_asin}")
+    
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_analysis")
+
+    # Step 3: Realtime Product Detail
+    log("Step 3/5: Realtime product detail...")
+    if comp_asins:
+        comp_realtime = []
+        for asin in comp_asins[:3]:
+            log(f"  → {asin}")
+            r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+            comp_realtime.append({"asin": asin, "result": r})
+        results["comp_realtime"] = comp_realtime
+    results["meta"]["steps_completed"].append("realtime_detail")
+
+    # Step 4: Market & Competitive Context
+    log("Step 4/5: Market context...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat)")
+    results["brand_overview"] = r
+
+    # Competitor lookup
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["meta"]["steps_completed"].append("market_context")
+
+    # Step 5: Price & Trend Context
+    log("Step 5/5: Price & trend context...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "pbo")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat)")
+    results["price_band_overview"] = r
+
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    hist_asins = [target_asin] + comp_asins[:2] if target_asin else comp_asins[:3]
+    if hist_asins:
+        r = safe_call("products/product-history", {
+            "asins": hist_asins, "startDate": thirty_ago, "endDate": today
+        }, "product-history")
+        results["product_history"] = {"data": r.get("data", []), "asins_tried": hist_asins}
+    results["meta"]["steps_completed"].append("price_trend_context")
+
+    log(f"\n✅ Review deep-dive complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Review dimensions: {sum(1 for k in review_results if k.startswith('target_'))}")
+    output(results, args.format)
+
+
 def cmd_check(args):
     """
     API self-check: verify API connectivity and available endpoints.
@@ -783,6 +941,14 @@ Examples:
     p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
+
+    # ── review-deepdive (composite) ──
+    p_rd = sub.add_parser("review-deepdive", help="Full 11-dimension review intelligence analysis")
+    p_rd.add_argument("--target-asin", help="ASIN to analyze in depth")
+    p_rd.add_argument("--keyword", help="Keyword to find target (if no ASIN)")
+    p_rd.add_argument("--comp-asins", help="Competitor ASINs for comparison (comma-separated)")
+    p_rd.add_argument("--category", help="Category path")
+    p_rd.set_defaults(func=cmd_review_deepdive)
 
     # ── analyze (reviews) ──
     p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")

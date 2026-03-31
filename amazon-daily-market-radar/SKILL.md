@@ -97,105 +97,51 @@ Before proceeding to data collection, verify:
 - ✓ All required inputs collected (from Step 0)
 If any check fails, stop and resolve before continuing.
 
-### Step 1 — Realtime Snapshot for All Tracked ASINs (5-15 calls)
+### Step 1 — Automated Data Collection (ONE command)
+
+Run the `daily-radar` composite command to automatically collect ALL monitoring data:
 
 ```bash
-python3 scripts/apiclaw.py product --asin {my_asin_1}
-python3 scripts/apiclaw.py product --asin {my_asin_2}
-python3 scripts/apiclaw.py product --asin {comp_1}
-python3 scripts/apiclaw.py product --asin {comp_2}
-# ... all tracked ASINs
+python3 scripts/apiclaw.py daily-radar --asins "{my_asin_1},{my_asin_2},{comp_1},{comp_2}" --keyword "{keyword}" --category "{categoryPath}" > /tmp/daily-radar-data.json 2> /tmp/daily-radar-log.txt
 ```
 
-For each: current price, rating, ratingCount, BSR, BuyBox winner, availability.
+This single command automatically executes:
+- **Realtime snapshots** for all tracked ASINs
+- **7-day historical comparison** (product-history)
+- **Market pulse**: markets/search + brand-overview + brand-detail (with keyword+category fallback)
+- **New competitor detection**: products/search top 20
+- **Price landscape**: price-band-overview + price-band-detail
+- **Review pulse**: reviews/analyze for first tracked ASIN with ≥50 reviews
 
-**DB + Realtime cross-reference principle:** Database data (products/search) provides broad quantitative metrics with ~T+1 delay. Realtime data (realtime/product) provides current qualitative content. Always compare both — discrepancies reveal promotions, listing changes, or data lag. Flag differences explicitly in the report (e.g. "DB price: $21.58, Realtime: $14.43 — likely active promotion").
-
-### Step 2 — Historical Comparison (1-2 calls)
-
+After running, check the log:
 ```bash
-python3 scripts/apiclaw.py product-history --asins "{all_tracked}" --start-date "{7d_ago}" --end-date "{today}"
+cat /tmp/daily-radar-log.txt
 ```
 
-**⚠️ Fallback for empty history data:** If product-history returns empty data (count=0) for some ASINs:
-1. **Try different ASINs** — newer products or variant ASINs may not have history coverage. Pick ASINs with the oldest `listingDate` from earlier steps.
-2. **Try up to 3 rounds** of different ASIN combinations before giving up.
-3. If ALL ASINs return empty, use BSR snapshots from DB data + realtime data to infer directional trends. Tag as 🔍 Inferred.
-4. **Never report "no trend data available" without trying at least 5 different ASINs.**
+Then load data for analysis:
+```bash
+cat /tmp/daily-radar-data.json
+```
 
-Compare today's snapshot vs 7-day history. Detect: price changes >5%, BSR moves >20%, sales spikes/drops.
+**⚠️ JSON is large (~300-400KB). Use targeted extraction, not full file read.**
 
-**Quantify trends, don't just label them.** Instead of "price stable" or "BSR rising", calculate and report:
+### Data Analysis Guidelines
+
+**Change detection:** Compare today's realtime data against product_history:
+- Price changes >5% → 🔴 alert
+- BSR moves >20% → 🟡 alert
+- New ASINs in top 20 not seen before → 🟡 alert
+
+**Trend quantification:** Calculate and report:
 - Price change rate: (latest - earliest) / earliest × 100%
 - BSR volatility: (max - min) / average × 100%
-- Sales trend direction: regression slope over the period
-Use these numbers to support trend labels.
 
-**Growth signal validation:** When flagging BSR improvements or sales spikes, distinguish between:
-- 📊 **Sustained trend** — multiple data points over 7+ days showing consistent direction
-- 🔍 **Possible signal** — 2-3 days of change, needs more observation
-- 💡 **Single-day spike** — could be promotion, restock, or data lag; do not alert as RED/YELLOW without confirmation
+**Growth signal validation:**
+- 📊 Sustained trend — 7+ days consistent direction
+- 🔍 Possible signal — 2-3 days of change
+- 💡 Single-day spike — could be promotion/restock
 
-**Note:** The most recent day's history data often has `bsrRank: null, recentSales: null` (scrape not yet completed). Use the most recent non-null entry as the historical baseline. Step 1 realtime data serves as the authoritative current snapshot.
-
-### Step 3 — Market Pulse (3 calls per keyword)
-
-```bash
-python3 scripts/apiclaw.py market --category "{categoryPath}" --topn 10
-python3 scripts/apiclaw.py brand-overview --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py brand-detail --keyword "{keyword}" --category "{categoryPath}"
-```
-
-**Category validation:** Cross-check sampleProducts from brand-detail against the target product's categoryPath. Exclude brands whose products are primarily in unrelated categories (e.g. flip-flop brand appearing for "yoga mat" keyword due to title stuffing). This is critical for automated runs — off-topic brands would poison the daily briefing.
-
-Check: market size changes, new brands entering, brand share shifts. Use sampleProducts from brand-detail to detect new product launches from tracked brands.
-
-### Step 4 — New Competitor Detection (1 call per keyword)
-
-```bash
-python3 scripts/apiclaw.py products --keyword "{keyword}" --category "{categoryPath}" --page-size 20
-```
-
-Compare today's top 20 against previous run. Flag any new ASINs not seen before.
-
-### Step 5 — Price Landscape Check (2 calls per keyword)
-
-```bash
-python3 scripts/apiclaw.py price-band-overview --keyword "{keyword}" --category "{categoryPath}"
-python3 scripts/apiclaw.py price-band-detail --keyword "{keyword}" --category "{categoryPath}"
-```
-
-Detect: shifts in price band distribution, opportunity index changes.
-
-### Step 6 — Category Context (1 call, optional)
-
-```bash
-python3 scripts/apiclaw.py categories --keyword "{keyword}"
-```
-
-If categories returns empty (common for multi-word keywords like "yoga mat"), skip this step — category path is already available from Step 1 realtime product data (`bestsellersRank` field).
-
-### Step 7 — Review Pulse (1-3 calls)
-
-**⚠️ labelType only accepts ONE value per call — do NOT comma-separate multiple types.**
-
-**Priority 1 — ASIN mode (try this first):**
-```bash
-# my_asin must have ratingCount ≥ 50
-python3 scripts/apiclaw.py analyze --asin {my_asin}
-```
-⚠️ The ASIN must have ratingCount ≥ 50. If <50 reviews, pick a different tracked ASIN with more reviews.
-
-**Priority 2 — Realtime topReviews (ONLY if ASIN mode fails):**
-- Extract sentiment shifts and new pain points from the topReviews text from Step 1 realtime/product data
-- Use ratingBreakdown (star distribution) to gauge satisfaction trends
-- Tag all insights as 💡 Directional — this is the weakest data source
-
-**⚠️ FORBIDDEN: Skipping directly to topReviews without attempting ASIN mode first.**
-
-Track: review count velocity, sentiment shifts, new pain points emerging.
-
-### Step 8 — Generate Daily Briefing
+### Step 2 — Generate Daily Briefing
 
 **First-run detection:** If `data/last-run.json` does not exist, this is the first run. Output a "Baseline Established" template instead of a change-detection briefing:
 - State clearly: "This is the first run — baseline data has been captured. Change detection and alerts will be available starting from the next run."
@@ -233,13 +179,29 @@ Track: review count velocity, sentiment shifts, new pain points emerging.
 
 > ⚠️ **Important**: This analysis is based on APIClaw API data as of [date]. Sales figures are lower-bound estimates. Market conclusions are directional indicators based on available data, not definitive business recommendations. Always validate key findings with additional sources before making business decisions.
 
-**Confidence labels — every conclusion or recommendation must be tagged with one of:**
-**Confidence labels — tag every conclusion with one of:**
-- 📊 **Data-backed** / **数据验证** — Supported by API data with cross-validation
-- 🔍 **Inferred** / **合理推断** — Reasonable inference, not directly measured
-- 💡 **Directional** / **方向参考** — Hypothesis only, verify before acting
+**Confidence labels — EVERY conclusion, data point, and recommendation MUST be tagged with exactly one of:**
+- 📊 **Data-backed** / **数据验证** — Direct API data (numbers, metrics, rankings)
+- 🔍 **Inferred** / **合理推断** — Logical reasoning based on data (comparisons, cause-effect, pattern recognition)
+- 💡 **Directional** / **方向参考** — Suggestions, hypotheses, predictions (entry strategy, pricing advice, budget estimates)
 
 Use the label in the user's language: English output → "📊 Data-backed", Chinese output → "📊 数据验证".
+
+**⚠️ Tagging rules (MANDATORY — do NOT over-use 📊):**
+
+| Content Type | Correct Tag | Examples |
+|-------------|------------|---------|
+| Raw API metrics | 📊 | CR10=73.4%, FBA率=98%, 月销=2000, 新品率=14% |
+| Rankings and lists from API | 📊 | Top 10 品牌表, 价格带数据, 评论痛点排名 |
+| Comparisons and patterns | 🔍 | "无大牌壁垒", "市场在扩张", "评论壁垒低" |
+| Cause-effect reasoning | 🔍 | "头部做促销说明市场在增长", "新品率高意味着进入机会大" |
+| Cross-data validation conclusions | 🔍 | "DB价格 vs 实时价格差异说明有促销活动" |
+| Entry strategy recommendations | 💡 | 建议入场价, 目标月销, 差异化方向 |
+| Budget and timeline estimates | 💡 | 启动预算, 投资回收周期 |
+| Supply chain and sourcing advice | 💡 | "义乌供应链优势", "供应链成本低" |
+| Risk assessment | 🔍 or 💡 | 基于数据的风险=🔍, 泛化假设=💡 |
+| Scoring rationale | 📊 + 🔍 | 数字部分=📊, 解释部分=🔍 |
+
+**⚠️ FORBIDDEN: Tagging strategy recommendations or subjective conclusions as 📊 Data-backed. If it involves any interpretation, comparison, or suggestion, it MUST be 🔍 or 💡.**
 
 **Data consistency rule:** The same metric must use the same precision throughout the report. Do NOT use "10K+" in one table and "47,000" in another for the same product. Pick one level of precision and apply it consistently across all sections.
 
@@ -275,6 +237,26 @@ Daily briefing (all sections, omit any with no alerts):
 | **Total** | | **15-30** |
 
 ## Important Notes
+
+### User Decision Standards (MANDATORY)
+**If the user specifies decision criteria (e.g. "CR10 < 50%", "margin > 30%", "monthly sales > 1000"), you MUST:**
+1. Explicitly evaluate each criterion against the data
+2. If ANY criterion is NOT met, mark as ⚠️ CAUTION or 🔴 AVOID — do NOT override with your own judgment
+3. Present the evaluation in a clear pass/fail table before giving your recommendation
+4. **FORBIDDEN: Recommending GO when user-defined criteria are not met, regardless of your own analysis**
+
+### Data Field Usage (MANDATORY)
+**Always use API-provided fields directly. Do NOT calculate metrics when the API already provides them:**
+- Revenue → use `sampleAvgMonthlyRevenue` or `sampleGroupMonthlyRevenue`, **NEVER** calculate as avgPrice × totalSales (overestimates 30-70%)
+- Opportunity → use `sampleOpportunityIndex` from price-band endpoints, **NEVER** invent your own formula
+- Concentration → use `sampleTop10BrandSalesRate` or `topBrandSalesRate` directly
+- Sales → use `atLeastMonthlySales` directly, label as "lower bound estimate"
+
+### Data Provenance (MANDATORY)
+**Every key data point MUST be traceable:**
+- Reference specific endpoint and parameters for each major finding
+- If you performed any manual calculation, show the formula AND the raw API fields used
+- **FORBIDDEN: Presenting numbers without indicating which API endpoint they came from**
 
 - Designed for daily automated runs — no user interaction needed after initial setup
 - **Never show empty data rows** — omit alerts with no changes
