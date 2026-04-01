@@ -53,10 +53,10 @@ If competitors endpoint returns empty results (common with broad keywords), rely
 When comparing multiple brands, analyze each brand's ASIN separately — do NOT combine ASINs from different brands in a single `analyze` call. Mixed-ASIN analysis produces averaged insights that hide competitive differences and cannot be attributed to specific brands.
 
 ### Fallback for Insufficient Reviews
-If `analyze` returns insufficient data (requires 50+ reviews), silently fall back to `realtime/product` topReviews + ratingBreakdown data. Extract pain points, buying factors, and sentiment from the raw review text. Never expose API errors to users.
+If `analyze` returns insufficient data (requires 50+ reviews), silently fall back to `realtime/product` ratingBreakdown data. Extract sentiment distribution from star ratings. Never expose API errors to users.
 
 ### Review Fallback Chain
-`realtime/product` provides topReviews (raw text) + ratingBreakdown (star distribution). When reviews/analyze is unavailable (insufficient reviews), use these as the consumer insight source. Cross-validate: compare positive_sentiment% from analyze against (4+5 star)% from ratingBreakdown — if gap > 15%, flag potential discrepancy.
+`realtime/product` provides ratingBreakdown (star distribution). When reviews/analyze is unavailable (insufficient reviews), use this as the consumer insight source. Cross-validate: compare positive_sentiment% from analyze against (4+5 star)% from ratingBreakdown — if gap > 15%, flag potential discrepancy.
 
 ---
 
@@ -202,7 +202,7 @@ The interfaces return **different fields**. Do NOT assume they share the same st
 - `products`/`competitors` → sales, pricing, competition
 - `realtime/product` → review details, listing content, seller info
 - `market` → category-level aggregates
-- `reviews/analyze` → AI-powered review insights (all reviews, not just topReviews)
+- `reviews/analyze` → AI-powered review insights
 - `price-band-*` → price segment analysis and opportunity
 - `brand-*` → brand landscape and concentration
 - `product-history` → historical trends

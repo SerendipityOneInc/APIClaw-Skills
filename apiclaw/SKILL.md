@@ -103,7 +103,6 @@ Key response fields:
 | `features` | List | Bullet points |
 | `bestsellersRank` | Array | `[{category, rank}, ...]` — NOT a single integer |
 | `buyboxWinner` | Object | `{price, fulfillment, seller}` — price is nested here |
-| `topReviews` | List | Top reviews with title, body, rating |
 | `variants` | List | All variants with dimensions |
 
 ⚠️ Does **NOT** return: `atLeastMonthlySales`, `profitMargin`, `fbaFee`, `sellerCount`. Use `products/competitor-lookup` for those.
@@ -207,7 +206,7 @@ The endpoint types return **different fields**. Do NOT assume they share the sam
 | Brand Count | sampleBrandCount | ❌ | ❌ | ❌ | sampleBrandCount (per band) | sampleBrandCount | ❌ |
 | Sentiment | ❌ | ❌ | ❌ | ✅ sentimentDistribution | ❌ | ❌ | ❌ |
 | Consumer Insights | ❌ | ❌ | ❌ | ✅ consumerInsights | ❌ | ❌ | ❌ |
-| Pain Points | ❌ | ❌ | ❌ (manual from topReviews) | ✅ AI-analyzed | ❌ | ❌ | ❌ |
+| Pain Points | ❌ | ❌ | ❌ | ✅ AI-analyzed | ❌ | ❌ | ❌ |
 | Profit Margin | ❌ | profitMargin | ❌ | ❌ | ❌ | ❌ | ❌ |
 | FBA Fee | ❌ | fbaFee | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Features/Bullets | ❌ | ❌ | ✅ features | ❌ | ❌ | ❌ | ❌ |
@@ -241,7 +240,7 @@ The endpoint types return **different fields**. Do NOT assume they share the sam
 6. Rate limit: 100 req/min, 10 req/sec burst
 7. `reviewCountMin`/`reviewCountMax` filters are currently broken — API accepts them silently but does not apply filtering (API-56)
 8. Keyword search uses broad fuzzy matching — results may include unrelated products. Use `categoryPath` parameter to filter when precision matters (API-57)
-9. `reviews/analyze` may return HTTP 500 for certain ASINs due to serialization bug (API-58). Retry with different ASIN or use `realtime/product` topReviews as fallback.
+9. `reviews/analyze` may return HTTP 500 for certain ASINs due to serialization bug (API-58). Retry with different ASIN or skip this ASIN.
 10. Price-band and brand endpoints only accept `keyword` (not `categoryPath`) — cross-validate returned products' categories to filter noise.
 
 ## Credits

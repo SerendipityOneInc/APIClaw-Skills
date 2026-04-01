@@ -18,15 +18,15 @@ python3 scripts/apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints,iss
 
 # Step 2 (supplement): Raw review samples for quoting specific examples
 python3 scripts/apiclaw.py product --asin B09V3KXJPB
-# → Use topReviews for specific review quotes to support analyze findings
+# → Use reviews/analyze for structured review insights
 ```
 
 **Data combination:**
 - Use `analyze` `consumerInsights` as primary structured findings (covers ALL reviews)
-- Use `realtime/product` `topReviews` for specific quotes to illustrate key pain points
+- Use `reviews/analyze` for specific quotes to illustrate key pain points
 - Use `analyze` `sentimentDistribution` for overall sentiment overview
 
-**Key Information Extracted from analyze + topReviews**:
+**Key Information Extracted from reviews/analyze**:
 
 | Analysis Dimension | Focus Points |
 |---------|-------|
@@ -45,7 +45,7 @@ python3 scripts/apiclaw.py product --asin B09V3KXJPB
 |------|------|------|
 
 ## Positive Review Themes
-[Extract top 3 positive review themes from topReviews]
+[Extract top 3 positive review themes from reviews/analyze]
 
 ## Negative Review Pain Points
 [Extract top 3 negative review themes → These are differentiation opportunities]
@@ -88,7 +88,7 @@ python3 scripts/apiclaw.py product --asin B09XXXXX
 | Seller Count | `sellerCount` | competitors |
 | Tags | `isBestSeller` / `isAmazonChoice` | competitors |
 | A+/Video | `hasAPlus` / `hasVideo` | competitors |
-| Review Details | `topReviews` / `ratingBreakdown` | realtime/product (optional) |
+| Review Details | `reviews/analyze` | realtime/product (optional) |
 | Listing Quality | `features` / `description` | realtime/product (optional) |
 
 ---

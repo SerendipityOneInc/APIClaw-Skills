@@ -70,11 +70,21 @@ Before any data collection, lock down the exact product category:
    ```bash
    python3 scripts/apiclaw.py categories --keyword "{keyword}"
    ```
-2. **If empty or too broad** — split/broaden the keyword and retry (e.g. "yoga mat" → "yoga", then drill into subcategories). Try up to 3 variations.
-3. **If still no match** — use realtime/product on a known ASIN to extract categoryPath from its bestsellersRank field.
-4. **Validate the categoryPath** — ensure it matches the user's intended product type, not a tangentially related category.
+2. **If multiple categories returned** — present ALL matching categories to the user and ask them to confirm which one(s) to analyze. Example response:
+   ```
+   Found multiple matching categories:
+   1. Health & Household > Diet & Sports Nutrition > Sports Nutrition > Protein
+   2. Grocery & Gourmet Food > Protein Drinks
+   3. Sports & Outdoors > Sports Nutrition > Protein Supplements
+   
+   Which category(s) would you like me to analyze? You can select one or multiple (e.g. "1 and 3").
+   ```
+   **Do NOT auto-select.** Wait for user confirmation before proceeding.
+3. **If empty** — split/broaden the keyword and retry (e.g. "yoga mat" → "yoga", then drill into subcategories). Try up to 3 variations.
+4. **If still no match** — use realtime/product on a known ASIN to extract categoryPath from its bestsellersRank field.
+5. **Validate the categoryPath** — ensure it matches the user's intended product type, not a tangentially related category.
 
-Once a precise categoryPath is confirmed, use it as the primary filter for **ALL** subsequent API calls:
+Once the user confirms the category(s), use each confirmed categoryPath as the primary filter for **ALL** subsequent API calls:
 - `markets/search` → use `--category "{categoryPath}"`
 - `products/search` → add `--category "{categoryPath}"` alongside keyword
 - `brand-overview` → add `--category "{categoryPath}"` alongside keyword
@@ -95,7 +105,100 @@ Before proceeding to data collection, verify:
 - ✓ All required inputs collected (from Step 0)
 If any check fails, stop and resolve before continuing.
 
-### Step 1 — Automated Data Collection (ONE command)
+### Step 1 — Sub-Market Discovery (automatic for broad categories)
+
+After category confirmation, discover all leaf sub-markets within the selected category:
+
+```bash
+python3 scripts/apiclaw.py market --category "{categoryPath}" --topn 10 --page-size 20
+```
+
+If `meta.totalPages > 1`, paginate to collect ALL sub-markets:
+```bash
+python3 scripts/apiclaw.py market --category "{categoryPath}" --topn 10 --page-size 20 --page 2
+# ... repeat until all pages collected
+```
+
+Each sub-market record already contains 41 fields of market data (avgMonthlySales, avgPrice, grossMargin, brandCount, fbaRate, newSkuRate, concentration metrics, etc.).
+
+**Sub-Market Opportunity Score (1-100):**
+
+Calculate a composite score for each sub-market using fields from the markets/search response:
+
+**Normal weights (when `sampleAvgGrossMargin` > 0):**
+
+| Dimension | Weight | Field | Scoring Logic |
+|-----------|--------|-------|---------------|
+| Demand | 25% | `sampleAvgMonthlySales` | ≥1500→100, 200-1500→linear, <200→0 |
+| Profit Potential | 25% | `sampleAvgGrossMargin` | ≥0.35→100, 0.15-0.35→linear, <0.15→0 |
+| New Entrant Space | 20% | `sampleNewSkuRate` | ≥0.20→100, 0.05-0.20→linear, <0.05→0 |
+| Brand Openness | 20% | `topBrandSalesRate` | ≤0.50→100, 0.50-0.90→linear, ≥0.90→0 (inverted) |
+| Market Capacity | 10% | `totalSkuCount` | 300-8000→100, <150 or >15000→50, extreme→30 |
+
+**⚠️ Fallback weights (when `sampleAvgGrossMargin` is 0 for ALL sub-markets — API field not yet populated):**
+
+| Dimension | Weight | Field | Scoring Logic |
+|-----------|--------|-------|---------------|
+| Demand | 30% | `sampleAvgMonthlySales` | ≥1500→100, 200-1500→linear, <200→0 |
+| New Entrant Space | 25% | `sampleNewSkuRate` | ≥0.20→100, 0.05-0.20→linear, <0.05→0 |
+| Brand Openness | 25% | `topBrandSalesRate` | ≤0.50→100, 0.50-0.90→linear, ≥0.90→0 (inverted) |
+| Market Capacity | 20% | `totalSkuCount` | 300-8000→100, <150 or >15000→50, extreme→30 |
+
+> When grossMargin is unavailable, profit analysis is deferred to Step 2 deep-dive using per-product `profitMargin` data from products/search.
+
+**Display: TOP 10 sub-markets** sorted by opportunity score. Tell the user: "Found [N] sub-markets in this category. Here are the top 10 by opportunity score:"
+
+| Sub-Market | Monthly Demand | Avg Price | Brand CR10 | New SKU Rate | Opportunity Score | Signal |
+|------------|---------------|-----------|------------|-------------|------------------|--------|
+| [path leaf] | [sampleAvgMonthlySales] | [sampleAvgPrice] | [topBrandSalesRate] | [sampleNewSkuRate] | [calculated] | GO/CAUTION/AVOID |
+
+Then ask: "Which sub-market(s) would you like me to deep-dive into? I recommend the top 3 (marked ✅), but you can select any number."
+
+If user doesn't specify, automatically deep-dive into the **TOP 3** sub-markets.
+
+**For each selected sub-market**, proceed to Step 2 (full data collection) using that sub-market's categoryPath.
+
+**Skip condition:** If the category search returns ≤3 sub-markets, skip the comparison table and directly deep-dive all of them.
+
+### ⚠️ CRITICAL RULES (read before ANY data analysis)
+
+These rules are non-negotiable. Violating them invalidates the entire report.
+
+1. **Revenue**: Use `sampleAvgMonthlyRevenue` or `sampleGroupMonthlyRevenue` DIRECTLY. **NEVER** calculate as avgPrice × totalSales — this overestimates by 30-70%.
+   - **Category total revenue**: If the user asks about total market size (e.g. "月需求量 > $500K"), estimate by summing `sampleAvgMonthlyRevenue` across all sub-markets from Step 1. If not available, acknowledge: "Category total revenue cannot be precisely calculated from available data. The per-product average is $X." Tag as 🔍 Inferred. **NEVER** silently skip a user criterion — either evaluate it or explain why it cannot be evaluated.
+2. **CR10 — Dual-level evaluation**: When the user sets a CR10 threshold:
+   - Check **category-level** CR10 (`sampleTop10BrandSalesRate` from brand-overview)
+   - Check **sub-market-level** CR10 (`topBrandSalesRate` from markets/search) for each target sub-market
+   - If category PASS but target sub-market FAIL → ⚠️ CAUTION with note: "Category overall is fragmented (CR10=X%), but the target sub-market [name] has higher concentration (CR10=Y%). Actual competition will be stronger than category-level data suggests."
+   - If both FAIL → AVOID
+   - Only if both PASS → true PASS
+3. **User decision criteria**: If the user sets specific thresholds, evaluate EVERY criterion explicitly. If ANY fails → CAUTION or AVOID. **NEVER** recommend GO when user criteria are not met. If a criterion cannot be evaluated due to data limitations, state this explicitly — do not skip silently.
+4. **Mode built-in parameters**: Each products/search mode has built-in filters. When you add extra filters (e.g. --price-max), they COMBINE with built-in ones — they don't replace them. Know what each mode includes:
+
+| Mode | Built-in Parameters |
+|------|-------------------|
+| `beginner` | priceMin=15, priceMax=60, monthlySalesMin=300, fulfillment=FBA, salesGrowthRateMin=0.03, listingAge≤365d, ratingCountMax=10000 |
+| `emerging` | monthlySalesMax=600, salesGrowthRateMin=0.1, listingAge≤180d |
+| `fast-movers` | monthlySalesMin=300, salesGrowthRateMin=0.1 |
+| `underserved` | monthlySalesMin=300, ratingMax=3.7, listingAge≤180d |
+| `long-tail` | bsrMin=10000, bsrMax=50000, priceMax=30, sellerCountMax=1, monthlySalesMax=300 |
+| `new-release` | monthlySalesMax=500, badges=New Release, fulfillment=FBA+FBM |
+| `fbm-friendly` | monthlySalesMin=300, fulfillment=FBM, listingAge≤180d |
+| `low-price` | priceMax=10 |
+| `high-demand-low-barrier` | monthlySalesMin=300, ratingCountMax=50, listingAge≤180d |
+| `single-variant` | salesGrowthRateMin=0.2, variantCountMax=1, listingAge≤180d |
+| `speculative` | monthlySalesMin=50, monthlySalesMax=300, ratingCountMax=30, listingAge≤180d |
+| `top-bsr` | bsrMax=100 |
+| `broad-catalog` | bsrGrowthRateMin=0.99, ratingCountMax=10, listingAge≤90d |
+| `selective-catalog` | bsrGrowthRateMin=0.99, listingAge≤90d |
+
+5. **Category filtering**: EVERY endpoint that accepts --category MUST include it. Keyword-only queries cause cross-category contamination.
+6. **Opportunity/concentration metrics**: Use API-provided fields directly (`sampleOpportunityIndex`, `sampleTop10BrandSalesRate`). NEVER invent your own formula when an API field exists.
+7. **Trend data insufficiency**: If product-history returns data for fewer than 3 ASINs, note in the report: "Trend analysis based on [N] product(s) — limited sample, confidence: Low." Score the Market Trend dimension at 50/100 max and tag as 💡 Directional.
+
+### Step 2 — Deep-Dive Data Collection (ONE command per sub-market)
+
+For each selected sub-market (from Step 1), run the full data collection:
 
 Run the `market-entry` composite command to automatically collect ALL data:
 
@@ -158,7 +261,7 @@ When analyzing the collected data:
 
 **Pain points with proportion:** "Top pain point: durability issues — mentioned in 27/471 reviews (5.7%), avg rating 2.4 when mentioned."
 
-### Step 2 — Cross-Validate & Score
+### Step 3 — Cross-Validate & Score
 
 Cross-validate data across all 11 data sources. When data conflicts, note the discrepancy.
 
@@ -231,7 +334,8 @@ Use the label in the user's language: English output → "📊 Data-backed", Chi
 **Anomaly handling:** Products with extreme growth rates (>200%) or sudden BSR changes must be tagged 💡 Directional, never 📊 Data-backed. Do NOT claim "proves innovation works" or "confirms market opportunity" based on a single product's spike. State: "Product X showed [metric], which MAY indicate [hypothesis]. Further validation needed."
 
 Report sections (all required):
-1. **📊 Executive Summary** — Score (1-100), GO/CAUTION/AVOID, one-paragraph verdict
+0. **🗺️ Sub-Market Landscape** (when applicable) — Total sub-markets discovered, comparison table with opportunity scores, recommended deep-dive targets
+1. **📊 Executive Summary** — Score (1-100), GO/CAUTION/AVOID, one-paragraph verdict (per sub-market when multiple)
 2. **📈 Market Overview** — Market value, SKU count, avg sales/price, new product rate
 3. **📉 Market Trend** — 30-day BSR/price/sales trend for Top 3, market direction (rising/stable/declining)
 4. **🏷️ Brand Landscape** — Brand count, CR10, Top 5 brands table, entry difficulty
@@ -248,6 +352,7 @@ Report sections (all required):
 
 **Sample bias disclosure:** Clearly state in the report body (not just Data Provenance): "This analysis is based on Top [N] products by sales volume, which skews toward established products. New or niche products may be underrepresented."
 11. **📊 API Usage & Sample Quality** — Per-endpoint call count with success/fail, total credits consumed, effective sample size after deduplication and category filtering
+12. **🎯 Cross-Market Comparison** (when multiple sub-markets analyzed) — Side-by-side comparison of all deep-dived sub-markets across key dimensions (opportunity score, demand, price, margin, competition, entry difficulty). Final recommendation: which sub-market to prioritize and why.
 
 ## ⚠️ Important Notes
 

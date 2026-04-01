@@ -333,7 +333,6 @@ When `salesMonthly` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 - Traffic source analysis
 - Historical sales trends (14-month curves)
 - Historical price / BSR charts
-- Raw individual review text (topReviews removed from realtime/product; use reviews/analyze for structured insights)
 
 ### API Data Coverage Boundaries
 
@@ -371,8 +370,6 @@ python3 scripts/apiclaw.py analyze --asin {asin3}
 ```
 ⚠️ ASIN mode requires the selected ASINs to have ≥50 reviews EACH. Check ratingCount before selecting. If an ASIN has <50 reviews, pick a different one.
 
-**Priority 3 — Realtime topReviews (ONLY if both category AND ASIN modes fail):**
-- Extract pain points, buying factors, and sentiment from the topReviews text from realtime/product data
 - Use ratingBreakdown (star distribution) to gauge overall satisfaction
 - Tag all insights as 💡 Directional — this is the weakest data source
 

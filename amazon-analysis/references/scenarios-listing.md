@@ -6,7 +6,7 @@
 >
 > ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
 >
-> **Data source:** `realtime/product` provides features, description, topReviews, ratingBreakdown.
+> **Data source:** `realtime/product` provides features, description, ratingBreakdown.
 > `competitors`/`products` provides sales, pricing, and competitive data.
 > Combine both for data-driven listing creation.
 
@@ -26,14 +26,14 @@ python3 scripts/apiclaw.py product --asin B07ZZZZZ
 python3 scripts/apiclaw.py analyze --asins B09XXXXX,B08YYYYY,B07ZZZZZ --label-type positives,painPoints,buyingFactors
 ```
 
-**Data source priority:** Use `analyze` consumerInsights for structured findings (covers ALL reviews). Use `realtime/product` features/topReviews for specific listing copy examples and quotes.
+**Data source priority:** Use `analyze` consumerInsights for structured findings (covers ALL reviews). Use `realtime/product` features for specific listing copy examples and quotes.
 
 **Extract from each ASIN:**
 
 | Data Point | Field | What to Analyze |
 |------------|-------|-----------------|
 | Bullet Points | `features` | Common selling points across competitors |
-| Negative Reviews | `topReviews` (1-2★) | Pain points = differentiation opportunities |
+| Negative Reviews | `reviews/analyze` | Pain points = differentiation opportunities |
 | Star Distribution | `ratingBreakdown` | High 1★% = product flaw to avoid/solve |
 | Product Specs | `specifications` | Feature gaps competitors miss |
 | Image Count | `images` | Benchmark for visual content |

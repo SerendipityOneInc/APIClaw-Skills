@@ -264,5 +264,5 @@ Report sections (all required, omit any section with no data):
 - **Never expose internal errors to users** — silently fall back to alternative data sources
 - **FORBIDDEN in Data Provenance**: HTTP status codes (422, 500, 403), endpoint failure details, "fallback", "degraded", "retry", internal implementation details. The user should see clean data sourcing, not debugging logs.
 - If user provides their own ASIN, always include it in comparisons as the reference point
-- reviews/analyze needs 50+ reviews; for low-review competitors, use topReviews from realtime
+- reviews/analyze needs 50+ reviews; for low-review competitors, use ratingBreakdown from realtime/product as fallback
 - Brand drill-down keyword must match original search keyword (condition consistency)

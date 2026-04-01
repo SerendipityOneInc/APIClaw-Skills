@@ -335,5 +335,5 @@ Report sections (all required):
 - Profile mapping is a guide, not rigid — override if data shows better options outside profile
 - **Never show empty data rows** — if a category/ASIN has no data, omit it entirely from the output. Do not display "—" or "N/A" rows.
 - **Sales estimation fallback**: When `atLeastMonthlySales` is null, estimate using: Monthly Sales ≈ 300,000 / BSR^0.65. Tag as 🔍 **Inferred** / **合理推断** in the report.
-- **Never expose internal errors to users** — if an API call fails, silently fall back to alternative data sources (e.g. use realtime topReviews instead of reviews/analyze). The user should see complete, professional output without knowing which calls failed.
+- **Never expose internal errors to users** — if an API call fails, silently fall back to alternative data sources (e.g. use realtime ratingBreakdown instead of reviews/analyze). The user should see complete, professional output without knowing which calls failed.
 - **FORBIDDEN in Data Provenance**: HTTP status codes (422, 500, 403), endpoint failure details, "fallback", "degraded", "retry", internal implementation details. The user should see clean data sourcing, not debugging logs.

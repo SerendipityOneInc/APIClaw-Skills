@@ -38,11 +38,14 @@ REQUEST_TIMEOUT = 60  # Request timeout in seconds; realtime/product can be slow
 # Each maps to a set of products/search filter parameters
 PRODUCT_MODES = {
     "fast-movers":              {"monthlySalesMin": 300, "salesGrowthRateMin": 0.1},
-    "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180"},
+    "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180",
+                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
     "single-variant":           {"salesGrowthRateMin": 0.2, "variantCountMax": 1, "listingAge": "180"},
-    "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
+    "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180",
+                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
     "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1, "monthlySalesMax": 300},
-    "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180"},
+    "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180",
+                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
     "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"], "fulfillment": ["FBA", "FBM"]},
     "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"], "listingAge": "180"},
     "low-price":                {"priceMax": 10},
@@ -525,23 +528,46 @@ def cmd_opportunity(args):
     output(results, args.format)
 
 
-def cmd_review_deepdive(args):
+def cmd_opportunity_scan(args):
     """
-    Composite workflow: Review Intelligence Deep Dive.
-    Full 11-dimension review analysis with market context.
+    Composite workflow: Opportunity Discovery.
+    Supports TWO scanning approaches:
+    1. Mode-based: uses 14 preset modes (beginner, emerging, underserved, etc.)
+    2. Custom filters: user-defined criteria (sales-min, ratings-max, price-min/max, rating-max)
+    Both can be combined — mode presets + custom overrides.
     """
-    target_asin = args.target_asin
     keyword = args.keyword
     category = args.category
-    comp_asins_str = getattr(args, 'comp_asins', None)
+    modes_str = getattr(args, 'modes', None)
+    
+    # Custom filter params
+    sales_min = getattr(args, 'sales_min', None)
+    sales_max = getattr(args, 'sales_max', None)
+    ratings_max = getattr(args, 'ratings_max', None)
+    price_min = getattr(args, 'price_min', None)
+    price_max = getattr(args, 'price_max', None)
+    rating_max = getattr(args, 'rating_max', None)
+    rating_min = getattr(args, 'rating_min', None)
 
-    if not target_asin and not keyword:
-        print("ERROR: --target-asin or --keyword is required.", file=sys.stderr)
-        sys.exit(1)
+    # Blue Ocean mode: keyword and category are both optional
+    # When neither is provided, scan across all categories using mode presets
 
-    comp_asins = [a.strip() for a in comp_asins_str.split(",") if a.strip()] if comp_asins_str else []
+    # Determine scan strategy
+    has_custom_filters = any(v is not None for v in [sales_min, sales_max, ratings_max, price_min, price_max, rating_max, rating_min])
+    
+    if modes_str:
+        modes = [m.strip() for m in modes_str.split(",")]
+    elif has_custom_filters:
+        modes = ["custom"]  # Custom-only scan
+    else:
+        modes = ["beginner", "emerging", "underserved"]  # Default modes
+    
     category_path = parse_category(category) if category else None
-    results = {"meta": {"target_asin": target_asin, "keyword": keyword, "comp_asins": comp_asins, "steps_completed": []}}
+    results = {"meta": {"keyword": keyword, "category": category, "modes": modes, 
+                        "custom_filters": {k: v for k, v in {"sales_min": sales_min, "sales_max": sales_max,
+                            "ratings_max": ratings_max, "price_min": price_min, "price_max": price_max,
+                            "rating_max": rating_max, "rating_min": rating_min}.items() if v is not None},
+                        "steps_completed": []}}
 
     def log(msg):
         print(msg, file=sys.stderr)
@@ -553,76 +579,76 @@ def cmd_review_deepdive(args):
         return r
 
     # Category Resolution
-    if not category_path:
-        if keyword:
-            log("Step 0: Resolving category...")
-            cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
-            results["categories"] = cat_result
-            cat_data = cat_result.get("data", [])
-            if cat_data:
-                category_path = cat_data[0].get("categoryPath")
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
     results["meta"]["resolved_category"] = category_path
 
-    # Step 1: Target Identification
-    log("Step 1/5: Target identification...")
-    if target_asin:
-        results["target_realtime"] = safe_call("realtime/product", {"asin": target_asin, "marketplace": "US"}, f"realtime {target_asin}")
-    if not target_asin and keyword:
-        prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
-        if keyword:
-            prod_params["keyword"] = keyword
-        if category_path:
-            prod_params["categoryPath"] = category_path
-        results["products"] = safe_call("products/search", prod_params, "products")
-        # Pick top product as target
-        items = results["products"].get("data", [])
-        if isinstance(items, list) and items:
-            target_asin = items[0].get("asin")
-            results["target_realtime"] = safe_call("realtime/product", {"asin": target_asin, "marketplace": "US"}, f"realtime {target_asin}")
-    results["meta"]["resolved_target"] = target_asin
-    results["meta"]["steps_completed"].append("target_identification")
-
-    # Step 2: Full Review Analysis (11 dimensions for target + comparison)
-    log("Step 2/5: Full review analysis (11 dimensions)...")
-    label_types = ["painPoints", "positives", "buyingFactors", "improvements", "userProfiles",
-                   "scenarios", "issues", "keywords", "usageTimes", "usageLocations", "behaviors"]
+    # Step 1: Product Scan (mode-based + custom filters)
+    scan_label = f"{len(modes)} modes" if "custom" not in modes else "custom filters"
+    log(f"Step 1/6: Product scan ({scan_label})...")
+    all_candidates = {}  # asin → product data (deduplicated)
+    mode_results = {}
     
-    review_results = {}
-    # Target ASIN reviews
-    if target_asin:
-        for lt in label_types:
-            log(f"  → {target_asin}: {lt}")
-            r = safe_call("reviews/analyze", {
-                "asins": [target_asin], "mode": "asin", "labelType": lt, "period": "6m"
-            }, f"reviews {lt}")
-            review_results[f"target_{lt}"] = r
+    # Build custom filter params (applied to ALL scans)
+    custom_params = {}
+    if sales_min is not None:
+        custom_params["monthlySalesMin"] = sales_min
+    if sales_max is not None:
+        custom_params["monthlySalesMax"] = sales_max
+    if ratings_max is not None:
+        custom_params["ratingCountMax"] = ratings_max
+    if price_min is not None:
+        custom_params["priceMin"] = price_min
+    if price_max is not None:
+        custom_params["priceMax"] = price_max
+    if rating_max is not None:
+        custom_params["ratingMax"] = rating_max
+    if rating_min is not None:
+        custom_params["ratingMin"] = rating_min
     
-    # Competitor comparison (top 2)
-    for comp_asin in comp_asins[:2]:
-        log(f"  → Competitor {comp_asin}: painPoints + positives")
-        review_results[f"comp_{comp_asin}_painPoints"] = safe_call("reviews/analyze", {
-            "asins": [comp_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
-        }, f"reviews comp {comp_asin}")
-        review_results[f"comp_{comp_asin}_positives"] = safe_call("reviews/analyze", {
-            "asins": [comp_asin], "mode": "asin", "labelType": "positives", "period": "6m"
-        }, f"reviews comp+ {comp_asin}")
+    for mode in modes:
+        log(f"  → {'Custom filters' if mode == 'custom' else f'Mode: {mode}'}")
+        mode_products = []
+        for page in range(1, 6):  # 5 pages per mode (100 products max)
+            prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            if keyword:
+                prod_params["keyword"] = keyword
+            if category_path:
+                prod_params["categoryPath"] = category_path
+            # Apply mode preset (skip for "custom" mode)
+            if mode != "custom" and mode in PRODUCT_MODES:
+                prod_params.update(PRODUCT_MODES[mode])
+            # Apply custom filters ON TOP of mode (custom overrides mode defaults)
+            prod_params.update(custom_params)
+            r = safe_call("products/search", prod_params, f"products {mode} p{page}")
+            items = r.get("data", [])
+            if isinstance(items, list):
+                mode_products.extend(items)
+            if not items:
+                break
+        mode_results[mode] = mode_products
+        for p in mode_products:
+            asin = p.get("asin")
+            if asin and asin not in all_candidates:
+                all_candidates[asin] = p
+        log(f"    → {len(mode_products)} products, {len(all_candidates)} unique total")
     
-    results["reviews"] = review_results
-    results["meta"]["steps_completed"].append("review_analysis")
+    # Log actual search parameters for transparency
+    if custom_params:
+        log(f"  → Custom filters applied: {custom_params}")
+    
+    results["scan_results"] = {m: len(ps) for m, ps in mode_results.items()}
+    results["meta"]["total_candidates"] = len(all_candidates)
+    results["meta"]["steps_completed"].append("product_scan")
 
-    # Step 3: Realtime Product Detail
-    log("Step 3/5: Realtime product detail...")
-    if comp_asins:
-        comp_realtime = []
-        for asin in comp_asins[:3]:
-            log(f"  → {asin}")
-            r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
-            comp_realtime.append({"asin": asin, "result": r})
-        results["comp_realtime"] = comp_realtime
-    results["meta"]["steps_completed"].append("realtime_detail")
-
-    # Step 4: Market & Competitive Context
-    log("Step 4/5: Market context...")
+    # Step 2: Market Context
+    log("Step 2/6: Market context...")
     market_params = {"topN": "10", "pageSize": 20}
     if category_path:
         market_params["categoryPath"] = category_path
@@ -640,19 +666,15 @@ def cmd_review_deepdive(args):
         if keyword and category_path:
             r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat)")
     results["brand_overview"] = r
-
-    # Competitor lookup
-    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
-    if keyword:
-        comp_params["keyword"] = keyword
-    if category_path:
-        comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat)")
+    results["brand_detail"] = r
     results["meta"]["steps_completed"].append("market_context")
 
-    # Step 5: Price & Trend Context
-    log("Step 5/5: Price & trend context...")
+    # Step 3: Price Opportunity
+    log("Step 3/6: Price opportunity...")
     pb_params = {"pageSize": 20}
     if category_path:
         pb_params["categoryPath"] = category_path
@@ -662,20 +684,74 @@ def cmd_review_deepdive(args):
     if not r.get("data") and keyword and category_path:
         r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat)")
     results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "pbd")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_opportunity")
 
+    # Step 4: Realtime Validation for Top 10
+    log("Step 4/6: Realtime validation (Top 10)...")
+    sorted_candidates = sorted(all_candidates.values(), key=lambda x: x.get("atLeastMonthlySales") or 0, reverse=True)
+    seen = set()
+    top_asins = []
+    for p in sorted_candidates:
+        parent = p.get("parentAsin") or p.get("asin")
+        if parent not in seen:
+            seen.add(parent)
+            top_asins.append(p.get("asin"))
+        if len(top_asins) >= 10:
+            break
+
+    realtime_details = []
+    for asin in top_asins:
+        log(f"  → {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"rt {asin}")
+        realtime_details.append({"asin": asin, "result": r})
+    results["realtime"] = realtime_details
+    results["meta"]["steps_completed"].append("realtime_validation")
+
+    # Step 5: Trend Check (Top 5)
+    log("Step 5/6: Trend check...")
     today = time.strftime("%Y-%m-%d")
     thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
-    hist_asins = [target_asin] + comp_asins[:2] if target_asin else comp_asins[:3]
-    if hist_asins:
-        r = safe_call("products/product-history", {
-            "asins": hist_asins, "startDate": thirty_ago, "endDate": today
-        }, "product-history")
-        results["product_history"] = {"data": r.get("data", []), "asins_tried": hist_asins}
-    results["meta"]["steps_completed"].append("price_trend_context")
+    r = safe_call("products/product-history", {
+        "asins": top_asins[:5], "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": top_asins[:5]}
+    results["meta"]["steps_completed"].append("trend_check")
 
-    log(f"\n✅ Review deep-dive complete!")
+    # Step 6: Consumer Insights (Top 3, category mode first)
+    log("Step 6/6: Consumer insights...")
+    review_results = {}
+    if category_path:
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            log(f"  → category mode: {lt}")
+            r = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews {lt}")
+            if r.get("data") and r.get("data", {}).get("consumerInsights"):
+                review_results[lt] = r
+            else:
+                break
+    if not review_results:
+        log("  → Falling back to ASIN mode...")
+        review_asins = [a for a in top_asins[:3]]
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            r = safe_call("reviews/analyze", {
+                "asins": review_asins, "mode": "asin", "labelType": lt, "period": "6m"
+            }, f"reviews ASIN {lt}")
+            review_results[lt] = r
+    results["reviews"] = review_results
+    results["meta"]["review_mode"] = "category" if category_path and review_results.get("painPoints", {}).get("data", {}).get("consumerInsights") else "asin"
+    results["meta"]["steps_completed"].append("consumer_insights")
+
+    # All candidates as structured list
+    results["all_candidates"] = sorted_candidates[:50]  # Top 50 for report
+
+    log(f"\n✅ Opportunity scan complete!")
     log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
-    log(f"   Review dimensions: {sum(1 for k in review_results if k.startswith('target_'))}")
+    log(f"   Modes: {modes} | Candidates: {len(all_candidates)} | Realtime: {len(realtime_details)}")
     output(results, args.format)
 
 
@@ -942,13 +1018,19 @@ Examples:
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
 
-    # ── review-deepdive (composite) ──
-    p_rd = sub.add_parser("review-deepdive", help="Full 11-dimension review intelligence analysis")
-    p_rd.add_argument("--target-asin", help="ASIN to analyze in depth")
-    p_rd.add_argument("--keyword", help="Keyword to find target (if no ASIN)")
-    p_rd.add_argument("--comp-asins", help="Competitor ASINs for comparison (comma-separated)")
-    p_rd.add_argument("--category", help="Category path")
-    p_rd.set_defaults(func=cmd_review_deepdive)
+    # ── opportunity-scan (composite) ──
+    p_os = sub.add_parser("opportunity-scan", help="Multi-mode product opportunity discovery")
+    p_os.add_argument("--keyword", help="Category keyword to scan")
+    p_os.add_argument("--category", help="Category path")
+    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. beginner,emerging,underserved). Omit to use custom filters only.")
+    p_os.add_argument("--sales-min", type=int, help="Min monthly sales (e.g. 300)")
+    p_os.add_argument("--sales-max", type=int, help="Max monthly sales")
+    p_os.add_argument("--ratings-max", type=int, help="Max review count (e.g. 100 for blue ocean)")
+    p_os.add_argument("--price-min", type=float, help="Min price (e.g. 15)")
+    p_os.add_argument("--price-max", type=float, help="Max price (e.g. 35)")
+    p_os.add_argument("--rating-max", type=float, help="Max rating (e.g. 4.3 for improvement opportunity)")
+    p_os.add_argument("--rating-min", type=float, help="Min rating")
+    p_os.set_defaults(func=cmd_opportunity_scan)
 
     # ── analyze (reviews) ──
     p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")

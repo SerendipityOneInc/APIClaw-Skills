@@ -129,7 +129,6 @@ Request params: `keyword`, `brand`, `asin`, `categoryPath`, `sortBy`, `pageSize`
 | `description` | string | Product description |
 | `specifications` | object | Tech specs |
 | `variants` | list | All variants with dimensions |
-| `topReviews` | list | Top reviews with title, body, rating, date |
 | `bestsellersRank` | list | BSR info [{category, rank}, ...] |
 | `buyboxWinner` | object | Buy Box: {price, fulfillment, seller} |
 | `images` | list | All image URLs |

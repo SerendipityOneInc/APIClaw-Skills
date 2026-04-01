@@ -1,5 +1,5 @@
 ---
-name: Amazon Review Intelligence — Consumer Insights from 1B+ Reviews
+name: Amazon Review Intelligence Extractor — Consumer Insights from 1B+ Reviews
 version: 1.0.0
 description: >
   Deep consumer insights from 1B+ pre-analyzed Amazon reviews.
@@ -62,48 +62,57 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 ## Execution Flow
 
-### Step 0 — Parse Input
+### Step 0 — Parse Input & Determine Mode
 
-Extract from user message:
-- **target_asin** (optional): specific ASIN to analyze
-- **competitor_asins** (optional): ASINs for cross-comparison
-- **keyword** (optional): find top products to analyze by keyword
-- **category** (optional): category-level review analysis
+Analyze the user's message to determine which mode to use:
 
-Determine mode: Single ASIN | Multi-ASIN Comparison | Category-wide
+| Mode | User Provides | Example |
+|------|--------------|---------|
+| **Single ASIN** | One ASIN | "分析 B09V3KXJPB 的评论" |
+| **Multi-ASIN Comparison** | Multiple ASINs | "对比这 5 个竞品的评论痛点" |
+| **Category-wide** | Keyword or category name | "分析瑜伽垫品类的消费者反馈" |
 
 **Input Collection:** If required inputs are missing, ask the user in ONE message:
-"To produce a reliable analysis, I need:
- ✅ Required: target_asin or keyword
- 💡 Recommended (significantly improves accuracy): competitor_asins
- 📌 Optional: category"
+"I need one of the following to start:
+ ✅ Option A: One or more ASINs (e.g. B09V3KXJPB) — I'll analyze their reviews directly
+ ✅ Option B: A specific product category (at least 3 levels deep, e.g. 'Home & Kitchen > Kitchen & Dining > Coffee Mugs') — I'll analyze category-wide consumer insights
+ 💡 If you're unsure about the exact category, just give me a keyword and I'll help you find the right one"
 
-Do NOT proceed until all required inputs are collected.
+Do NOT proceed until a valid ASIN or category direction is provided.
 
-### Step 0.5 — Category Resolution (mandatory, do not skip)
+### Step 0.5 — Category Resolution (for Category-wide mode only)
 
-Before any data collection, lock down the exact product category:
+**Skip this step if user provided ASINs directly.**
 
-1. **Query categories endpoint** — try the user's keyword first:
+When user gives a keyword or broad category, resolve to a precise category path (at least 3 levels deep):
+
+1. **Query categories endpoint**:
    ```bash
    python3 scripts/apiclaw.py categories --keyword "{keyword}"
    ```
-2. **If empty or too broad** — split/broaden the keyword and retry (e.g. "yoga mat" → "yoga", then drill into subcategories). Try up to 3 variations.
-3. **If still no match** — use realtime/product on a known ASIN to extract categoryPath from its bestsellersRank field.
-4. **Validate the categoryPath** — ensure it matches the user's intended product type, not a tangentially related category.
+2. **If multiple categories returned** — present ALL to the user and ask them to confirm:
+   ```
+   Found multiple matching categories:
+   1. Home & Kitchen > Kitchen & Dining > Coffee Mugs
+   2. Home & Kitchen > Kitchen & Dining > Travel Mugs
+   3. Sports & Outdoors > Sports Water Bottles
+   
+   Which category would you like me to analyze consumer reviews for?
+   ```
+   **Do NOT auto-select.** Wait for user confirmation.
+3. **If category is too broad** (fewer than 3 levels, e.g. just "Home & Kitchen") — ask user to narrow down:
+   ```
+   "Home & Kitchen" is very broad. Can you be more specific? For example:
+   - Home & Kitchen > Kitchen & Dining > Coffee Mugs
+   - Home & Kitchen > Storage & Organization > Drawer Organizers
+   Or give me a product keyword and I'll find the right category.
+   ```
+4. **If empty** — broaden keyword and retry (up to 3 variations).
+5. **If still no match** — ask user for a specific ASIN instead.
 
-Once a precise categoryPath is confirmed, use it as the primary filter for **ALL** subsequent keyword-based list/stats API calls:
-- `products/search` → add `--category "{categoryPath}"`
-- `brand-overview` → add `--category "{categoryPath}"`
-- `brand-detail` → add `--category "{categoryPath}"`
-- `price-band-overview` → add `--category "{categoryPath}"`
-- `price-band-detail` → add `--category "{categoryPath}"`
-- `competitors` → add `--category "{categoryPath}"`
-- `markets/search` → use `--category "{categoryPath}"`
+Once categoryPath is confirmed (≥3 levels), use it for all subsequent API calls that accept --category.
 
-**⚠️ CRITICAL: All keyword-based list/stats endpoints MUST include --category when categoryPath is locked.** Without it, keyword-only queries return cross-category contamination. ASIN-specific endpoints (realtime/product, product-history, reviews/analyze by ASIN) do NOT need --category.
-
-Record in the final report's Data Provenance section: the final categoryPath used, how it was resolved, and how many results were filtered out.
+**⚠️ reviews/analyze in category mode requires a precise category.** Broad categories return diluted, less actionable insights. Always aim for the most specific category possible.
 
 ### Pre-Execution Checklist
 
@@ -112,6 +121,13 @@ Before proceeding to data collection, verify:
 - ✓ categoryPath is locked (from Step 0.5)
 - ✓ All required inputs collected (from Step 0)
 If any check fails, stop and resolve before continuing.
+
+### ⚠️ Review Analysis Rules
+
+1. **reviews/analyze requires 50+ reviews** to produce meaningful results. If a product has fewer than 50 reviews, skip reviews/analyze for that ASIN and use `realtime/product` ratingBreakdown as fallback.
+2. **labelType: one value per call.** Do NOT comma-separate multiple labelTypes in a single call. Make separate calls for each (e.g. `painPoints`, `buyingFactors`, `improvements`).
+3. **Category mode vs ASIN mode:** Category mode analyzes ALL reviews in a category (broader, better for market-level insights). ASIN mode analyzes specific products (deeper, better for competitive analysis). Choose based on user intent.
+4. **Do NOT invent consumer insights.** Only report what the API returns. If a dimension has no data, omit it — do not fill gaps with generic advice.
 
 ### Step 1 — Automated Data Collection (ONE command)
 
@@ -243,7 +259,7 @@ Report sections (all required, omit any with no data):
 - If you performed any manual calculation, show the formula AND the raw API fields used
 - **FORBIDDEN: Presenting numbers without indicating which API endpoint they came from**
 
-- reviews/analyze needs 50+ reviews for meaningful analysis; use topReviews from realtime as fallback
+- reviews/analyze needs 50+ reviews for meaningful analysis; use ratingBreakdown from realtime/product as fallback
 - **Never show empty data rows** — omit dimensions with no data
 - **Never expose internal errors to users** — silently fall back to alternative data
 - InsightItem field: `reviewRate` (not `reviewPercentage`) for mention frequency

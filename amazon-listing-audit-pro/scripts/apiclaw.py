@@ -349,11 +349,11 @@ def cmd_products(args):
 
     result = api_call("products/search", params)
 
-    # Client-side filter: reviewCountMin/Max not enforced by API (known bug)
+    # Client-side ratingCount filter
     # Apply filtering locally to ensure mode presets work correctly
     if result and result.get("success") and isinstance(result.get("data"), list):
-        rc_min = params.get("ratingCountMin") or params.get("reviewCountMin")
-        rc_max = params.get("ratingCountMax") or params.get("reviewCountMax")
+        rc_min = params.get("ratingCountMin")
+        rc_max = params.get("ratingCountMax")
         if rc_min is not None or rc_max is not None:
             original_count = len(result["data"])
             filtered = result["data"]
@@ -364,7 +364,7 @@ def cmd_products(args):
             result["data"] = filtered
             if len(filtered) < original_count:
                 result["_clientFilter"] = {
-                    "reason": "reviewCount filter applied client-side (API bug workaround)",
+                    "reason": "ratingCount filter applied client-side",
                     "before": original_count,
                     "after": len(filtered)
                 }

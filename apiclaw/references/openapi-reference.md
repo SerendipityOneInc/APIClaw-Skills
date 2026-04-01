@@ -50,7 +50,7 @@ Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgMonthl
 | seller | String | Seller filter |
 | asin | String | ASIN filter |
 | categoryPath | List\<String\> | Category filter |
-| sortBy | String | `atLeastMonthlySales` / `atLeastMonthlyRevenue` / `bsr` / `price` / `rating` / `reviewCount` / `listingDate` |
+| sortBy | String | `atLeastMonthlySales` / `atLeastMonthlyRevenue` / `bsr` / `price` / `rating` / `ratingCount` / `listingDate` |
 | sortOrder | String | `asc` / `desc` |
 | pageSize | Integer | default 20 |
 
@@ -66,7 +66,7 @@ Same as competitor-lookup, plus:
 | keywordMatchType | String | `fuzzy` / `phrase` / `exact` |
 | listingAge | **String** | Max age in days ⚠️ must be string |
 
-Filter pairs (all optional, Min/Max): `monthlySales`, `revenue`, `salesGrowthRate`, `bsr`, `subBsr`, `bsrGrowthRate`, `price`, `rating`, `reviewCount`, `fbaShipping`, `variantCount`, `grossMargin`, `sellerCount`
+Filter pairs (all optional, Min/Max): `monthlySales`, `revenue`, `salesGrowthRate`, `bsr`, `subBsr`, `bsrGrowthRate`, `price`, `rating`, `ratingCount`, `fbaShipping`, `variantCount`, `grossMargin`, `sellerCount`
 
 Additional: `includeBrands`, `excludeBrands`, `fulfillment` (`["FBA"]`/`["FBM"]`), `badges` (`["New Release"]`/`["Best Seller"]`)
 
@@ -79,7 +79,7 @@ Additional: `includeBrands`, `excludeBrands`, `fulfillment` (`["FBA"]`/`["FBM"]`
 | asin | **Yes** | Product ASIN |
 | marketplace | No | `US`/`UK`/`DE`/`FR`/`IT`/`ES`/`JP`/`CA`/`AU`/`IN`/`MX`/`BR` (default: US) |
 
-Response fields: `asin`, `title`, `brand`, `rating`, `ratingCount`, `ratingBreakdown`, `features`, `description`, `specifications`, `categories`, `variants`, `topReviews`, `bestsellersRank` (array), `buyboxWinner` (object with price), `images`, `dimensions`, `weight`
+Response fields: `asin`, `title`, `brand`, `rating`, `ratingCount`, `ratingBreakdown`, `features`, `description`, `specifications`, `categories`, `variants`, `bestsellersRank` (array), `buyboxWinner` (object with price), `images`, `dimensions`, `weight`
 
 ⚠️ Does NOT have: `atLeastMonthlySales`, `profitMargin`, `fbaFee`, `sellerCount`
 
