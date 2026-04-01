@@ -1,5 +1,5 @@
 ---
-name: Amazon Pricing Command Center
+name: Amazon Pricing Command Center — Optimal Price Positioning
 version: 1.0.0
 description: >
   Data-driven pricing strategy engine for Amazon sellers.

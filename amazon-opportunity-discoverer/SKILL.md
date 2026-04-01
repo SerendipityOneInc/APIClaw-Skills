@@ -1,5 +1,5 @@
 ---
-name: Amazon Opportunity Discoverer
+name: Amazon Opportunity Discoverer — Niche Scanner & Scoring
 version: 1.0.0
 description: >
   Automated product opportunity scanner for Amazon sellers.
