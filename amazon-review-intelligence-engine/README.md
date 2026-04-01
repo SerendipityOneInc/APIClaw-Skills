@@ -1,4 +1,4 @@
-# Amazon Review Intelligence Engine — APIClaw Agent Skill
+# Amazon Review Intelligence Extractor — APIClaw Agent Skill
 
 > Deep consumer insights from 1B+ pre-analyzed Amazon reviews. No NLP required.
 
@@ -38,7 +38,7 @@ Extracts actionable consumer insights from Amazon product reviews. Give it an AS
 npx skills add SerendipityOneInc/APIClaw-Skills
 ```
 
-Select **Amazon Review Intelligence Engine** when prompted.
+Select **Amazon Review Intelligence Extractor** when prompted.
 
 ## API Key Setup
 

@@ -1,4 +1,4 @@
-# Amazon Blue Ocean Finder — APIClaw Agent Skill
+# Amazon Blue Ocean Product Finder — APIClaw Agent Skill
 
 > Find untapped products. High demand, low competition, real data.
 
@@ -29,7 +29,7 @@ For each approach, the skill:
 npx skills add SerendipityOneInc/APIClaw-Skills
 ```
 
-Select **Amazon Blue Ocean Finder** when prompted.
+Select **Amazon Blue Ocean Product Finder** when prompted.
 
 ## API Key Setup
 

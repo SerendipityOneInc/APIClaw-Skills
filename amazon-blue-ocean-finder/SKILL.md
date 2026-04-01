@@ -1,5 +1,5 @@
 ---
-name: Amazon Blue Ocean Finder — Untapped Product Discovery
+name: Amazon Blue Ocean Product Finder — Untapped Product Discovery
 version: 1.0.0
 description: >
   Discover untapped, high-demand, low-competition products on Amazon.
@@ -15,7 +15,7 @@ homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
-# APIClaw — Amazon Blue Ocean Finder
+# APIClaw — Amazon Blue Ocean Product Finder
 
 > Find untapped products. High demand, low competition, real data.
 >

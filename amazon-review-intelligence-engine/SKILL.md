@@ -16,7 +16,7 @@ homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
-# APIClaw — Amazon Review Intelligence Engine
+# APIClaw — Amazon Review Intelligence Extractor
 
 > 1B+ reviews pre-analyzed. 11 insight dimensions. 95% token savings vs DIY NLP.
 >
