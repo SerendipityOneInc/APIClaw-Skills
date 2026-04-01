@@ -54,7 +54,7 @@ This repo contains **9 agent skills** organized in two tiers:
 | 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | Market viability assessment for new category entry | Go/no-go decisions, market sizing |
 | 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | Underserved niche and opportunity identification | Finding blue ocean markets |
 | 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | Dynamic pricing strategy and margin optimization | Price positioning, profit maximization |
-| 💬 [`amazon-review-intelligence-engine/`](amazon-review-intelligence-engine/) | Deep review sentiment analysis and insight extraction | Customer voice analysis, product improvement |
+| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | Deep review sentiment analysis and insight extraction | Customer voice analysis, product improvement |
 
 ## Quick Start
 
@@ -77,7 +77,7 @@ You'll be prompted to select which skills to install:
 - **Amazon Market Entry Analyzer** — Market viability assessment
 - **Amazon Opportunity Discoverer** — Niche & opportunity identification
 - **Amazon Pricing Command Center** — Pricing strategy & margin optimization
-- **Amazon Review Intelligence Engine** — Review sentiment & insight extraction
+- **Amazon Review Intelligence Engine** — Review intelligence Review sentiment & insight extraction insight extraction
 
 Or clone manually:
 ```bash
@@ -209,7 +209,7 @@ The `products/search` endpoint supports 14 preset modes for different research s
 │   └── scripts/
 │       └── apiclaw.py
 │
-├── amazon-review-intelligence-engine/    # Review sentiment & insight extraction
+├── amazon-review-intelligence-extractor/    # Review intelligence & insight extraction
 │   ├── SKILL.md
 │   ├── references/
 │   │   └── reference.md

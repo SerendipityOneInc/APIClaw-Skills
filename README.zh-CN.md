@@ -56,7 +56,7 @@
 | 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | 新品类市场可行性评估 | Go/No-go 决策，市场规模评估 |
 | 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | 细分蓝海市场与机会发现 | 蓝海市场挖掘 |
 | 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | 动态定价策略与利润优化 | 价格定位，利润最大化 |
-| 💬 [`amazon-review-intelligence-engine/`](amazon-review-intelligence-engine/) | 深度评论情感分析与洞察提取 | 消费者声音分析，产品改进 |
+| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | 深度评论智能分析与洞察提取 | 消费者声音分析，产品改进 |
 
 ## 快速开始
 
@@ -79,7 +79,7 @@ npx skills add SerendipityOneInc/APIClaw-Skills
 - **Amazon Market Entry Analyzer** — 市场可行性评估
 - **Amazon Opportunity Discoverer** — 蓝海市场与机会发现
 - **Amazon Pricing Command Center** — 定价策略与利润优化
-- **Amazon Review Intelligence Engine** — 评论情感分析与洞察提取
+- **Amazon Review Intelligence Engine** — 评论智能分析与洞察提取
 
 也可以手动克隆：
 ```bash
@@ -211,7 +211,7 @@ python amazon-analysis/scripts/apiclaw.py products --keyword "wireless earbuds" 
 │   └── scripts/
 │       └── apiclaw.py
 │
-├── amazon-review-intelligence-engine/    # 评论情感分析与洞察提取
+├── amazon-review-intelligence-extractor/    # 评论智能分析与洞察提取
 │   ├── SKILL.md
 │   ├── references/
 │   │   └── reference.md
