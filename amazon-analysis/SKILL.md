@@ -1,6 +1,6 @@
 ---
 name: apiclaw-analysis
-version: 1.0.0
+version: 1.1.4
 description: >
   Amazon seller data analysis tool. Features: market research, product selection, competitor analysis, ASIN evaluation, pricing reference, category research.
   Uses scripts/apiclaw.py to call APIClaw API, requires APICLAW_API_KEY.

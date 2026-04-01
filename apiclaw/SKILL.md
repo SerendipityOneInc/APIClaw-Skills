@@ -1,6 +1,6 @@
 ---
 name: APIClaw — Commerce Data for AI Agents
-version: 2.0.0
+version: 1.1.0
 description: >
   General overview, 11 API endpoints.
   AI-powered commerce data infrastructure with 200M+ Amazon products.

@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] — 2026-04-01
+
+### amazon-analysis v1.1.4
+- Major SKILL.md rewrite: improved intent routing, workflow structure, and agent instructions
+- Added `references/execution-guide.md` — step-by-step execution playbook for agents
+- Updated `references/reference.md` with 11 endpoints (was 6), new field descriptions
+- Enhanced scenarios files with additional guidance
+- Rewrote `scripts/apiclaw.py` with improved error handling
+
+### apiclaw v1.1.0
+- Expanded from 6 to 11 API endpoints: added price-band overview/detail, brand overview/detail, product history
+- Rewrote SKILL.md with complete endpoint documentation
+- Updated `references/openapi-reference.md` with full field reference for all 11 endpoints
+
+### 7 New Hero Skills v1.0.0
+- **amazon-competitor-war-room** — Real-time competitive monitoring and response strategy
+- **amazon-daily-market-radar** — Daily market pulse check and anomaly detection
+- **amazon-listing-audit-pro** — Comprehensive listing quality audit and optimization
+- **amazon-market-entry-analyzer** — Market viability assessment for new category entry
+- **amazon-opportunity-discoverer** — Underserved niche and opportunity identification
+- **amazon-pricing-command-center** — Dynamic pricing strategy and margin optimization
+- **amazon-review-intelligence-engine** — Deep review sentiment analysis and insight extraction
+
+### Repo
+- Added `scoring-methodology.md` — unified quality scoring framework for all skills
+
 ## [1.1.3] — 2026-03-20
 
 ### amazon-analysis

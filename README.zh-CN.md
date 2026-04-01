@@ -33,14 +33,21 @@
 
 [APIClaw](https://apiclaw.io) 是专为 Agent 构建的数据基础设施。模型正在商品化，真正稀缺的是 Agent 能直接消费的结构化数据。APIClaw 提供实时电商信号，让你的 Agent 每天能分析 10,000+ 商品，而不是 100 个。
 
-当前已接入亚马逊，提供 6 个 API 接口：产品搜索（14 种预设模式）、市场分析、竞品情报、实时追踪、AI 评论洞察、类目导航。干净 JSON，Agent 即用。
+当前已接入亚马逊，提供 11 个 API 接口：产品搜索（14 种预设模式）、市场分析、竞品情报、实时追踪、AI 评论洞察、类目导航、价格带分析、品牌分析、历史数据。干净 JSON，Agent 即用。
 
-本仓库包含 **两个 Agent 技能**，让任何 AI 助手都能即插即用地调用 APIClaw：
+本仓库包含 **9 个 Agent 技能**，让任何 AI 助手都能即插即用地调用 APIClaw：
 
 | 技能 | 说明 | 适用场景 |
 |------|------|----------|
-| 📦 **[`apiclaw/`](apiclaw/)** | 数据层概览，6 个 API 接口，快速集成 | 快速上手，Agent tool-calling |
-| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 种选品策略，市场验证，竞品情报，风险评估 | 深度选品调研，自主选品 Agent |
+| 📦 **[`apiclaw/`](apiclaw/)** | 数据层概览，11 个 API 接口，快速集成 | 快速上手，Agent tool-calling |
+| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 种选品策略，市场验证，竞品情报 | 深度选品调研，自主选品 Agent |
+| ⚔️ **[`amazon-competitor-war-room/`](amazon-competitor-war-room/)** | 实时竞品监控与应对策略 | 竞品追踪，价格战 |
+| 📡 **[`amazon-daily-market-radar/`](amazon-daily-market-radar/)** | 每日市场脉搏与异常检测 | 晨报简报，趋势预警 |
+| ✅ **[`amazon-listing-audit-pro/`](amazon-listing-audit-pro/)** | Listing 质量全面审计与优化 | Listing 健康检查，转化率提升 |
+| 🚪 **[`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/)** | 新品类市场可行性评估 | Go/No-go 决策，市场规模评估 |
+| 💎 **[`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/)** | 细分蓝海市场与机会发现 | 蓝海市场挖掘 |
+| 💰 **[`amazon-pricing-command-center/`](amazon-pricing-command-center/)** | 动态定价策略与利润优化 | 价格定位，利润最大化 |
+| 💬 **[`amazon-review-intelligence-engine/`](amazon-review-intelligence-engine/)** | 深度评论情感分析与洞察提取 | 消费者声音分析，产品改进 |
 
 ## 快速开始
 
@@ -125,6 +132,11 @@ curl -X POST 'https://api.apiclaw.io/openapi/v2/products/search' \
 | ⚡ `realtime/product` | 实时商品详情——评论、功能、变体 | *"查一下 ASIN B0D5CRV4KL 的最新信息"* |
 | 💬 `reviews/analyze` | AI 驱动的评论洞察——情感分析、痛点提取 | *"消费者对这个产品的好评和差评分别集中在哪里？"* |
 | 📁 `categories` | 亚马逊类目树导航 | *"看看 Electronics 下面有哪些子类目"* |
+| 📈 `products/price-band-overview` | 价格带概览与最佳机会带 | *"瑜伽垫最适合的价格区间是哪个？"* |
+| 📊 `products/price-band-detail` | 5 档价格带详细分布分析 | *"无线耳机各价格带的详细数据"* |
+| 🏢 `products/brand-overview` | 头部品牌集中度指标（CR10） | *"这个类目品牌集中度如何？"* |
+| 🏷️ `products/brand-detail` | 各品牌拆解与头部商品 | *"哪些品牌占据了这个类目？"* |
+| 📅 `products/product-history` | ASIN 历史每日快照 | *"查看这个 ASIN 的价格和 BSR 历史"* |
 
 **Base URL：** `https://api.apiclaw.io/openapi/v2`
 **认证方式：** `Authorization: Bearer $APICLAW_API_KEY`
@@ -162,23 +174,49 @@ curl -X POST 'https://api.apiclaw.io/openapi/v2/products/search' \
 ## 项目结构
 
 ```
-├── apiclaw/                        # 通用技能（轻量版）
-│   ├── SKILL.md                      # 能力概览，快速入门
+├── apiclaw/                              # 数据层技能（轻量版）
+│   ├── SKILL.md                            # 11 个接口，快速入门
 │   └── references/
-│       └── openapi-reference.md      # API 字段参考
+│       └── openapi-reference.md            # API 字段参考
 │
-├── amazon-analysis/                # 亚马逊深度分析技能
-│   ├── SKILL.md                      # 意图路由，工作流，评估标准
+├── amazon-analysis/                      # 深度分析技能
+│   ├── SKILL.md                            # 意图路由，工作流，评估标准
 │   ├── references/
-│   │   ├── reference.md              # 完整 API 参考
-│   │   ├── scenarios-composite.md    # 综合推荐
-│   │   ├── scenarios-eval.md         # 商品评估、风险分析、评论
-│   │   ├── scenarios-pricing.md      # 定价策略、利润估算
-│   │   ├── scenarios-ops.md          # 市场监控、预警
-│   │   ├── scenarios-expand.md       # 扩展、趋势
-│   │   └── scenarios-listing.md      # Listing 撰写与优化
+│   │   ├── reference.md                    # 完整 API 参考
+│   │   ├── execution-guide.md              # 分步执行手册
+│   │   ├── scenarios-composite.md          # 综合推荐
+│   │   ├── scenarios-eval.md               # 商品评估、风险分析、评论
+│   │   ├── scenarios-pricing.md            # 定价策略、利润估算
+│   │   ├── scenarios-ops.md                # 市场监控、预警
+│   │   ├── scenarios-expand.md             # 扩展、趋势
+│   │   └── scenarios-listing.md            # Listing 撰写与优化
 │   └── scripts/
-│       └── apiclaw.py                # CLI 工具 — 8 个子命令，14 种预设模式
+│       └── apiclaw.py                      # CLI 工具 — 8 个子命令，14 种预设模式
+│
+├── amazon-competitor-war-room/           # 竞品监控与应对
+│   └── SKILL.md
+│
+├── amazon-daily-market-radar/            # 每日市场脉搏与异常检测
+│   └── SKILL.md
+│
+├── amazon-listing-audit-pro/             # Listing 质量审计与优化
+│   └── SKILL.md
+│
+├── amazon-market-entry-analyzer/         # 市场可行性评估
+│   └── SKILL.md
+│
+├── amazon-opportunity-discoverer/        # 蓝海市场与机会发现
+│   └── SKILL.md
+│
+├── amazon-pricing-command-center/        # 定价策略与利润优化
+│   └── SKILL.md
+│
+├── amazon-review-intelligence-engine/    # 评论情感分析与洞察提取
+│   └── SKILL.md
+│
+├── scoring-methodology.md                # 统一质量评分框架
+├── CHANGELOG.md
+└── README.md
 ```
 
 ## 环境要求

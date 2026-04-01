@@ -33,12 +33,19 @@
 
 [APIClaw](https://apiclaw.io) is the data infrastructure built for agents. Not a scraping API. Not a human dashboard. A purpose-built data layer that gives your AI agents direct access to Amazon commerce signals — 200M+ indexed products, 2+ years of history, and 1B+ reviews pre-processed into structured insights. Clean JSON, real-time, agent-ready.
 
-This repo contains **two agent skills** that let any AI assistant use APIClaw instantly:
+This repo contains **9 agent skills** that let any AI assistant use APIClaw instantly:
 
 | Skill | Description | Best For |
 |-------|------------|----------|
-| 📦 **[`apiclaw/`](apiclaw/)** | Data layer overview, 6 API endpoints, quick integration | Getting started, agent tool-calling |
-| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 selection strategies, market validation, competitor intelligence, risk assessment | Deep product research, autonomous sourcing agents |
+| 📦 **[`apiclaw/`](apiclaw/)** | Data layer overview, 11 API endpoints, quick integration | Getting started, agent tool-calling |
+| 🎯 **[`amazon-analysis/`](amazon-analysis/)** | 14 selection strategies, market validation, competitor intelligence | Deep product research, autonomous sourcing |
+| ⚔️ **[`amazon-competitor-war-room/`](amazon-competitor-war-room/)** | Real-time competitive monitoring and response strategy | Tracking competitors, price wars |
+| 📡 **[`amazon-daily-market-radar/`](amazon-daily-market-radar/)** | Daily market pulse check and anomaly detection | Morning briefings, trend alerts |
+| ✅ **[`amazon-listing-audit-pro/`](amazon-listing-audit-pro/)** | Comprehensive listing quality audit and optimization | Listing health checks, conversion improvement |
+| 🚪 **[`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/)** | Market viability assessment for new category entry | Go/no-go decisions, market sizing |
+| 💎 **[`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/)** | Underserved niche and opportunity identification | Finding blue ocean markets |
+| 💰 **[`amazon-pricing-command-center/`](amazon-pricing-command-center/)** | Dynamic pricing strategy and margin optimization | Price positioning, profit maximization |
+| 💬 **[`amazon-review-intelligence-engine/`](amazon-review-intelligence-engine/)** | Deep review sentiment analysis and insight extraction | Customer voice analysis, product improvement |
 
 ## Quick Start
 
@@ -123,6 +130,11 @@ Example response (simplified):
 | ⚡ `realtime/product` | Real-time product details — reviews, features, variants | *"Get current details for ASIN B0D5CRV4KL"* |
 | 💬 `reviews/analyze` | AI-powered review insights — sentiment, pain points | *"What do customers love/hate about this product?"* |
 | 📁 `categories` | Amazon category tree navigation | *"Show subcategories under Electronics"* |
+| 📈 `products/price-band-overview` | Price band summary with best opportunity band | *"What's the best price range for yoga mats?"* |
+| 📊 `products/price-band-detail` | Full 5-band price distribution analysis | *"Show detailed price band breakdown for wireless earbuds"* |
+| 🏢 `products/brand-overview` | Top-brand concentration metrics (CR10) | *"How concentrated is the brand landscape?"* |
+| 🏷️ `products/brand-detail` | Per-brand breakdown with top products | *"Which brands dominate this category?"* |
+| 📅 `products/product-history` | Historical daily snapshots for ASINs | *"Show price and BSR history for this ASIN"* |
 
 **Base URL:** `https://api.apiclaw.io/openapi/v2`  
 **Auth:** `Authorization: Bearer $APICLAW_API_KEY`  
@@ -160,23 +172,49 @@ The `products/search` endpoint supports 14 preset modes for different research s
 ## Project Structure
 
 ```
-├── apiclaw/                        # General skill (lightweight)
-│   ├── SKILL.md                      # Capabilities overview, quick start
+├── apiclaw/                              # Data layer skill (lightweight)
+│   ├── SKILL.md                            # 11 endpoints, quick start
 │   └── references/
-│       └── openapi-reference.md      # API field reference
+│       └── openapi-reference.md            # API field reference
 │
-├── amazon-analysis/                # Amazon deep skill
-│   ├── SKILL.md                      # Intent routing, workflows, evaluation criteria
+├── amazon-analysis/                      # Deep analysis skill
+│   ├── SKILL.md                            # Intent routing, workflows, evaluation criteria
 │   ├── references/
-│   │   ├── reference.md              # Full API reference
-│   │   ├── scenarios-composite.md    # Comprehensive recommendations
-│   │   ├── scenarios-eval.md         # Product evaluation, risk, reviews
-│   │   ├── scenarios-pricing.md      # Pricing strategy, profit estimation
-│   │   ├── scenarios-ops.md          # Market monitoring, alerts
-│   │   ├── scenarios-expand.md       # Expansion, trends
-│   │   └── scenarios-listing.md      # Listing writing, optimization
+│   │   ├── reference.md                    # Full API reference
+│   │   ├── execution-guide.md              # Step-by-step execution playbook
+│   │   ├── scenarios-composite.md          # Comprehensive recommendations
+│   │   ├── scenarios-eval.md               # Product evaluation, risk, reviews
+│   │   ├── scenarios-pricing.md            # Pricing strategy, profit estimation
+│   │   ├── scenarios-ops.md                # Market monitoring, alerts
+│   │   ├── scenarios-expand.md             # Expansion, trends
+│   │   └── scenarios-listing.md            # Listing writing, optimization
 │   └── scripts/
-│       └── apiclaw.py                # CLI — 8 subcommands, 14 preset modes
+│       └── apiclaw.py                      # CLI — 8 subcommands, 14 preset modes
+│
+├── amazon-competitor-war-room/           # Competitive monitoring & response
+│   └── SKILL.md
+│
+├── amazon-daily-market-radar/            # Daily market pulse & anomaly detection
+│   └── SKILL.md
+│
+├── amazon-listing-audit-pro/             # Listing quality audit & optimization
+│   └── SKILL.md
+│
+├── amazon-market-entry-analyzer/         # Market viability assessment
+│   └── SKILL.md
+│
+├── amazon-opportunity-discoverer/        # Niche & opportunity identification
+│   └── SKILL.md
+│
+├── amazon-pricing-command-center/        # Pricing strategy & margin optimization
+│   └── SKILL.md
+│
+├── amazon-review-intelligence-engine/    # Review sentiment & insight extraction
+│   └── SKILL.md
+│
+├── scoring-methodology.md                # Unified quality scoring framework
+├── CHANGELOG.md
+└── README.md
 ```
 
 ## Requirements
@@ -192,11 +230,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 - 💬 [Discord](https://discord.gg/YfDFU9BDp5) — Chat, get help, share what you're building
 - 🐛 [Issues](https://github.com/SerendipityOneInc/APIClaw-Skills/issues) — Bug reports and feature requests
-- 📖 [API Docs](https://apiclaw.io) — Full API documentation
-
-## License
-
-[MIT](LICENSE) © [SerendipityOne Inc.](https://apiclaw.io)
 - 📖 [API Docs](https://apiclaw.io) — Full API documentation
 
 ## License
