@@ -1,5 +1,5 @@
 ---
-name: Amazon Daily Market Radar
+name: Amazon Daily Market Radar — Automated Monitoring & Alerts
 version: 1.0.0
 description: >
   Automated daily market monitoring and alert system for Amazon sellers.

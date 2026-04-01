@@ -1,5 +1,5 @@
 ---
-name: APIClaw — Commerce Data for AI Agents
+name: APIClaw — Amazon Commerce Data, 11 Endpoints
 version: 1.1.0
 description: >
   General overview, 11 API endpoints.

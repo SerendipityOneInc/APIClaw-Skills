@@ -1,5 +1,5 @@
 ---
-name: Amazon Competitor War Room
+name: Amazon Competitor War Room — Competitive Intel & Battle Strategy
 version: 1.0.0
 description: >
   Deep competitor intelligence and battle-ready insights for Amazon sellers.

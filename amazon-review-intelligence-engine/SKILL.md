@@ -1,5 +1,5 @@
 ---
-name: Amazon Review Intelligence Engine
+name: Amazon Review Intelligence — Consumer Insights from 1B+ Reviews
 version: 1.0.0
 description: >
   Deep consumer insights from 1B+ pre-analyzed Amazon reviews.
