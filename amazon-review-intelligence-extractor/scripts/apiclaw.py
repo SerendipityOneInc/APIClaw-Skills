@@ -525,6 +525,1189 @@ def cmd_opportunity(args):
     output(results, args.format)
 
 
+def cmd_market_entry(args):
+    """
+    Composite workflow: Full Market Entry Analysis.
+    Runs ALL 11 endpoints in the correct order with fallback logic.
+    Outputs a single structured JSON with all data needed for the report.
+    
+    Steps:
+      1. Market landscape: market + brand-overview + brand-detail
+      2. Price structure: price-band-overview + price-band-detail
+      3. Product supply: products/search (5 pages, 100 records)
+      4. Competitors: competitor-lookup + realtime/product (Top 5)
+      5. Trends: product-history (Top 3, with ASIN retry)
+      6. Consumer insights: reviews/analyze (3x category mode, fallback to ASIN)
+    """
+    keyword = args.keyword
+    category = args.category
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    results = {"meta": {"keyword": keyword, "category": category, "steps_completed": []}}
+    category_path = parse_category(category) if category else None
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        """Call API and return result. Never exit on error."""
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # ── Step 0.5: Category Resolution ──
+    if not category_path and keyword:
+        log("Step 0.5: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked category: {' > '.join(category_path)}")
+        else:
+            log("  ⚠️ No category match, will use keyword-only queries")
+
+    results["meta"]["resolved_category"] = category_path
+
+    # ── Step 1: Market Landscape (3 calls) ──
+    log("Step 1/6: Market landscape...")
+    
+    # 1a. Market aggregate
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    # 1b. Brand overview (keyword + category, fallback to category-only)
+    brand_ov_params = {"pageSize": 20}
+    if category_path:
+        brand_ov_params["categoryPath"] = category_path
+    if keyword:
+        brand_ov_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", brand_ov_params, "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            log("  → brand-overview empty with keyword+category, retrying category-only...")
+            brand_ov_params.pop("keyword", None)
+            r = safe_call("products/brand-overview", brand_ov_params, "brand-overview (category-only)")
+    results["brand_overview"] = r
+
+    # 1c. Brand detail
+    brand_dt_params = {"pageSize": 20}
+    if category_path:
+        brand_dt_params["categoryPath"] = category_path
+    if keyword:
+        brand_dt_params["keyword"] = keyword
+    r = safe_call("products/brand-detail", brand_dt_params, "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            log("  → brand-detail empty with keyword+category, retrying category-only...")
+            brand_dt_params.pop("keyword", None)
+            r = safe_call("products/brand-detail", brand_dt_params, "brand-detail (category-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_landscape")
+
+    # ── Step 2: Price Structure (2 calls) ──
+    log("Step 2/6: Price structure...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+
+    r = safe_call("products/price-band-overview", dict(pb_params), "price-band-overview")
+    if not r.get("data"):
+        if keyword and category_path:
+            pb_params_co = {k: v for k, v in pb_params.items() if k != "keyword"}
+            r = safe_call("products/price-band-overview", pb_params_co, "price-band-overview (category-only)")
+    results["price_band_overview"] = r
+
+    r = safe_call("products/price-band-detail", dict(pb_params), "price-band-detail")
+    if not r.get("data"):
+        if keyword and category_path:
+            pb_params_co = {k: v for k, v in pb_params.items() if k != "keyword"}
+            r = safe_call("products/price-band-detail", pb_params_co, "price-band-detail (category-only)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_structure")
+
+    # ── Step 3: Product Supply (5 pages = 100 records) ──
+    log("Step 3/6: Product supply (5 pages)...")
+    all_products = []
+    total_products = 0
+    for page in range(1, 6):
+        prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+        if keyword:
+            prod_params["keyword"] = keyword
+        if category_path:
+            prod_params["categoryPath"] = category_path
+        r = safe_call("products/search", prod_params, f"products page {page}")
+        page_data = r.get("data", [])
+        if isinstance(page_data, list):
+            all_products.extend(page_data)
+        if page == 1:
+            total_products = r.get("meta", {}).get("total", 0)
+        if not page_data:
+            log(f"  → Page {page} empty, stopping pagination")
+            break
+    results["products"] = {"items": all_products, "total": total_products, "pages_fetched": page}
+    log(f"  → {len(all_products)} products fetched (total available: {total_products})")
+    results["meta"]["steps_completed"].append("product_supply")
+
+    # ── Step 4: Top Competitor Deep-Dive ──
+    log("Step 4/6: Competitor deep-dive...")
+    
+    # 4a. Competitor lookup
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+
+    # 4b. Pick Top 5 ASINs for realtime (deduplicate by parentAsin)
+    seen_parents = set()
+    top_asins = []
+    for p in all_products:
+        parent = p.get("parentAsin") or p.get("asin")
+        if parent not in seen_parents:
+            seen_parents.add(parent)
+            top_asins.append(p.get("asin"))
+        if len(top_asins) >= 5:
+            break
+
+    realtime_details = []
+    for asin in top_asins:
+        log(f"  → Realtime: {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+        if r.get("success") is not False:
+            realtime_details.append(r)
+    results["realtime"] = realtime_details
+    results["meta"]["steps_completed"].append("competitor_deepdive")
+
+    # ── Step 5: Trend Analysis ──
+    log("Step 5/6: Trend analysis...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_days_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+
+    # Try product-history with Top 3, fallback to older ASINs
+    history_data = []
+    tried_asins = set()
+    
+    # Sort products by listingDate (oldest first) for fallback
+    products_by_age = sorted(
+        [p for p in all_products if p.get("listingDate")],
+        key=lambda x: x.get("listingDate", "9999")
+    )
+
+    # Round 1: Top 3 by sales
+    round1_asins = top_asins[:3]
+    if round1_asins:
+        tried_asins.update(round1_asins)
+        r = safe_call("products/product-history", {
+            "asins": round1_asins,
+            "startDate": thirty_days_ago,
+            "endDate": today,
+        }, "product-history round 1")
+        history_data = r.get("data", [])
+
+    # Round 2: Try oldest products if round 1 was empty
+    if not history_data:
+        round2_asins = [p.get("asin") for p in products_by_age if p.get("asin") not in tried_asins][:5]
+        if round2_asins:
+            log(f"  → Round 1 empty, trying older ASINs: {round2_asins}")
+            tried_asins.update(round2_asins)
+            r = safe_call("products/product-history", {
+                "asins": round2_asins,
+                "startDate": thirty_days_ago,
+                "endDate": today,
+            }, "product-history round 2")
+            history_data = r.get("data", [])
+
+    results["product_history"] = {"data": history_data, "asins_tried": list(tried_asins)}
+    log(f"  → {len(history_data)} history records from {len(tried_asins)} ASINs tried")
+    results["meta"]["steps_completed"].append("trend_analysis")
+
+    # ── Step 6: Consumer Insights ──
+    log("Step 6/6: Consumer insights...")
+    review_results = {}
+    label_types = ["painPoints", "buyingFactors", "improvements"]
+
+    # Priority 1: Category mode
+    category_mode_success = True
+    if category_path:
+        for lt in label_types:
+            log(f"  → reviews/analyze category mode: {lt}")
+            r = safe_call("reviews/analyze", {
+                "categoryPath": category_path,
+                "mode": "category",
+                "labelType": lt,
+                "period": "6m",
+            }, f"reviews {lt}")
+            if r.get("success") is False or not r.get("data", {}).get("consumerInsights"):
+                category_mode_success = False
+                log(f"  ⚠️ Category mode failed for {lt}")
+                break
+            review_results[lt] = r
+
+    # Priority 2: ASIN mode (if category failed)
+    if not category_mode_success or not category_path:
+        log("  → Falling back to ASIN mode...")
+        # Pick ASINs with ratingCount >= 50
+        review_asins = [p.get("asin") for p in all_products if (p.get("ratingCount") or 0) >= 50][:3]
+        if review_asins:
+            for lt in label_types:
+                if lt in review_results:
+                    continue
+                log(f"  → reviews/analyze ASIN mode: {lt} ({review_asins})")
+                r = safe_call("reviews/analyze", {
+                    "asins": review_asins,
+                    "mode": "asin",
+                    "labelType": lt,
+                    "period": "6m",
+                }, f"reviews ASIN {lt}")
+                review_results[lt] = r
+
+    results["reviews"] = review_results
+    results["meta"]["review_mode"] = "category" if category_mode_success and category_path else "asin"
+    results["meta"]["steps_completed"].append("consumer_insights")
+
+    # ── Summary ──
+    log(f"\n✅ Market entry analysis complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Products: {len(all_products)} | Realtime: {len(realtime_details)} | History: {len(history_data)}")
+    log(f"   Reviews mode: {results['meta']['review_mode']}")
+    
+    output(results, args.format)
+
+
+def cmd_competitor_analysis(args):
+    """
+    Composite workflow: Competitor War Room.
+    Discovers and deeply analyzes competitors with battle-ready insights.
+    """
+    keyword = args.keyword
+    my_asin = getattr(args, 'my_asin', None)
+    category = args.category
+
+    if not keyword and not my_asin:
+        print("ERROR: --keyword or --my-asin is required.", file=sys.stderr)
+        sys.exit(1)
+
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"keyword": keyword, "my_asin": my_asin, "category": category, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Category Resolution
+    if not category_path:
+        if keyword:
+            log("Step 0: Resolving category...")
+            cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+            results["categories"] = cat_result
+            cat_data = cat_result.get("data", [])
+            if cat_data:
+                category_path = cat_data[0].get("categoryPath")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Competitor Discovery
+    log("Step 1/7: Competitor discovery...")
+    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        prod_params["keyword"] = keyword
+    if category_path:
+        prod_params["categoryPath"] = category_path
+    results["products"] = safe_call("products/search", prod_params, "products")
+
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["meta"]["steps_completed"].append("competitor_discovery")
+
+    # Step 2: Market Context
+    log("Step 2/7: Market context...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat-only)")
+    results["brand_overview"] = r
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_context")
+
+    # Step 3: Price Landscape
+    log("Step 3/7: Price landscape...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "pbo")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "pbd")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_landscape")
+
+    # Step 4: Deep Realtime for Top 10
+    log("Step 4/7: Realtime deep-dive (Top 10)...")
+    all_products = results["products"].get("data", [])
+    if not isinstance(all_products, list):
+        all_products = []
+    seen = set()
+    top_asins = []
+    for p in all_products:
+        parent = p.get("parentAsin") or p.get("asin")
+        asin = p.get("asin")
+        if parent not in seen:
+            seen.add(parent)
+            if my_asin and asin == my_asin:
+                continue
+            top_asins.append(asin)
+        if len(top_asins) >= 10:
+            break
+
+    realtime_details = []
+    for asin in top_asins:
+        log(f"  → {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"rt {asin}")
+        realtime_details.append({"asin": asin, "result": r})
+    results["realtime"] = realtime_details
+    results["meta"]["steps_completed"].append("realtime_deepdive")
+
+    # Step 5: Historical Trends
+    log("Step 5/7: Historical trends...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    history_asins = ([my_asin] if my_asin else []) + top_asins[:5]
+    r = safe_call("products/product-history", {
+        "asins": history_asins[:8], "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins[:8]}
+    results["meta"]["steps_completed"].append("historical_trends")
+
+    # Step 6: Review Intelligence
+    log("Step 6/7: Review intelligence...")
+    review_results = {}
+    for asin in top_asins[:5]:
+        r = safe_call("reviews/analyze", {
+            "asins": [asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {asin}")
+        if r.get("data") and r.get("data", {}).get("consumerInsights"):
+            review_results[asin] = r
+    if not review_results and category_path:
+        log("  → Falling back to category mode...")
+        for lt in ["painPoints", "buyingFactors"]:
+            review_results[lt] = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews cat {lt}")
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_intelligence")
+
+    # Step 7: Brand Drill-Down
+    log("Step 7/7: Brand drill-down...")
+    brands = results.get("brand_detail", {}).get("data", {}).get("brands", [])
+    if brands:
+        top_brand = brands[0].get("brandName")
+        if top_brand:
+            bp = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            if keyword:
+                bp["keyword"] = keyword
+            if category_path:
+                bp["categoryPath"] = category_path
+            bp["includeBrands"] = top_brand
+            results["top_brand_products"] = safe_call("products/search", bp, f"brand {top_brand}")
+    results["meta"]["steps_completed"].append("brand_drilldown")
+
+    log(f"\n✅ Competitor analysis complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Competitors: {len(realtime_details)} | Reviews: {len(review_results)}")
+    output(results, args.format)
+
+
+def cmd_pricing_analysis(args):
+    """
+    Composite workflow: Pricing Analysis.
+    Runs: realtime(my_asin) → price-band → products/competitors → market/brand → history → realtime(top5) → reviews
+    """
+    my_asin = args.my_asin
+    keyword = args.keyword
+    category = args.category
+
+    if not my_asin:
+        print("ERROR: --my-asin is required.", file=sys.stderr)
+        sys.exit(1)
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"my_asin": my_asin, "keyword": keyword, "category": category, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Step 0.5: Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Current Price Snapshot
+    log("Step 1/8: Current price snapshot...")
+    results["my_product"] = safe_call("realtime/product", {"asin": my_asin, "marketplace": "US"}, f"realtime {my_asin}")
+    results["meta"]["steps_completed"].append("price_snapshot")
+
+    # Step 2: Price Band Intelligence
+    log("Step 2/8: Price band intelligence...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "price-band-overview")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat-only)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "price-band-detail")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat-only)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_bands")
+
+    # Step 3: Competitor Price Landscape
+    log("Step 3/8: Competitor price landscape...")
+    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        prod_params["keyword"] = keyword
+    if category_path:
+        prod_params["categoryPath"] = category_path
+    results["products"] = safe_call("products/search", prod_params, "products")
+
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["meta"]["steps_completed"].append("competitor_landscape")
+
+    # Step 4: Market Benchmarks
+    log("Step 4/8: Market benchmarks...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat-only)")
+    results["brand_overview"] = r
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_benchmarks")
+
+    # Step 5: Historical Price Trends
+    log("Step 5/8: Historical price trends...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    
+    comp_data = results["products"].get("data", [])
+    comp_asins = []
+    seen = set()
+    for p in (comp_data if isinstance(comp_data, list) else []):
+        parent = p.get("parentAsin") or p.get("asin")
+        asin = p.get("asin")
+        if parent not in seen and asin != my_asin:
+            seen.add(parent)
+            comp_asins.append(asin)
+        if len(comp_asins) >= 4:
+            break
+
+    history_asins = [my_asin] + comp_asins
+    r = safe_call("products/product-history", {
+        "asins": history_asins, "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins}
+    results["meta"]["steps_completed"].append("price_trends")
+
+    # Step 6: Realtime Competitor Deep-Dive (Top 5)
+    log("Step 6/8: Realtime competitor deep-dive...")
+    comp_realtime = []
+    for asin in comp_asins[:5]:
+        log(f"  → Realtime: {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+        comp_realtime.append({"asin": asin, "result": r})
+    results["comp_realtime"] = comp_realtime
+    results["meta"]["steps_completed"].append("comp_deepdive")
+
+    # Step 7: Review Context
+    log("Step 7/8: Review context...")
+    review_results = {}
+    my_rc = results["my_product"].get("data", {}).get("ratingCount", 0)
+    if my_rc and my_rc >= 50:
+        review_results["my_asin"] = safe_call("reviews/analyze", {
+            "asins": [my_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {my_asin}")
+    if comp_asins:
+        review_results["top_comp"] = safe_call("reviews/analyze", {
+            "asins": [comp_asins[0]], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {comp_asins[0]}")
+    if not review_results and category_path:
+        for lt in ["painPoints", "buyingFactors"]:
+            review_results[lt] = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews cat {lt}")
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_context")
+
+    # Step 8: Price Drill-Down (opportunity band)
+    log("Step 8/8: Price drill-down...")
+    pbo_data = results.get("price_band_overview", {}).get("data", {})
+    best_band = pbo_data.get("bestOpportunityBand", {}) if pbo_data else {}
+    if best_band and best_band.get("sampleBandMinPrice") and best_band.get("sampleBandMaxPrice"):
+        drill_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc",
+                        "priceMin": best_band["sampleBandMinPrice"], "priceMax": best_band["sampleBandMaxPrice"]}
+        if keyword:
+            drill_params["keyword"] = keyword
+        if category_path:
+            drill_params["categoryPath"] = category_path
+        results["price_drilldown"] = safe_call("products/search", drill_params, "price drill-down")
+    results["meta"]["steps_completed"].append("price_drilldown")
+
+    log(f"\n✅ Pricing analysis complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    output(results, args.format)
+
+
+def cmd_daily_radar(args):
+    """
+    Composite workflow: Daily Market Radar.
+    Runs realtime snapshots → historical comparison → market pulse → 
+    new competitor detection → price landscape → review pulse.
+    Designed for unattended daily monitoring.
+    """
+    asins_str = args.asins
+    keyword = args.keyword
+    category = args.category
+
+    if not asins_str:
+        print("ERROR: --asins is required (comma-separated ASINs to track).", file=sys.stderr)
+        sys.exit(1)
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    tracked_asins = [a.strip() for a in asins_str.split(",") if a.strip()]
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"asins": tracked_asins, "keyword": keyword, "category": category, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Step 0.5: Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Realtime Snapshot for All Tracked ASINs
+    log(f"Step 1/7: Realtime snapshot ({len(tracked_asins)} ASINs)...")
+    realtime_snapshots = []
+    for asin in tracked_asins:
+        log(f"  → {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+        realtime_snapshots.append({"asin": asin, "result": r})
+    results["realtime"] = realtime_snapshots
+    results["meta"]["steps_completed"].append("realtime_snapshot")
+
+    # Step 2: Historical Comparison (7-day)
+    log("Step 2/7: Historical comparison (7 days)...")
+    today = time.strftime("%Y-%m-%d")
+    seven_days_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 7 * 86400))
+    
+    history_data = []
+    tried_asins = set()
+    
+    # Round 1: All tracked ASINs
+    r = safe_call("products/product-history", {
+        "asins": tracked_asins,
+        "startDate": seven_days_ago,
+        "endDate": today,
+    }, "product-history round 1")
+    history_data = r.get("data", [])
+    tried_asins.update(tracked_asins)
+
+    results["product_history"] = {"data": history_data, "asins_tried": list(tried_asins)}
+    log(f"  → {len(history_data)} history records")
+    results["meta"]["steps_completed"].append("historical_comparison")
+
+    # Step 3: Market Pulse
+    log("Step 3/7: Market pulse...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    # Brand overview + detail
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            brand_params_co = {k: v for k, v in brand_params.items() if k != "keyword"}
+            r = safe_call("products/brand-overview", brand_params_co, "brand-overview (category-only)")
+    results["brand_overview"] = r
+
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            brand_params_co = {k: v for k, v in brand_params.items() if k != "keyword"}
+            r = safe_call("products/brand-detail", brand_params_co, "brand-detail (category-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_pulse")
+
+    # Step 4: New Competitor Detection
+    log("Step 4/7: New competitor detection...")
+    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        prod_params["keyword"] = keyword
+    if category_path:
+        prod_params["categoryPath"] = category_path
+    results["top_products"] = safe_call("products/search", prod_params, "products top 20")
+    results["meta"]["steps_completed"].append("competitor_detection")
+
+    # Step 5: Price Landscape
+    log("Step 5/7: Price landscape...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+
+    r = safe_call("products/price-band-overview", dict(pb_params), "price-band-overview")
+    if not r.get("data"):
+        if keyword and category_path:
+            pb_co = {k: v for k, v in pb_params.items() if k != "keyword"}
+            r = safe_call("products/price-band-overview", pb_co, "price-band-overview (category-only)")
+    results["price_band_overview"] = r
+
+    r = safe_call("products/price-band-detail", dict(pb_params), "price-band-detail")
+    if not r.get("data"):
+        if keyword and category_path:
+            pb_co = {k: v for k, v in pb_params.items() if k != "keyword"}
+            r = safe_call("products/price-band-detail", pb_co, "price-band-detail (category-only)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_landscape")
+
+    # Step 6: Review Pulse (ASIN mode for tracked products)
+    log("Step 7/7: Review pulse...")
+    review_results = {}
+    # Pick first tracked ASIN with enough reviews
+    for snap in realtime_snapshots:
+        rc = snap.get("result", {}).get("data", {}).get("ratingCount", 0)
+        if rc and rc >= 50:
+            review_asin = snap["asin"]
+            log(f"  → Analyzing reviews for {review_asin} ({rc} reviews)")
+            r = safe_call("reviews/analyze", {
+                "asins": [review_asin],
+                "mode": "asin",
+                "labelType": "painPoints",
+                "period": "6m",
+            }, f"reviews {review_asin}")
+            review_results["painPoints"] = r
+            break
+    
+    if not review_results:
+        log("  ⚠️ No tracked ASIN with ≥50 reviews, using ratingBreakdown from realtime")
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_pulse")
+
+    # Summary
+    log(f"\n✅ Daily radar scan complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   ASINs tracked: {len(tracked_asins)} | History: {len(history_data)} records")
+
+    output(results, args.format)
+
+
+def cmd_listing_audit(args):
+    """
+    Composite workflow: Listing Audit.
+    Audits a product listing against category leaders across all dimensions.
+    Runs: realtime(target) → products(leaders) → realtime(top5) → market → brand → price-band → reviews → history
+    """
+    my_asin = args.my_asin
+    keyword = args.keyword
+    category = args.category
+
+    if not my_asin:
+        print("ERROR: --my-asin is required.", file=sys.stderr)
+        sys.exit(1)
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"my_asin": my_asin, "keyword": keyword, "category": category, "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Step 0.5: Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Audit Target
+    log("Step 1/7: Auditing target listing...")
+    results["target_realtime"] = safe_call("realtime/product", {"asin": my_asin, "marketplace": "US"}, f"realtime {my_asin}")
+    results["meta"]["steps_completed"].append("audit_target")
+
+    # Step 2: Category Leaders
+    log("Step 2/7: Finding category leaders...")
+    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        prod_params["keyword"] = keyword
+    if category_path:
+        prod_params["categoryPath"] = category_path
+    results["leader_products"] = safe_call("products/search", prod_params, "products leaders")
+
+    comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
+                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    if keyword:
+        comp_params["keyword"] = keyword
+    if category_path:
+        comp_params["categoryPath"] = category_path
+    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["meta"]["steps_completed"].append("category_leaders")
+
+    # Step 3: Benchmark Realtime (Top 5 leaders, deduplicated)
+    log("Step 3/7: Realtime benchmark for Top 5 leaders...")
+    leader_data = results["leader_products"].get("data", [])
+    if isinstance(leader_data, list):
+        seen_parents = set()
+        leader_asins = []
+        for p in leader_data:
+            parent = p.get("parentAsin") or p.get("asin")
+            asin = p.get("asin")
+            if parent not in seen_parents and asin != my_asin:
+                seen_parents.add(parent)
+                leader_asins.append(asin)
+            if len(leader_asins) >= 5:
+                break
+    else:
+        leader_asins = []
+
+    leader_realtime = []
+    for asin in leader_asins:
+        log(f"  → Realtime: {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"realtime {asin}")
+        leader_realtime.append({"asin": asin, "result": r})
+    results["leader_realtime"] = leader_realtime
+    results["meta"]["steps_completed"].append("benchmark_realtime")
+
+    # Step 4: Market Context
+    log("Step 4/7: Market context...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "brand-overview (cat-only)")
+    results["brand_overview"] = r
+
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "brand-detail (cat-only)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_context")
+
+    # Step 5: Price Context
+    log("Step 5/7: Price context...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "price-band-overview")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat-only)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "price-band-detail")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat-only)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_context")
+
+    # Step 6: Review Intelligence
+    log("Step 6/7: Review intelligence...")
+    review_results = {}
+    # ASIN mode first (my_asin + top leader)
+    target_rc = results["target_realtime"].get("data", {}).get("ratingCount", 0)
+    if target_rc and target_rc >= 50:
+        log(f"  → reviews/analyze ASIN mode: {my_asin}")
+        review_results["my_asin"] = safe_call("reviews/analyze", {
+            "asins": [my_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {my_asin}")
+    if leader_asins:
+        top_leader = leader_asins[0]
+        log(f"  → reviews/analyze ASIN mode: {top_leader}")
+        review_results["top_leader"] = safe_call("reviews/analyze", {
+            "asins": [top_leader], "mode": "asin", "labelType": "painPoints", "period": "6m"
+        }, f"reviews {top_leader}")
+    # Category fallback
+    if not review_results and category_path:
+        log("  → Falling back to category mode...")
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            review_results[lt] = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews category {lt}")
+    results["reviews"] = review_results
+    results["meta"]["steps_completed"].append("review_intelligence")
+
+    # Step 7: Trend Context
+    log("Step 7/7: Trend context...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    history_asins = [my_asin] + leader_asins[:2]
+    r = safe_call("products/product-history", {
+        "asins": history_asins, "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins}
+    results["meta"]["steps_completed"].append("trend_context")
+
+    log(f"\n✅ Listing audit complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Target: {my_asin} | Leaders: {len(leader_asins)} | Reviews: {len(review_results)}")
+    output(results, args.format)
+
+
+def cmd_opportunity_scan(args):
+    """
+    Composite workflow: Opportunity Discovery.
+    Supports TWO scanning approaches:
+    1. Mode-based: uses 14 preset modes (beginner, emerging, underserved, etc.)
+    2. Custom filters: user-defined criteria (sales-min, ratings-max, price-min/max, rating-max)
+    Both can be combined — mode presets + custom overrides.
+    """
+    keyword = args.keyword
+    category = args.category
+    modes_str = getattr(args, 'modes', None)
+    
+    # Custom filter params
+    sales_min = getattr(args, 'sales_min', None)
+    sales_max = getattr(args, 'sales_max', None)
+    ratings_max = getattr(args, 'ratings_max', None)
+    price_min = getattr(args, 'price_min', None)
+    price_max = getattr(args, 'price_max', None)
+    rating_max = getattr(args, 'rating_max', None)
+    rating_min = getattr(args, 'rating_min', None)
+
+    if not keyword and not category:
+        print("ERROR: --keyword or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine scan strategy
+    has_custom_filters = any(v is not None for v in [sales_min, sales_max, ratings_max, price_min, price_max, rating_max, rating_min])
+    
+    if modes_str:
+        modes = [m.strip() for m in modes_str.split(",")]
+    elif has_custom_filters:
+        modes = ["custom"]  # Custom-only scan
+    else:
+        modes = ["beginner", "emerging", "underserved"]  # Default modes
+    
+    category_path = parse_category(category) if category else None
+    results = {"meta": {"keyword": keyword, "category": category, "modes": modes, 
+                        "custom_filters": {k: v for k, v in {"sales_min": sales_min, "sales_max": sales_max,
+                            "ratings_max": ratings_max, "price_min": price_min, "price_max": price_max,
+                            "rating_max": rating_max, "rating_min": rating_min}.items() if v is not None},
+                        "steps_completed": []}}
+
+    def log(msg):
+        print(msg, file=sys.stderr)
+
+    def safe_call(endpoint, params, label=""):
+        r = api_call(endpoint, params)
+        if r.get("success") is False:
+            log(f"  ⚠️ {label or endpoint}: {r.get('error', {}).get('message', 'failed')}")
+        return r
+
+    # Category Resolution
+    if not category_path and keyword:
+        log("Step 0: Resolving category...")
+        cat_result = safe_call("categories", {"categoryKeyword": keyword}, "categories")
+        results["categories"] = cat_result
+        cat_data = cat_result.get("data", [])
+        if cat_data:
+            category_path = cat_data[0].get("categoryPath")
+            log(f"  → Locked: {' > '.join(category_path)}")
+    results["meta"]["resolved_category"] = category_path
+
+    # Step 1: Product Scan (mode-based + custom filters)
+    scan_label = f"{len(modes)} modes" if "custom" not in modes else "custom filters"
+    log(f"Step 1/6: Product scan ({scan_label})...")
+    all_candidates = {}  # asin → product data (deduplicated)
+    mode_results = {}
+    
+    # Build custom filter params (applied to ALL scans)
+    custom_params = {}
+    if sales_min is not None:
+        custom_params["monthlySalesMin"] = sales_min
+    if sales_max is not None:
+        custom_params["monthlySalesMax"] = sales_max
+    if ratings_max is not None:
+        custom_params["ratingCountMax"] = ratings_max
+    if price_min is not None:
+        custom_params["priceMin"] = price_min
+    if price_max is not None:
+        custom_params["priceMax"] = price_max
+    if rating_max is not None:
+        custom_params["ratingMax"] = rating_max
+    if rating_min is not None:
+        custom_params["ratingMin"] = rating_min
+    
+    for mode in modes:
+        log(f"  → {'Custom filters' if mode == 'custom' else f'Mode: {mode}'}")
+        mode_products = []
+        for page in range(1, 6):  # 5 pages per mode (100 products max)
+            prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            if keyword:
+                prod_params["keyword"] = keyword
+            if category_path:
+                prod_params["categoryPath"] = category_path
+            # Apply mode preset (skip for "custom" mode)
+            if mode != "custom" and mode in PRODUCT_MODES:
+                prod_params.update(PRODUCT_MODES[mode])
+            # Apply custom filters ON TOP of mode (custom overrides mode defaults)
+            prod_params.update(custom_params)
+            r = safe_call("products/search", prod_params, f"products {mode} p{page}")
+            items = r.get("data", [])
+            if isinstance(items, list):
+                mode_products.extend(items)
+            if not items:
+                break
+        mode_results[mode] = mode_products
+        for p in mode_products:
+            asin = p.get("asin")
+            if asin and asin not in all_candidates:
+                all_candidates[asin] = p
+        log(f"    → {len(mode_products)} products, {len(all_candidates)} unique total")
+    
+    # Log actual search parameters for transparency
+    if custom_params:
+        log(f"  → Custom filters applied: {custom_params}")
+    
+    results["scan_results"] = {m: len(ps) for m, ps in mode_results.items()}
+    results["meta"]["total_candidates"] = len(all_candidates)
+    results["meta"]["steps_completed"].append("product_scan")
+
+    # Step 2: Market Context
+    log("Step 2/6: Market context...")
+    market_params = {"topN": "10", "pageSize": 20}
+    if category_path:
+        market_params["categoryPath"] = category_path
+    elif keyword:
+        market_params["categoryKeyword"] = keyword
+    results["market"] = safe_call("markets/search", market_params, "market")
+
+    brand_params = {"pageSize": 20}
+    if category_path:
+        brand_params["categoryPath"] = category_path
+    if keyword:
+        brand_params["keyword"] = keyword
+    r = safe_call("products/brand-overview", dict(brand_params), "brand-overview")
+    if not r.get("data") or r.get("data", {}).get("sampleBrandCount", 0) == 0:
+        if keyword and category_path:
+            r = safe_call("products/brand-overview", {"categoryPath": category_path, "pageSize": 20}, "bo (cat)")
+    results["brand_overview"] = r
+    r = safe_call("products/brand-detail", dict(brand_params), "brand-detail")
+    if not r.get("data") or not r.get("data", {}).get("brands"):
+        if keyword and category_path:
+            r = safe_call("products/brand-detail", {"categoryPath": category_path, "pageSize": 20}, "bd (cat)")
+    results["brand_detail"] = r
+    results["meta"]["steps_completed"].append("market_context")
+
+    # Step 3: Price Opportunity
+    log("Step 3/6: Price opportunity...")
+    pb_params = {"pageSize": 20}
+    if category_path:
+        pb_params["categoryPath"] = category_path
+    if keyword:
+        pb_params["keyword"] = keyword
+    r = safe_call("products/price-band-overview", dict(pb_params), "pbo")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-overview", {"categoryPath": category_path, "pageSize": 20}, "pbo (cat)")
+    results["price_band_overview"] = r
+    r = safe_call("products/price-band-detail", dict(pb_params), "pbd")
+    if not r.get("data") and keyword and category_path:
+        r = safe_call("products/price-band-detail", {"categoryPath": category_path, "pageSize": 20}, "pbd (cat)")
+    results["price_band_detail"] = r
+    results["meta"]["steps_completed"].append("price_opportunity")
+
+    # Step 4: Realtime Validation for Top 10
+    log("Step 4/6: Realtime validation (Top 10)...")
+    sorted_candidates = sorted(all_candidates.values(), key=lambda x: x.get("atLeastMonthlySales") or 0, reverse=True)
+    seen = set()
+    top_asins = []
+    for p in sorted_candidates:
+        parent = p.get("parentAsin") or p.get("asin")
+        if parent not in seen:
+            seen.add(parent)
+            top_asins.append(p.get("asin"))
+        if len(top_asins) >= 10:
+            break
+
+    realtime_details = []
+    for asin in top_asins:
+        log(f"  → {asin}")
+        r = safe_call("realtime/product", {"asin": asin, "marketplace": "US"}, f"rt {asin}")
+        realtime_details.append({"asin": asin, "result": r})
+    results["realtime"] = realtime_details
+    results["meta"]["steps_completed"].append("realtime_validation")
+
+    # Step 5: Trend Check (Top 5)
+    log("Step 5/6: Trend check...")
+    today = time.strftime("%Y-%m-%d")
+    thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
+    r = safe_call("products/product-history", {
+        "asins": top_asins[:5], "startDate": thirty_ago, "endDate": today
+    }, "product-history")
+    results["product_history"] = {"data": r.get("data", []), "asins_tried": top_asins[:5]}
+    results["meta"]["steps_completed"].append("trend_check")
+
+    # Step 6: Consumer Insights (Top 3, category mode first)
+    log("Step 6/6: Consumer insights...")
+    review_results = {}
+    if category_path:
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            log(f"  → category mode: {lt}")
+            r = safe_call("reviews/analyze", {
+                "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
+            }, f"reviews {lt}")
+            if r.get("data") and r.get("data", {}).get("consumerInsights"):
+                review_results[lt] = r
+            else:
+                break
+    if not review_results:
+        log("  → Falling back to ASIN mode...")
+        review_asins = [a for a in top_asins[:3]]
+        for lt in ["painPoints", "buyingFactors", "improvements"]:
+            r = safe_call("reviews/analyze", {
+                "asins": review_asins, "mode": "asin", "labelType": lt, "period": "6m"
+            }, f"reviews ASIN {lt}")
+            review_results[lt] = r
+    results["reviews"] = review_results
+    results["meta"]["review_mode"] = "category" if category_path and review_results.get("painPoints", {}).get("data", {}).get("consumerInsights") else "asin"
+    results["meta"]["steps_completed"].append("consumer_insights")
+
+    # All candidates as structured list
+    results["all_candidates"] = sorted_candidates[:50]  # Top 50 for report
+
+    log(f"\n✅ Opportunity scan complete!")
+    log(f"   Steps: {', '.join(results['meta']['steps_completed'])}")
+    log(f"   Modes: {modes} | Candidates: {len(all_candidates)} | Realtime: {len(realtime_details)}")
+    output(results, args.format)
+
+
 def cmd_review_deepdive(args):
     """
     Composite workflow: Review Intelligence Deep Dive.
@@ -941,6 +2124,54 @@ Examples:
     p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
     p_opp.add_argument("--mode", help="Product search mode preset")
     p_opp.set_defaults(func=cmd_opportunity)
+
+    # ── market-entry (composite: full analysis) ──
+    p_me = sub.add_parser("market-entry", help="Full market entry analysis (runs ALL endpoints automatically)")
+    p_me.add_argument("--keyword", help="Product keyword or niche")
+    p_me.add_argument("--category", help="Category path (e.g. 'Sports & Outdoors>Sports Sunglasses')")
+    p_me.set_defaults(func=cmd_market_entry)
+
+    # ── competitor-analysis (composite) ──
+    p_ca = sub.add_parser("competitor-analysis", help="Full competitor war room analysis")
+    p_ca.add_argument("--keyword", help="Product keyword to discover competitors")
+    p_ca.add_argument("--my-asin", help="Your product ASIN (optional)")
+    p_ca.add_argument("--category", help="Category path")
+    p_ca.set_defaults(func=cmd_competitor_analysis)
+
+    # ── pricing-analysis (composite) ──
+    p_pa = sub.add_parser("pricing-analysis", help="Full pricing analysis with competitor benchmarking")
+    p_pa.add_argument("--my-asin", required=True, help="Your product ASIN")
+    p_pa.add_argument("--keyword", help="Product keyword for market context")
+    p_pa.add_argument("--category", help="Category path")
+    p_pa.set_defaults(func=cmd_pricing_analysis)
+
+    # ── daily-radar (composite) ──
+    p_dr = sub.add_parser("daily-radar", help="Daily market monitoring scan (runs all tracking endpoints)")
+    p_dr.add_argument("--asins", required=True, help="Tracked ASINs (comma-separated, your products + competitors)")
+    p_dr.add_argument("--keyword", help="Category keyword for market monitoring")
+    p_dr.add_argument("--category", help="Category path")
+    p_dr.set_defaults(func=cmd_daily_radar)
+
+    # ── listing-audit (composite) ──
+    p_la = sub.add_parser("listing-audit", help="Full listing audit against category leaders")
+    p_la.add_argument("--my-asin", required=True, help="ASIN to audit")
+    p_la.add_argument("--keyword", help="Primary keyword for benchmark context")
+    p_la.add_argument("--category", help="Category path")
+    p_la.set_defaults(func=cmd_listing_audit)
+
+    # ── opportunity-scan (composite) ──
+    p_os = sub.add_parser("opportunity-scan", help="Multi-mode product opportunity discovery")
+    p_os.add_argument("--keyword", help="Category keyword to scan")
+    p_os.add_argument("--category", help="Category path")
+    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. beginner,emerging,underserved). Omit to use custom filters only.")
+    p_os.add_argument("--sales-min", type=int, help="Min monthly sales (e.g. 300)")
+    p_os.add_argument("--sales-max", type=int, help="Max monthly sales")
+    p_os.add_argument("--ratings-max", type=int, help="Max review count (e.g. 100 for blue ocean)")
+    p_os.add_argument("--price-min", type=float, help="Min price (e.g. 15)")
+    p_os.add_argument("--price-max", type=float, help="Max price (e.g. 35)")
+    p_os.add_argument("--rating-max", type=float, help="Max rating (e.g. 4.3 for improvement opportunity)")
+    p_os.add_argument("--rating-min", type=float, help="Min rating")
+    p_os.set_defaults(func=cmd_opportunity_scan)
 
     # ── review-deepdive (composite) ──
     p_rd = sub.add_parser("review-deepdive", help="Full 11-dimension review intelligence analysis")

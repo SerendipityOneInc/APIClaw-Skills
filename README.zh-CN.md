@@ -50,7 +50,7 @@
 
 | 技能 | 说明 | 适用场景 |
 |------|------|----------|
-| ⚔️ [`amazon-competitor-war-room/`](amazon-competitor-war-room/) | 实时竞品监控与应对策略 | 竞品追踪，价格战 |
+| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | 竞品情报监控与三级告警 | 竞品追踪，价格战 |
 | 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | 每日市场脉搏与异常检测 | 晨报简报，趋势预警 |
 | ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | Listing 质量全面审计与优化 | Listing 健康检查，转化率提升 |
 | 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | 新品类市场可行性评估 | Go/No-go 决策，市场规模评估 |
@@ -169,7 +169,7 @@ python amazon-analysis/scripts/apiclaw.py products --keyword "wireless earbuds" 
 │   └── scripts/
 │       └── apiclaw.py                      # CLI 工具 — 8 个子命令，14 种预设模式
 │
-├── amazon-competitor-war-room/           # 竞品监控与应对
+├── amazon-competitor-intelligence-monitor/  # 竞品情报监控
 │   ├── SKILL.md
 │   ├── references/
 │   │   └── reference.md

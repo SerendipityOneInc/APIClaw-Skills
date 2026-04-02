@@ -26,3 +26,8 @@ config.json
 
 # Logs
 *.log
+
+# Runtime data (auto-created by skills)
+**/monitor-data/
+**/scan-data/
+**/data/
