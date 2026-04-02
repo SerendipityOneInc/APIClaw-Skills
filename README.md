@@ -48,7 +48,7 @@ This repo contains **9 agent skills** organized in two tiers:
 
 | Skill | Description | Best For |
 |-------|------------|----------|
-| ⚔️ [`amazon-competitor-war-room/`](amazon-competitor-war-room/) | Real-time competitive monitoring and response strategy | Tracking competitors, price wars |
+| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | Competitor intelligence with continuous monitoring & tiered alerts | Tracking competitors, price wars |
 | 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | Daily market pulse check and anomaly detection | Morning briefings, trend alerts |
 | ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | Comprehensive listing quality audit and optimization | Listing health checks, conversion improvement |
 | 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | Market viability assessment for new category entry | Go/no-go decisions, market sizing |
@@ -167,7 +167,7 @@ The `products/search` endpoint supports 14 preset modes for different research s
 │   └── scripts/
 │       └── apiclaw.py                      # CLI — 8 subcommands, 14 preset modes
 │
-├── amazon-competitor-war-room/           # Competitive monitoring & response
+├── amazon-competitor-intelligence-monitor/  # Competitor intelligence & monitoring
 │   ├── SKILL.md
 │   ├── references/
 │   │   └── reference.md
