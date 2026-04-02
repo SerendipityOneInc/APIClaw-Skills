@@ -30,7 +30,6 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 
 ## Input
 - **Required**: one or more ASINs (your products). No keyword needed — category is auto-detected.
-- **Recommended**: cost/COGS per ASIN (if if cost is in RMB (¥), ÷7.2 to USD), target_margin %
 - **Optional**: competitor_asins
 
 On first interaction, tell user: "Give me your ASIN(s). I support single or batch analysis — I'll auto-detect each product's category and analyze the pricing landscape for you."
