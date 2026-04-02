@@ -36,7 +36,6 @@ Select **Amazon Pricing Command Center** when prompted.
 - *"Analyze the pricing strategy for ASIN B0XXXXXXXX"*
 - *"Analyze pricing for these 5 ASINs: B0AAA, B0BBB, B0CCC, B0DDD, B0EEE"*
 - *"My COGS is $8, current price $24.99 — am I leaving money on the table?"*
-- *"Should I raise or lower the price? ASIN B0XXXXXXXX, COGS ¥45"*
 
 ## What You Get
 
