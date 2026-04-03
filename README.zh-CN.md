@@ -75,13 +75,13 @@ npx skills add SerendipityOneInc/APIClaw-Skills
 
 **⚡ 专项层：**
 - **Amazon Competitor Intelligence Monitor** — 双模式竞品情报与三级告警
-- **Amazon Daily Market Radar — Automated Monitoring & Alerts**
-- **Amazon Listing Audit Pro — 8-Dimension Health Check**
-- **Amazon Market Entry Analyzer — GO/CAUTION/AVOID Verdicts**
-- **Amazon Market Trend Scanner — Daily Category Radar**
-- **Amazon Opportunity Discoverer — Niche Scanner & Scoring**
-- **Amazon Pricing Command Center — RAISE/HOLD/LOWER Signals**
-- **Amazon Review Intelligence Extractor — Consumer Insights from 1B+ Reviews**
+- **Amazon Daily Market Radar** — 每日市场脉搏与异常检测
+- **Amazon Listing Audit Pro** — 8 维度 Listing 健康检查与优化
+- **Amazon Market Entry Analyzer** — 一键市场可行性评估，GO/CAUTION/AVOID 判定
+- **Amazon Market Trend Scanner** — 品类全景扫描与趋势发现
+- **Amazon Opportunity Discoverer** — 基于卖家画像的选品扫描与 7 维度评分
+- **Amazon Pricing Command Center** — 数据驱动定价信号，RAISE/HOLD/LOWER
+- **Amazon Review Intelligence Extractor** — 10 亿+评论消费者洞察，11 个分析维度
 
 也可以手动克隆：
 ```bash
