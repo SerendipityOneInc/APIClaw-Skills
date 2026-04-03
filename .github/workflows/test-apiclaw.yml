@@ -1,0 +1,38 @@
+name: Test apiclaw.py
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apiclaw/scripts/apiclaw.py'
+      - 'amazon-*/scripts/apiclaw.py'
+      - 'tests/test_apiclaw*.py'
+  push:
+    branches: [main]
+    paths:
+      - 'apiclaw/scripts/apiclaw.py'
+      - 'tests/test_apiclaw*.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # No dependencies needed — stdlib only
+
+      - name: Run test suite
+        run: python tests/test_apiclaw.py
+
+      - name: Run page-arg regression tests
+        run: python tests/test_apiclaw_page_arg.py
