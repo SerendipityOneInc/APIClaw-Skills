@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/sync-scripts.sh
-# 将 shared/scripts/apiclaw.py 同步到所有 amazon-* skill 目录
+# 将 apiclaw/scripts/apiclaw.py 同步到所有 amazon-* skill 目录
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -38,7 +38,7 @@ for skill_dir in "$REPO_ROOT"/amazon-*/; do
       ((changed++))
     else
       echo "  CONFLICT $skill_name — scripts/apiclaw.py 与真源不一致且不含 AUTO-SYNCED 标记"
-      echo "           请勿手动编辑副本，改动应提交到 shared/scripts/apiclaw.py"
+      echo "           请勿手动编辑副本，改动应提交到 apiclaw/scripts/apiclaw.py"
       ((conflict++))
     fi
   fi
