@@ -70,8 +70,8 @@ npx skills add SerendipityOneInc/APIClaw-Skills
 安装时会提示选择技能：
 
 **🏗️ 基础层：**
-- **APIClaw — Amazon Commerce Data, 11 Endpoints**
-- **Amazon Analysis — Full-Spectrum Research & Seller Intelligence**
+- **APIClaw** — 数据层概览，11 个 API 接口，快速集成
+- **Amazon Analysis** — 13 种选品模式，市场验证，竞品情报
 
 **⚡ 专项层：**
 - **Amazon Competitor Intelligence Monitor** — 双模式竞品情报与三级告警
