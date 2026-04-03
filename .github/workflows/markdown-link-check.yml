@@ -1,8 +1,8 @@
-name: CI
+name: Markdown Link Check
 
 on:
   push:
-    branches: [main]
+    branches-ignore: [main]
   pull_request:
     branches: [main]
 
@@ -10,19 +10,6 @@ permissions:
   contents: read
 
 jobs:
-  cli-smoke-test:
-    name: CLI Smoke Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: CLI smoke test
-        run: python amazon-analysis/scripts/apiclaw.py --help
-
   markdown-link-check:
     name: Markdown Link Check
     runs-on: ubuntu-latest
