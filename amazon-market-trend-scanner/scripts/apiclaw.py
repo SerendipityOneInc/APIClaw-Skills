@@ -278,6 +278,8 @@ def cmd_market(args):
         params["topN"] = str(args.topn)
     if args.page_size:
         params["pageSize"] = args.page_size
+    if args.page:
+        params["page"] = args.page
     if args.sort:
         params["sortBy"] = args.sort
     if args.order:
@@ -351,6 +353,7 @@ def cmd_products(args):
     params["sortBy"] = args.sort or "atLeastMonthlySales"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
+    params["page"] = args.page or 1
 
     result = api_call("products/search", params)
 
@@ -1978,6 +1981,7 @@ def cmd_price_band_overview(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
     params["pageSize"] = args.page_size or 20
+    params["page"] = args.page or 1
     result = api_call("products/price-band-overview", params)
     output(result, args.format)
 
@@ -1990,6 +1994,7 @@ def cmd_price_band_detail(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
     params["pageSize"] = args.page_size or 20
+    params["page"] = args.page or 1
     result = api_call("products/price-band-detail", params)
     output(result, args.format)
 
@@ -2002,6 +2007,7 @@ def cmd_brand_overview(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
     params["pageSize"] = args.page_size or 20
+    params["page"] = args.page or 1
     result = api_call("products/brand-overview", params)
     output(result, args.format)
 
@@ -2014,6 +2020,7 @@ def cmd_brand_detail(args):
     if args.category:
         params["categoryPath"] = parse_category(args.category)
     params["pageSize"] = args.page_size or 20
+    params["page"] = args.page or 1
     result = api_call("products/brand-detail", params)
     output(result, args.format)
 
@@ -2036,6 +2043,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="APIClaw CLI — Amazon Product Research",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        allow_abbrev=False,
         epilog="""
 Examples:
   %(prog)s categories --keyword "pet supplies"
@@ -2069,6 +2077,7 @@ Examples:
     p_mkt.add_argument("--keyword", help="Category keyword")
     p_mkt.add_argument("--topn", type=int, default=10, help="Top N for concentration analysis (default: 10)")
     p_mkt.add_argument("--page-size", type=int, default=20)
+    p_mkt.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_mkt.add_argument("--sort", help="Sort field")
     p_mkt.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_mkt.set_defaults(func=cmd_market)
@@ -2093,6 +2102,7 @@ Examples:
     p_prod.add_argument("--include-brands", help="Include brands (comma-separated)")
     p_prod.add_argument("--exclude-brands", help="Exclude brands (comma-separated)")
     p_prod.add_argument("--page-size", type=int, default=20)
+    p_prod.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_prod.add_argument("--sort", help="Sort field (default: monthlySales)")
     p_prod.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_prod.set_defaults(func=cmd_products)
@@ -2200,6 +2210,7 @@ Examples:
     p_pbo.add_argument("--keyword", help="Search keyword")
     p_pbo.add_argument("--category", help="Category path")
     p_pbo.add_argument("--page-size", type=int, default=20)
+    p_pbo.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_pbo.set_defaults(func=cmd_price_band_overview)
 
     # ── price-band-detail ──
@@ -2207,6 +2218,7 @@ Examples:
     p_pbd.add_argument("--keyword", help="Search keyword")
     p_pbd.add_argument("--category", help="Category path")
     p_pbd.add_argument("--page-size", type=int, default=20)
+    p_pbd.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_pbd.set_defaults(func=cmd_price_band_detail)
 
     # ── brand-overview ──
@@ -2214,6 +2226,7 @@ Examples:
     p_bo.add_argument("--keyword", help="Search keyword")
     p_bo.add_argument("--category", help="Category path")
     p_bo.add_argument("--page-size", type=int, default=20)
+    p_bo.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_bo.set_defaults(func=cmd_brand_overview)
 
     # ── brand-detail ──
@@ -2221,6 +2234,7 @@ Examples:
     p_bd.add_argument("--keyword", help="Search keyword")
     p_bd.add_argument("--category", help="Category path")
     p_bd.add_argument("--page-size", type=int, default=20)
+    p_bd.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_bd.set_defaults(func=cmd_brand_detail)
 
     # ── product-history ──
