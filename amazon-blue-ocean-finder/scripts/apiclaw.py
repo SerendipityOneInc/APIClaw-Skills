@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ============================================================
-# AUTO-SYNCED — 请勿直接编辑各 skill 目录下的副本
-# 真源位置: shared/scripts/apiclaw.py
-# 同步方式: CI 自动复制 或 bash scripts/sync-scripts.sh
+# 唯一真源 — 请勿直接编辑各 amazon-* skill 目录下的副本
+# 真源位置: apiclaw/scripts/apiclaw.py
+# 同步方式: pre-commit hook 自动复制 或 bash scripts/sync-scripts.sh
 # ============================================================
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
 
-Single-script interface for all APIClaw endpoints + composite workflows.
+Single-script interface for all 5 APIClaw endpoints + composite workflows.
 Handles authentication, retries, rate limits, parameter quirks, and output formatting.
 
 Usage:
@@ -16,22 +16,8 @@ Usage:
     python apiclaw.py products --keyword "yoga mat" --mode beginner
     python apiclaw.py competitors --keyword "wireless earbuds"
     python apiclaw.py product --asin B09V3KXJPB
-    python apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints
-    python apiclaw.py price-band-overview --keyword "yoga mat"
-    python apiclaw.py price-band-detail --keyword "yoga mat"
-    python apiclaw.py brand-overview --keyword "yoga mat"
-    python apiclaw.py brand-detail --keyword "yoga mat"
-    python apiclaw.py product-history --asins B09V3KXJPB,B08XYZ --start-date 2024-01-01 --end-date 2024-01-31
     python apiclaw.py report --keyword "pet supplies"
     python apiclaw.py opportunity --keyword "pet supplies"
-    python apiclaw.py opportunity-scan --keyword "yoga mat" --modes beginner,emerging
-    python apiclaw.py competitor-analysis --keyword "wireless earbuds"
-    python apiclaw.py daily-radar --asins B09V3KXJPB,B08XYZ --keyword "yoga mat"
-    python apiclaw.py listing-audit --my-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py market-entry --keyword "pet supplies"
-    python apiclaw.py pricing-analysis --my-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py review-deepdive --target-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py check
 
 Environment:
     APICLAW_API_KEY — Required. Get one at https://apiclaw.io/en/api-keys
@@ -248,7 +234,7 @@ def output(data, fmt="json"):
 
 def parse_category(cat_str: str) -> list:
     """Parse category path string into a list.
-
+    
     Supported formats:
       - 'Pet Supplies,Dogs,Toys'           (comma-separated)
       - 'Pet Supplies > Dogs > Toys'       (spaced arrow)
@@ -264,7 +250,7 @@ def parse_category(cat_str: str) -> list:
     return [c.strip() for c in cat_str.split(",")]
 
 
-# ─── Base Subcommands ─────────────────────────────────────────────────────────
+# ─── Subcommands ─────────────────────────────────────────────────────────────
 
 def cmd_categories(args):
     """Query the Amazon category tree."""
@@ -320,6 +306,19 @@ def cmd_products(args):
             sys.exit(1)
 
     # Override with explicit filters
+    for attr in ("monthlySalesMin", "monthlySalesMax", "ratingCountMin", "ratingCountMax",
+                 "priceMin", "priceMax", "ratingMin", "ratingMax", "bsrMin", "bsrMax",
+                 "salesGrowthRateMin", "salesGrowthRateMax", "sellerCountMin", "sellerCountMax",
+                 "variantCountMin", "variantCountMax"):
+        val = getattr(args, attr.replace("Min", "_min").replace("Max", "_max")
+                      .replace("monthly", "monthly_").replace("review", "review_")
+                      .replace("sales", "sales_").replace("Growth", "_growth_")
+                      .replace("Rate", "rate_").replace("price", "price_")
+                      .replace("rating", "rating_").replace("bsr", "bsr_")
+                      .replace("seller", "seller_").replace("Count", "_count_")
+                      .replace("variant", "variant_"), None)
+        # Simplified: just use the argparse names directly
+
     if args.sales_min is not None:
         params["monthlySalesMin"] = args.sales_min
     if args.sales_max is not None:
@@ -1497,7 +1496,7 @@ def cmd_opportunity_scan(args):
     keyword = args.keyword
     category = args.category
     modes_str = getattr(args, 'modes', None)
-
+    
     # Custom filter params
     sales_min = getattr(args, 'sales_min', None)
     sales_max = getattr(args, 'sales_max', None)
@@ -1513,16 +1512,16 @@ def cmd_opportunity_scan(args):
 
     # Determine scan strategy
     has_custom_filters = any(v is not None for v in [sales_min, sales_max, ratings_max, price_min, price_max, rating_max, rating_min])
-
+    
     if modes_str:
         modes = [m.strip() for m in modes_str.split(",")]
     elif has_custom_filters:
         modes = ["custom"]  # Custom-only scan
     else:
         modes = ["beginner", "emerging", "underserved"]  # Default modes
-
+    
     category_path = parse_category(category) if category else None
-    results = {"meta": {"keyword": keyword, "category": category, "modes": modes,
+    results = {"meta": {"keyword": keyword, "category": category, "modes": modes, 
                         "custom_filters": {k: v for k, v in {"sales_min": sales_min, "sales_max": sales_max,
                             "ratings_max": ratings_max, "price_min": price_min, "price_max": price_max,
                             "rating_max": rating_max, "rating_min": rating_min}.items() if v is not None},
@@ -1553,7 +1552,7 @@ def cmd_opportunity_scan(args):
     log(f"Step 1/6: Product scan ({scan_label})...")
     all_candidates = {}  # asin → product data (deduplicated)
     mode_results = {}
-
+    
     # Build custom filter params (applied to ALL scans)
     custom_params = {}
     if sales_min is not None:
@@ -1570,7 +1569,7 @@ def cmd_opportunity_scan(args):
         custom_params["ratingMax"] = rating_max
     if rating_min is not None:
         custom_params["ratingMin"] = rating_min
-
+    
     for mode in modes:
         log(f"  → {'Custom filters' if mode == 'custom' else f'Mode: {mode}'}")
         mode_products = []
@@ -1597,10 +1596,11 @@ def cmd_opportunity_scan(args):
             if asin and asin not in all_candidates:
                 all_candidates[asin] = p
         log(f"    → {len(mode_products)} products, {len(all_candidates)} unique total")
-
+    
+    # Log actual search parameters for transparency
     if custom_params:
         log(f"  → Custom filters applied: {custom_params}")
-
+    
     results["scan_results"] = {m: len(ps) for m, ps in mode_results.items()}
     results["meta"]["total_candidates"] = len(all_candidates)
     results["meta"]["steps_completed"].append("product_scan")
@@ -1941,6 +1941,95 @@ def cmd_check(args):
     output({"check": "complete", "endpoints": results}, args.format)
 
 
+# ─── Review Analysis Command ─────────────────────────────────────────────────
+
+def cmd_analyze(args):
+    """Analyze reviews for ASINs or category with AI-powered insights."""
+    params = {}
+    if args.asin:
+        params["asins"] = [args.asin]
+        params["mode"] = "asin"
+    elif args.asins:
+        params["asins"] = [a.strip() for a in args.asins.split(",")]
+        params["mode"] = "asin"
+    elif args.category:
+        params["categoryPath"] = parse_category(args.category)
+        params["mode"] = "category"
+    else:
+        print("ERROR: --asin, --asins, or --category is required.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.label_type:
+        params["labelType"] = args.label_type
+    if args.period:
+        params["period"] = args.period
+
+    result = api_call("reviews/analyze", params)
+    output(result, args.format)
+
+
+# ─── New Endpoint Commands (price-band, brand, history) ──────────────────────
+
+def cmd_price_band_overview(args):
+    """Get price band overview — hottest and best opportunity bands."""
+    params = {}
+    if args.keyword:
+        params["keyword"] = args.keyword
+    if args.category:
+        params["categoryPath"] = parse_category(args.category)
+    params["pageSize"] = args.page_size or 20
+    result = api_call("products/price-band-overview", params)
+    output(result, args.format)
+
+
+def cmd_price_band_detail(args):
+    """Get price band detailed breakdown — all bands with stats."""
+    params = {}
+    if args.keyword:
+        params["keyword"] = args.keyword
+    if args.category:
+        params["categoryPath"] = parse_category(args.category)
+    params["pageSize"] = args.page_size or 20
+    result = api_call("products/price-band-detail", params)
+    output(result, args.format)
+
+
+def cmd_brand_overview(args):
+    """Get brand landscape overview — brand count, CR10, top brand stats."""
+    params = {}
+    if args.keyword:
+        params["keyword"] = args.keyword
+    if args.category:
+        params["categoryPath"] = parse_category(args.category)
+    params["pageSize"] = args.page_size or 20
+    result = api_call("products/brand-overview", params)
+    output(result, args.format)
+
+
+def cmd_brand_detail(args):
+    """Get brand ranking with per-brand statistics."""
+    params = {}
+    if args.keyword:
+        params["keyword"] = args.keyword
+    if args.category:
+        params["categoryPath"] = parse_category(args.category)
+    params["pageSize"] = args.page_size or 20
+    result = api_call("products/brand-detail", params)
+    output(result, args.format)
+
+
+def cmd_product_history(args):
+    """Get historical data (price, BSR, sales) for ASINs over a date range."""
+    asins = [a.strip() for a in args.asins.split(",")]
+    params = {
+        "asins": asins,
+        "startDate": args.start_date,
+        "endDate": args.end_date,
+    }
+    result = api_call("products/product-history", params)
+    output(result, args.format)
+
+
 # ─── CLI Setup ───────────────────────────────────────────────────────────────
 
 def main():
@@ -1955,20 +2044,9 @@ Examples:
   %(prog)s products --keyword "yoga mat" --sales-min 300 --ratings-max 50
   %(prog)s competitors --keyword "wireless earbuds" --brand Anker
   %(prog)s product --asin B09V3KXJPB
-  %(prog)s analyze --asin B09V3KXJPB --label-type painPoints
-  %(prog)s price-band-overview --keyword "yoga mat"
-  %(prog)s brand-overview --category "Sports & Outdoors"
-  %(prog)s product-history --asins B09V3KXJPB,B08XYZ --start-date 2024-01-01 --end-date 2024-01-31
   %(prog)s report --keyword "pet supplies"
   %(prog)s opportunity --keyword "pet supplies" --mode high-demand-low-barrier
-  %(prog)s opportunity-scan --keyword "yoga mat" --modes beginner,emerging,underserved
-  %(prog)s competitor-analysis --keyword "wireless earbuds"
-  %(prog)s daily-radar --asins B09V3KXJPB,B08XYZ --keyword "yoga mat"
-  %(prog)s listing-audit --my-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s market-entry --keyword "pet supplies"
-  %(prog)s pricing-analysis --my-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s review-deepdive --target-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s check
+  %(prog)s check                                            # API self-check
         """,
     )
 
@@ -2015,7 +2093,7 @@ Examples:
     p_prod.add_argument("--include-brands", help="Include brands (comma-separated)")
     p_prod.add_argument("--exclude-brands", help="Exclude brands (comma-separated)")
     p_prod.add_argument("--page-size", type=int, default=20)
-    p_prod.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
+    p_prod.add_argument("--sort", help="Sort field (default: monthlySales)")
     p_prod.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_prod.set_defaults(func=cmd_products)
 
@@ -2113,7 +2191,7 @@ Examples:
     p_analyze.add_argument("--asin", help="Single ASIN")
     p_analyze.add_argument("--asins", help="Multiple ASINs (comma-separated)")
     p_analyze.add_argument("--category", help="Category path")
-    p_analyze.add_argument("--label-type", help="Filter dimensions (e.g. painPoints, positives, buyingFactors)")
+    p_analyze.add_argument("--label-type", help="Filter dimensions (comma-separated)")
     p_analyze.add_argument("--period", help="Time period: 1m, 3m, 6m, 1y, 2y", default="6m")
     p_analyze.set_defaults(func=cmd_analyze)
 
@@ -2152,76 +2230,8 @@ Examples:
     p_ph.add_argument("--end-date", required=True, help="End date (YYYY-MM-DD)")
     p_ph.set_defaults(func=cmd_product_history)
 
-    # ── report (composite) ──
-    p_report = sub.add_parser("report", help="Full market analysis report (composite workflow)")
-    p_report.add_argument("--keyword", required=True, help="Category/niche keyword")
-    p_report.add_argument("--topn", type=int, default=10, help="Top N (default: 10)")
-    p_report.set_defaults(func=cmd_report)
-
-    # ── opportunity (composite) ──
-    p_opp = sub.add_parser("opportunity", help="Product opportunity discovery (composite workflow)")
-    p_opp.add_argument("--keyword", required=True, help="Category/niche keyword")
-    p_opp.add_argument("--mode", help="Product search mode preset")
-    p_opp.set_defaults(func=cmd_opportunity)
-
-    # ── opportunity-scan (composite) ──
-    p_os = sub.add_parser("opportunity-scan", help="Multi-mode product opportunity discovery")
-    p_os.add_argument("--keyword", help="Category keyword to scan")
-    p_os.add_argument("--category", help="Category path")
-    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. beginner,emerging,underserved). Omit to use custom filters only.")
-    p_os.add_argument("--sales-min", type=int, help="Min monthly sales (e.g. 300)")
-    p_os.add_argument("--sales-max", type=int, help="Max monthly sales")
-    p_os.add_argument("--ratings-max", type=int, help="Max review count (e.g. 100 for blue ocean)")
-    p_os.add_argument("--price-min", type=float, help="Min price (e.g. 15)")
-    p_os.add_argument("--price-max", type=float, help="Max price (e.g. 35)")
-    p_os.add_argument("--rating-max", type=float, help="Max rating (e.g. 4.3 for improvement opportunity)")
-    p_os.add_argument("--rating-min", type=float, help="Min rating")
-    p_os.set_defaults(func=cmd_opportunity_scan)
-
-    # ── competitor-analysis (composite) ──
-    p_ca = sub.add_parser("competitor-analysis", help="Full competitor war room analysis")
-    p_ca.add_argument("--keyword", help="Product keyword to discover competitors")
-    p_ca.add_argument("--my-asin", help="Your product ASIN (optional)")
-    p_ca.add_argument("--category", help="Category path")
-    p_ca.set_defaults(func=cmd_competitor_analysis)
-
-    # ── daily-radar (composite) ──
-    p_dr = sub.add_parser("daily-radar", help="Daily market monitoring scan")
-    p_dr.add_argument("--asins", required=True, help="Tracked ASINs (comma-separated, your products + competitors)")
-    p_dr.add_argument("--keyword", help="Category keyword for market monitoring")
-    p_dr.add_argument("--category", help="Category path")
-    p_dr.set_defaults(func=cmd_daily_radar)
-
-    # ── listing-audit (composite) ──
-    p_la = sub.add_parser("listing-audit", help="Full listing audit against category leaders")
-    p_la.add_argument("--my-asin", required=True, help="ASIN to audit")
-    p_la.add_argument("--keyword", help="Primary keyword for benchmark context")
-    p_la.add_argument("--category", help="Category path")
-    p_la.set_defaults(func=cmd_listing_audit)
-
-    # ── market-entry (composite) ──
-    p_me = sub.add_parser("market-entry", help="Full market entry analysis (runs ALL endpoints automatically)")
-    p_me.add_argument("--keyword", help="Product keyword or niche")
-    p_me.add_argument("--category", help="Category path (e.g. 'Sports & Outdoors>Sports Sunglasses')")
-    p_me.set_defaults(func=cmd_market_entry)
-
-    # ── pricing-analysis (composite) ──
-    p_pa = sub.add_parser("pricing-analysis", help="Full pricing analysis with competitor benchmarking")
-    p_pa.add_argument("--my-asin", required=True, help="Your product ASIN")
-    p_pa.add_argument("--keyword", help="Product keyword for market context")
-    p_pa.add_argument("--category", help="Category path")
-    p_pa.set_defaults(func=cmd_pricing_analysis)
-
-    # ── review-deepdive (composite) ──
-    p_rd = sub.add_parser("review-deepdive", help="Full 11-dimension review intelligence analysis")
-    p_rd.add_argument("--target-asin", help="ASIN to analyze in depth")
-    p_rd.add_argument("--keyword", help="Keyword to find target (if no ASIN)")
-    p_rd.add_argument("--comp-asins", help="Competitor ASINs for comparison (comma-separated)")
-    p_rd.add_argument("--category", help="Category path")
-    p_rd.set_defaults(func=cmd_review_deepdive)
-
     # ── check (API self-check) ──
-    p_check = sub.add_parser("check", help="Verify API connectivity and available endpoints")
+    p_check = sub.add_parser("check", help="Fetch latest OpenAPI spec to verify available endpoints")
     p_check.set_defaults(func=cmd_check)
 
     args = parser.parse_args()

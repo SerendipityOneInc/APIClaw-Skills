@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # ============================================================
-# AUTO-SYNCED — 请勿直接编辑各 skill 目录下的副本
-# 真源位置: shared/scripts/apiclaw.py
-# 同步方式: CI 自动复制 或 bash scripts/sync-scripts.sh
+# 唯一真源 — 请勿直接编辑各 amazon-* skill 目录下的副本
+# 真源位置: apiclaw/scripts/apiclaw.py
+# 同步方式: pre-commit hook 自动复制 或 bash scripts/sync-scripts.sh
 # ============================================================
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
 
-Single-script interface for all APIClaw endpoints + composite workflows.
+Single-script interface for all 5 APIClaw endpoints + composite workflows.
 Handles authentication, retries, rate limits, parameter quirks, and output formatting.
 
 Usage:
@@ -16,22 +16,8 @@ Usage:
     python apiclaw.py products --keyword "yoga mat" --mode beginner
     python apiclaw.py competitors --keyword "wireless earbuds"
     python apiclaw.py product --asin B09V3KXJPB
-    python apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints
-    python apiclaw.py price-band-overview --keyword "yoga mat"
-    python apiclaw.py price-band-detail --keyword "yoga mat"
-    python apiclaw.py brand-overview --keyword "yoga mat"
-    python apiclaw.py brand-detail --keyword "yoga mat"
-    python apiclaw.py product-history --asins B09V3KXJPB,B08XYZ --start-date 2024-01-01 --end-date 2024-01-31
     python apiclaw.py report --keyword "pet supplies"
     python apiclaw.py opportunity --keyword "pet supplies"
-    python apiclaw.py opportunity-scan --keyword "yoga mat" --modes beginner,emerging
-    python apiclaw.py competitor-analysis --keyword "wireless earbuds"
-    python apiclaw.py daily-radar --asins B09V3KXJPB,B08XYZ --keyword "yoga mat"
-    python apiclaw.py listing-audit --my-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py market-entry --keyword "pet supplies"
-    python apiclaw.py pricing-analysis --my-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py review-deepdive --target-asin B09V3KXJPB --keyword "yoga mat"
-    python apiclaw.py check
 
 Environment:
     APICLAW_API_KEY — Required. Get one at https://apiclaw.io/en/api-keys
@@ -57,8 +43,7 @@ REQUEST_TIMEOUT = 60  # Request timeout in seconds; realtime/product can be slow
 # Each maps to a set of products/search filter parameters
 PRODUCT_MODES = {
     "fast-movers":              {"monthlySalesMin": 300, "salesGrowthRateMin": 0.1},
-    "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180",
-                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
+    "emerging":                 {"monthlySalesMax": 600, "salesGrowthRateMin": 0.1, "listingAge": "180"},
     "single-variant":           {"salesGrowthRateMin": 0.2, "variantCountMax": 1, "listingAge": "180"},
     "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
     "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1, "monthlySalesMax": 300},
@@ -265,7 +250,7 @@ def parse_category(cat_str: str) -> list:
     return [c.strip() for c in cat_str.split(",")]
 
 
-# ─── Base Subcommands ─────────────────────────────────────────────────────────
+# ─── Subcommands ─────────────────────────────────────────────────────────────
 
 def cmd_categories(args):
     """Query the Amazon category tree."""
@@ -321,6 +306,19 @@ def cmd_products(args):
             sys.exit(1)
 
     # Override with explicit filters
+    for attr in ("monthlySalesMin", "monthlySalesMax", "ratingCountMin", "ratingCountMax",
+                 "priceMin", "priceMax", "ratingMin", "ratingMax", "bsrMin", "bsrMax",
+                 "salesGrowthRateMin", "salesGrowthRateMax", "sellerCountMin", "sellerCountMax",
+                 "variantCountMin", "variantCountMax"):
+        val = getattr(args, attr.replace("Min", "_min").replace("Max", "_max")
+                      .replace("monthly", "monthly_").replace("review", "review_")
+                      .replace("sales", "sales_").replace("Growth", "_growth_")
+                      .replace("Rate", "rate_").replace("price", "price_")
+                      .replace("rating", "rating_").replace("bsr", "bsr_")
+                      .replace("seller", "seller_").replace("Count", "_count_")
+                      .replace("variant", "variant_"), None)
+        # Simplified: just use the argparse names directly
+
     if args.sales_min is not None:
         params["monthlySalesMin"] = args.sales_min
     if args.sales_max is not None:
@@ -2046,20 +2044,9 @@ Examples:
   %(prog)s products --keyword "yoga mat" --sales-min 300 --ratings-max 50
   %(prog)s competitors --keyword "wireless earbuds" --brand Anker
   %(prog)s product --asin B09V3KXJPB
-  %(prog)s analyze --asin B09V3KXJPB --label-type painPoints
-  %(prog)s price-band-overview --keyword "yoga mat"
-  %(prog)s brand-overview --category "Sports & Outdoors"
-  %(prog)s product-history --asins B09V3KXJPB,B08XYZ --start-date 2024-01-01 --end-date 2024-01-31
   %(prog)s report --keyword "pet supplies"
   %(prog)s opportunity --keyword "pet supplies" --mode high-demand-low-barrier
-  %(prog)s opportunity-scan --keyword "yoga mat" --modes beginner,emerging,underserved
-  %(prog)s competitor-analysis --keyword "wireless earbuds"
-  %(prog)s daily-radar --asins B09V3KXJPB,B08XYZ --keyword "yoga mat"
-  %(prog)s listing-audit --my-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s market-entry --keyword "pet supplies"
-  %(prog)s pricing-analysis --my-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s review-deepdive --target-asin B09V3KXJPB --keyword "yoga mat"
-  %(prog)s check
+  %(prog)s check                                            # API self-check
         """,
     )
 
@@ -2106,7 +2093,7 @@ Examples:
     p_prod.add_argument("--include-brands", help="Include brands (comma-separated)")
     p_prod.add_argument("--exclude-brands", help="Exclude brands (comma-separated)")
     p_prod.add_argument("--page-size", type=int, default=20)
-    p_prod.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
+    p_prod.add_argument("--sort", help="Sort field (default: monthlySales)")
     p_prod.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_prod.set_defaults(func=cmd_products)
 
@@ -2130,50 +2117,6 @@ Examples:
     p_single.add_argument("--marketplace", default="US",
                           help="Marketplace: US/UK/DE/FR/IT/ES/JP/CA/AU/IN/MX/BR (default: US)")
     p_single.set_defaults(func=cmd_product)
-
-    # ── analyze (reviews) ──
-    p_analyze = sub.add_parser("analyze", help="AI-powered review analysis")
-    p_analyze.add_argument("--asin", help="Single ASIN")
-    p_analyze.add_argument("--asins", help="Multiple ASINs (comma-separated)")
-    p_analyze.add_argument("--category", help="Category path")
-    p_analyze.add_argument("--label-type", help="Filter dimensions (e.g. painPoints, positives, buyingFactors)")
-    p_analyze.add_argument("--period", help="Time period: 1m, 3m, 6m, 1y, 2y", default="6m")
-    p_analyze.set_defaults(func=cmd_analyze)
-
-    # ── price-band-overview ──
-    p_pbo = sub.add_parser("price-band-overview", help="Price band overview (hottest & best opportunity)")
-    p_pbo.add_argument("--keyword", help="Search keyword")
-    p_pbo.add_argument("--category", help="Category path")
-    p_pbo.add_argument("--page-size", type=int, default=20)
-    p_pbo.set_defaults(func=cmd_price_band_overview)
-
-    # ── price-band-detail ──
-    p_pbd = sub.add_parser("price-band-detail", help="Price band detailed breakdown")
-    p_pbd.add_argument("--keyword", help="Search keyword")
-    p_pbd.add_argument("--category", help="Category path")
-    p_pbd.add_argument("--page-size", type=int, default=20)
-    p_pbd.set_defaults(func=cmd_price_band_detail)
-
-    # ── brand-overview ──
-    p_bo = sub.add_parser("brand-overview", help="Brand landscape overview")
-    p_bo.add_argument("--keyword", help="Search keyword")
-    p_bo.add_argument("--category", help="Category path")
-    p_bo.add_argument("--page-size", type=int, default=20)
-    p_bo.set_defaults(func=cmd_brand_overview)
-
-    # ── brand-detail ──
-    p_bd = sub.add_parser("brand-detail", help="Brand ranking with per-brand stats")
-    p_bd.add_argument("--keyword", help="Search keyword")
-    p_bd.add_argument("--category", help="Category path")
-    p_bd.add_argument("--page-size", type=int, default=20)
-    p_bd.set_defaults(func=cmd_brand_detail)
-
-    # ── product-history ──
-    p_ph = sub.add_parser("product-history", help="Historical data for ASINs")
-    p_ph.add_argument("--asins", required=True, help="ASINs (comma-separated)")
-    p_ph.add_argument("--start-date", required=True, help="Start date (YYYY-MM-DD)")
-    p_ph.add_argument("--end-date", required=True, help="End date (YYYY-MM-DD)")
-    p_ph.set_defaults(func=cmd_product_history)
 
     # ── report (composite) ──
     p_report = sub.add_parser("report", help="Full market analysis report (composite workflow)")
@@ -2288,7 +2231,7 @@ Examples:
     p_ph.set_defaults(func=cmd_product_history)
 
     # ── check (API self-check) ──
-    p_check = sub.add_parser("check", help="Verify API connectivity and available endpoints")
+    p_check = sub.add_parser("check", help="Fetch latest OpenAPI spec to verify available endpoints")
     p_check.set_defaults(func=cmd_check)
 
     args = parser.parse_args()

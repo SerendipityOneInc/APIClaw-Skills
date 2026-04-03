@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SOURCE="$REPO_ROOT/shared/scripts/apiclaw.py"
+SOURCE="$REPO_ROOT/apiclaw/scripts/apiclaw.py"
 
 if [[ ! -f "$SOURCE" ]]; then
   echo "ERROR: 真源文件不存在: $SOURCE"

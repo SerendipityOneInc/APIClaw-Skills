@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# ============================================================
+# 唯一真源 — 请勿直接编辑各 amazon-* skill 目录下的副本
+# 真源位置: apiclaw/scripts/apiclaw.py
+# 同步方式: pre-commit hook 自动复制 或 bash scripts/sync-scripts.sh
+# ============================================================
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
 

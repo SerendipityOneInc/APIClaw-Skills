@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'shared/scripts/**'
+      - 'apiclaw/scripts/apiclaw.py'
       - 'scripts/**'
       - 'amazon-*/scripts/apiclaw.py'
   pull_request:
     branches: [main]
     paths:
-      - 'shared/scripts/**'
+      - 'apiclaw/scripts/apiclaw.py'
       - 'scripts/**'
       - 'amazon-*/scripts/apiclaw.py'
   workflow_dispatch:
@@ -42,8 +42,8 @@ jobs:
               echo "请运行: bash scripts/sync-scripts.sh"
               exit 1
             fi
-            if ! diff -q shared/scripts/apiclaw.py "$target" &>/dev/null; then
-              echo "::error::$target 与 shared/scripts/apiclaw.py 不一致！"
+            if ! diff -q apiclaw/scripts/apiclaw.py "$target" &>/dev/null; then
+              echo "::error::$target 与 apiclaw/scripts/apiclaw.py 不一致！"
               echo "请运行: bash scripts/sync-scripts.sh"
               exit 1
             fi
@@ -55,4 +55,4 @@ jobs:
 
       # CLI 冒烟测试（用真源验证）
       - name: CLI smoke test
-        run: python shared/scripts/apiclaw.py --help
+        run: python apiclaw/scripts/apiclaw.py --help
