@@ -40,8 +40,8 @@ Collect in ONE message: ✅ my_asins (1-10) + keyword | 💡 competitor_asins (u
 
 1. **Category first**: MUST resolve categoryPath via `categories --keyword` before any data collection
 2. **All keyword-based endpoints MUST include `--category`**; ASIN-specific endpoints do NOT
-3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`atLeastMonthlySales`, concentration=`sampleTop10BrandSalesRate`
-4. **reviews/analyze**: needs 50+ reviews
+3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`monthlySalesFloor`, concentration=`sampleTop10BrandSalesRate`
+4. **reviews/analysis**: needs 50+ reviews
 5. **Aggregation without categoryPath**: severely distorted data
 
 ## Execution

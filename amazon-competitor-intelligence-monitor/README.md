@@ -58,14 +58,14 @@ Select **Amazon Competitor Intelligence Monitor** when prompted.
 | `categories` | Category resolution |
 | `markets/search` | Market context |
 | `products/search` | Product landscape |
-| `products/competitor-lookup` | Competitor discovery |
+| `products/competitors` | Competitor discovery |
 | `realtime/product` | Live competitor data |
-| `reviews/analyze` | Sentiment & pain points |
+| `reviews/analysis` | Sentiment & pain points |
 | `products/price-band-overview` | Price band context |
 | `products/price-band-detail` | Detailed price analysis |
 | `products/brand-overview` | Brand concentration |
 | `products/brand-detail` | Per-brand breakdown |
-| `products/product-history` | Trend analysis |
+| `products/history` | Trend analysis |
 
 ## Credit Cost
 

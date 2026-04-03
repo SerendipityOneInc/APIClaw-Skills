@@ -41,7 +41,7 @@ Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgMonthl
 
 ---
 
-## 3. products/competitor-lookup
+## 3. products/competitors
 
 | Parameter | Type | Note |
 |-----------|------|------|
@@ -50,7 +50,7 @@ Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgMonthl
 | seller | String | Seller filter |
 | asin | String | ASIN filter |
 | categoryPath | List\<String\> | Category filter |
-| sortBy | String | `atLeastMonthlySales` / `atLeastMonthlyRevenue` / `bsr` / `price` / `rating` / `ratingCount` / `listingDate` |
+| sortBy | String | `monthlySalesFloor` / `monthlyRevenueFloor` / `bsr` / `price` / `rating` / `ratingCount` / `listingDate` |
 | sortOrder | String | `asc` / `desc` |
 | pageSize | Integer | default 20 |
 
@@ -58,7 +58,7 @@ Key response fields: `sampleAvgMonthlySales`, `sampleAvgPrice`, `sampleAvgMonthl
 
 ## 4. products/search
 
-Same as competitor-lookup, plus:
+Same as competitors, plus:
 
 | Parameter | Type | Note |
 |-----------|------|------|
@@ -81,11 +81,11 @@ Additional: `includeBrands`, `excludeBrands`, `fulfillment` (`["FBA"]`/`["FBM"]`
 
 Response fields: `asin`, `title`, `brand`, `rating`, `ratingCount`, `ratingBreakdown`, `features`, `description`, `specifications`, `categories`, `variants`, `bestsellersRank` (array), `buyboxWinner` (object with price), `images`, `dimensions`, `weight`
 
-⚠️ Does NOT have: `atLeastMonthlySales`, `profitMargin`, `fbaFee`, `sellerCount`
+⚠️ Does NOT have: `monthlySalesFloor`, `fbaFee`, `sellerCount`
 
 ---
 
-## 6. reviews/analyze
+## 6. reviews/analysis
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
@@ -97,9 +97,9 @@ Response fields: `asin`, `title`, `brand`, `rating`, `ratingCount`, `ratingBreak
 
 labelType values: `scenarios`, `issues`, `positives`, `improvements`, `buyingFactors`, `painPoints`, `keywords`, `userProfiles`, `usageTimes`, `usageLocations`, `behaviors`
 
-Response: `totalReviews`, `avgRating`, `verifiedRatio`, `ratingDistribution`, `sentimentDistribution`, `consumerInsights` (list of InsightItem), `topKeywords`
+Response: `reviewCount`, `avgRating`, `verifiedRate`, `ratingDistribution`, `sentimentDistribution`, `consumerInsights` (list of InsightItem), `topKeywords`
 
-InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
+InsightItem: `element`, `labelType`, `count`, `reviewRate`, `avgRating`
 
 ---
 
@@ -210,7 +210,7 @@ InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
 
 ---
 
-## 11. products/product-history
+## 11. products/history
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
@@ -226,14 +226,14 @@ InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
 |-------|------|------|
 | asin | String | Product ASIN |
 | price | Float | Price on that date |
-| bsrRank | Integer | BSR rank on that date |
-| subBsrRank | Integer | Sub-category BSR rank |
+| bsr | Integer | BSR rank on that date |
+| subBsr | Integer | Sub-category BSR rank |
 | recentSales | Integer | Recent sales estimate |
 | updatedAt | String | Timestamp of the snapshot |
 
 ---
 
-## Shared Product Object (products/search, competitor-lookup & brand-detail sampleProducts)
+## Shared Product Object (products/search, competitors & brand-detail sampleProducts)
 
 | Field | Type | Note |
 |-------|------|------|
@@ -241,16 +241,15 @@ InsightItem: `element`, `labelType`, `count`, `reviewPercentage`, `avgRating`
 | title | String | |
 | brand | String | |
 | price | Float | Top-level (unlike realtime) |
-| bsrRank | Integer | BSR rank (NOT `bsr` or `bestsellersRank`) |
-| atLeastMonthlySales | Integer | Lower-bound monthly sales |
-| salesRevenue | Float | Monthly revenue |
+| bsr | Integer | BSR rank (NOT `bsr` or `bestsellersRank`) |
+| monthlySalesFloor | Integer | Lower-bound monthly sales |
+| monthlyRevenueFloor | Float | Monthly revenue lower bound |
 | salesGrowthRate | Float | Growth rate |
 | rating | Float | 0-5 |
 | ratingCount | Integer | NOT `reviewCount` |
-| profitMargin | Float | |
 | fbaFee | Float | |
 | sellerCount | Integer | |
 | variantCount | Integer | |
 | fulfillment | String | FBA/FBM/AMZ |
 | listingDate | String | |
-| buyboxSeller | String | |
+| buyBoxSellerName | String | |

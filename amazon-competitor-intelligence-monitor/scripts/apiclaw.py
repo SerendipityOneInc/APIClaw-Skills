@@ -13,7 +13,7 @@ Handles authentication, retries, rate limits, parameter quirks, and output forma
 Usage:
     python apiclaw.py categories --keyword "pet supplies"
     python apiclaw.py market --category "Pet Supplies" --topn 10
-    python apiclaw.py products --keyword "yoga mat" --mode beginner
+    python apiclaw.py products --keyword "yoga mat" --mode emerging
     python apiclaw.py competitors --keyword "wireless earbuds"
     python apiclaw.py product --asin B09V3KXJPB
     python apiclaw.py report --keyword "pet supplies"
@@ -39,7 +39,7 @@ MAX_RETRIES = 2       # Maximum number of retry attempts for failed requests
 RETRY_DELAY = 2       # Initial retry delay in seconds; doubles on 429 (rate limit)
 REQUEST_TIMEOUT = 60  # Request timeout in seconds; realtime/product can be slow (up to 30s)
 
-# 14 built-in product selection modes
+# 13 built-in product selection modes
 # Each maps to a set of products/search filter parameters
 PRODUCT_MODES = {
     "fast-movers":              {"monthlySalesMin": 300, "salesGrowthRateMin": 0.1},
@@ -48,15 +48,13 @@ PRODUCT_MODES = {
     "high-demand-low-barrier":  {"monthlySalesMin": 300, "ratingCountMax": 50, "listingAge": "180"},
     "long-tail":                {"bsrMin": 10000, "bsrMax": 50000, "priceMax": 30, "sellerCountMax": 1, "monthlySalesMax": 300},
     "underserved":              {"monthlySalesMin": 300, "ratingMax": 3.7, "listingAge": "180"},
-    "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"], "fulfillment": ["FBA", "FBM"]},
-    "fbm-friendly":             {"monthlySalesMin": 300, "fulfillment": ["FBM"], "listingAge": "180"},
+    "new-release":              {"monthlySalesMax": 500, "badges": ["New Release"], "fulfillments": ["FBA", "FBM"]},
+    "fbm-friendly":             {"monthlySalesMin": 300, "fulfillments": ["FBM"], "listingAge": "180"},
     "low-price":                {"priceMax": 10},
     "broad-catalog":            {"bsrGrowthRateMin": 0.99, "ratingCountMax": 10, "listingAge": "90"},
     "selective-catalog":        {"bsrGrowthRateMin": 0.99, "listingAge": "90"},
     "speculative":              {"monthlySalesMin": 600, "sellerCountMin": 3, "listingAge": "180"},
-    "beginner":                 {"monthlySalesMin": 300, "priceMin": 15, "priceMax": 60, "fulfillment": ["FBA"],
-                                 "salesGrowthRateMin": 0.03, "listingAge": "365",
-                                 "excludeKeywords": "Brow,Air Fryer,Body Fragrance Mist,Ornament,Ivory,Bed Comforter,Biker Shorts,Mens Dress Shoe,Charms,Dumbbell,Gaming Chair,Skipping Rope,Hoops,Plus Hoola,Kids Bike Helmet,Socks,Cushion,Camping Hammock,Double Leggings,Yoga,Hand Warmers,Trail Camera,Water Bottle,Insulated Food,Pillow,Pillows,iPhone,Dog Bark Collar,Leg Covers,Leg Cover,Laptop Stand,Pet Briefs,Brief,Hangers,Hanger,Slip Rug Pad,rossbody,Fanny Pack,Bedding,Dog Harness,Sweet Water Decor,Eyeshadow,Cotton Sleepsack,Swaddle,Chocolate Bra,Wireless Bed Sheet Set,Car Windshield Curtain,Curtains,Wallet,Green Tea,Picture Frame,Womens,Women Fan,Bottle,Essential Oil,Tumbler,YETI,Vitamin,Vitamins,Face Mask,Led Strip,Pocket,Women's Watch,Waffle Case,Gloves,Shorts,Short Yoga,StrawExpert,Wrap Around Pillowcases,Cup,Bath Mats,Bedsure,Pillowcase,Bathroom,Shower,Milk Frother,Masks,Bug Zapper,Touchless Thermometer,Cat Litter Mat,Probiotics,Smart Plug,Natural Vitality Bottle,Christmas,Sleeveless,Shape Shifting Box,Refrigerator Organizer,Hydration Multiplier,Standard Mouth,Gift Box,USB C,Superhero,Digital Caliper,Massage Gun,Fidget Toys,Garden Hose,Cookie,Blanket,Protein Bars,Caramel Cashew,String Lights,Umbrella,Wearable Blanket,Diapers,Halloween,Flying Toys,Laundry Basket,Kitchen Faucet,Citrulline Malate,Onesie,Pajamas,Nail Polish Kit,fairy finder,Allergy,Immune Supplement,Frying Pan,Tablecloth,Electric Knife,Butter Dish,Dancing Cactus,Maya Mint,ice Cream,Christmas Tree,Liquid Motion Lamp,Stuffed Animal,Plush Bed Comforter,Journal,Women's,Sleeveless Wrap,Supplement,Screen Magnifier,Foot Massager,Machine,Santa,Anime Heroes,Air Mattress,Three Barrel Curling,3D Printer Filament,Power Strip,Rechargeable Toothbrush,Hooded Bathrobe,Sleepwear,Baby Einstein,Vinyl,Plastic Plates,Doorbell,Month Planner,Wooden Balls,Arceus,Wipes,Perfume,Rings,Bore Sight,Fishing Lures,Ear Protection,Firewood Rack,Sling Bag,Resistance Bands,Belt,Backpacks,Silver Slides,Whiteboard,Sports Bra,Cover,Jade Stud,Earrings,Necklace,Snow Shovel,Computer Desk,Dog Pee Pads,Turtleneck,Glasses,Spa,Up Balancer"},
+    # "beginner" mode disabled — excludeKeywords filter not working
     "top-bsr":                  {"subBsrMax": 1000},
 }
 
@@ -344,13 +342,13 @@ def cmd_products(args):
     if args.badges:
         params["badges"] = args.badges
     if args.fulfillment:
-        params["fulfillment"] = args.fulfillment
+        params["fulfillments"] = args.fulfillment
     if args.include_brands:
         params["includeBrands"] = args.include_brands
     if args.exclude_brands:
         params["excludeBrands"] = args.exclude_brands
 
-    params["sortBy"] = args.sort or "atLeastMonthlySales"
+    params["sortBy"] = args.sort or "monthlySalesFloor"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
     params["page"] = args.page or 1
@@ -386,7 +384,7 @@ def cmd_competitors(args):
     if args.keyword:
         params["keyword"] = args.keyword
     if args.brand:
-        params["brand"] = args.brand
+        params["brandName"] = args.brand
     if args.asin:
         params["asin"] = args.asin
     if args.category:
@@ -395,11 +393,11 @@ def cmd_competitors(args):
     params["dateRange"] = args.date_range or "30d"
     params["marketplace"] = args.marketplace or "US"
     params["page"] = args.page or 1
-    params["sortBy"] = args.sort or "atLeastMonthlySales"
+    params["sortBy"] = args.sort or "monthlySalesFloor"
     params["sortOrder"] = args.order or "desc"
     params["pageSize"] = args.page_size or 20
 
-    result = api_call("products/competitor-lookup", params)
+    result = api_call("products/competitors", params)
     output(result, args.format)
 
 
@@ -543,9 +541,9 @@ def cmd_market_entry(args):
       1. Market landscape: market + brand-overview + brand-detail
       2. Price structure: price-band-overview + price-band-detail
       3. Product supply: products/search (5 pages, 100 records)
-      4. Competitors: competitor-lookup + realtime/product (Top 5)
-      5. Trends: product-history (Top 3, with ASIN retry)
-      6. Consumer insights: reviews/analyze (3x category mode, fallback to ASIN)
+      4. Competitors: competitors + realtime/product (Top 5)
+      5. Trends: history (Top 3, with ASIN retry)
+      6. Consumer insights: reviews/analysis (3x category mode, fallback to ASIN)
     """
     keyword = args.keyword
     category = args.category
@@ -648,7 +646,7 @@ def cmd_market_entry(args):
     all_products = []
     total_products = 0
     for page in range(1, 6):
-        prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+        prod_params = {"pageSize": 20, "page": page, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
         if keyword:
             prod_params["keyword"] = keyword
         if category_path:
@@ -671,12 +669,12 @@ def cmd_market_entry(args):
     
     # 4a. Competitor lookup
     comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+                   "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         comp_params["keyword"] = keyword
     if category_path:
         comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["competitors"] = safe_call("products/competitors", comp_params, "competitors")
 
     # 4b. Pick Top 5 ASINs for realtime (deduplicate by parentAsin)
     seen_parents = set()
@@ -703,7 +701,7 @@ def cmd_market_entry(args):
     today = time.strftime("%Y-%m-%d")
     thirty_days_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
 
-    # Try product-history with Top 3, fallback to older ASINs
+    # Try history with Top 3, fallback to older ASINs
     history_data = []
     tried_asins = set()
     
@@ -717,11 +715,11 @@ def cmd_market_entry(args):
     round1_asins = top_asins[:3]
     if round1_asins:
         tried_asins.update(round1_asins)
-        r = safe_call("products/product-history", {
+        r = safe_call("products/history", {
             "asins": round1_asins,
             "startDate": thirty_days_ago,
             "endDate": today,
-        }, "product-history round 1")
+        }, "history round 1")
         history_data = r.get("data", [])
 
     # Round 2: Try oldest products if round 1 was empty
@@ -730,11 +728,11 @@ def cmd_market_entry(args):
         if round2_asins:
             log(f"  → Round 1 empty, trying older ASINs: {round2_asins}")
             tried_asins.update(round2_asins)
-            r = safe_call("products/product-history", {
+            r = safe_call("products/history", {
                 "asins": round2_asins,
                 "startDate": thirty_days_ago,
                 "endDate": today,
-            }, "product-history round 2")
+            }, "history round 2")
             history_data = r.get("data", [])
 
     results["product_history"] = {"data": history_data, "asins_tried": list(tried_asins)}
@@ -750,8 +748,8 @@ def cmd_market_entry(args):
     category_mode_success = True
     if category_path:
         for lt in label_types:
-            log(f"  → reviews/analyze category mode: {lt}")
-            r = safe_call("reviews/analyze", {
+            log(f"  → reviews/analysis category mode: {lt}")
+            r = safe_call("reviews/analysis", {
                 "categoryPath": category_path,
                 "mode": "category",
                 "labelType": lt,
@@ -772,8 +770,8 @@ def cmd_market_entry(args):
             for lt in label_types:
                 if lt in review_results:
                     continue
-                log(f"  → reviews/analyze ASIN mode: {lt} ({review_asins})")
-                r = safe_call("reviews/analyze", {
+                log(f"  → reviews/analysis ASIN mode: {lt} ({review_asins})")
+                r = safe_call("reviews/analysis", {
                     "asins": review_asins,
                     "mode": "asin",
                     "labelType": lt,
@@ -832,7 +830,7 @@ def cmd_competitor_analysis(args):
 
     # Step 1: Competitor Discovery
     log("Step 1/7: Competitor discovery...")
-    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    prod_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         prod_params["keyword"] = keyword
     if category_path:
@@ -840,12 +838,12 @@ def cmd_competitor_analysis(args):
     results["products"] = safe_call("products/search", prod_params, "products")
 
     comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+                   "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         comp_params["keyword"] = keyword
     if category_path:
         comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["competitors"] = safe_call("products/competitors", comp_params, "competitors")
     results["meta"]["steps_completed"].append("competitor_discovery")
 
     # Step 2: Market Context
@@ -922,9 +920,9 @@ def cmd_competitor_analysis(args):
     today = time.strftime("%Y-%m-%d")
     thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
     history_asins = ([my_asin] if my_asin else []) + top_asins[:5]
-    r = safe_call("products/product-history", {
+    r = safe_call("products/history", {
         "asins": history_asins[:8], "startDate": thirty_ago, "endDate": today
-    }, "product-history")
+    }, "history")
     results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins[:8]}
     results["meta"]["steps_completed"].append("historical_trends")
 
@@ -932,7 +930,7 @@ def cmd_competitor_analysis(args):
     log("Step 6/7: Review intelligence...")
     review_results = {}
     for asin in top_asins[:5]:
-        r = safe_call("reviews/analyze", {
+        r = safe_call("reviews/analysis", {
             "asins": [asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews {asin}")
         if r.get("data") and r.get("data", {}).get("consumerInsights"):
@@ -940,7 +938,7 @@ def cmd_competitor_analysis(args):
     if not review_results and category_path:
         log("  → Falling back to category mode...")
         for lt in ["painPoints", "buyingFactors"]:
-            review_results[lt] = safe_call("reviews/analyze", {
+            review_results[lt] = safe_call("reviews/analysis", {
                 "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
             }, f"reviews cat {lt}")
     results["reviews"] = review_results
@@ -952,7 +950,7 @@ def cmd_competitor_analysis(args):
     if brands:
         top_brand = brands[0].get("brandName")
         if top_brand:
-            bp = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            bp = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
             if keyword:
                 bp["keyword"] = keyword
             if category_path:
@@ -1030,7 +1028,7 @@ def cmd_pricing_analysis(args):
 
     # Step 3: Competitor Price Landscape
     log("Step 3/8: Competitor price landscape...")
-    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    prod_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         prod_params["keyword"] = keyword
     if category_path:
@@ -1038,12 +1036,12 @@ def cmd_pricing_analysis(args):
     results["products"] = safe_call("products/search", prod_params, "products")
 
     comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+                   "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         comp_params["keyword"] = keyword
     if category_path:
         comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["competitors"] = safe_call("products/competitors", comp_params, "competitors")
     results["meta"]["steps_completed"].append("competitor_landscape")
 
     # Step 4: Market Benchmarks
@@ -1090,9 +1088,9 @@ def cmd_pricing_analysis(args):
             break
 
     history_asins = [my_asin] + comp_asins
-    r = safe_call("products/product-history", {
+    r = safe_call("products/history", {
         "asins": history_asins, "startDate": thirty_ago, "endDate": today
-    }, "product-history")
+    }, "history")
     results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins}
     results["meta"]["steps_completed"].append("price_trends")
 
@@ -1111,16 +1109,16 @@ def cmd_pricing_analysis(args):
     review_results = {}
     my_rc = results["my_product"].get("data", {}).get("ratingCount", 0)
     if my_rc and my_rc >= 50:
-        review_results["my_asin"] = safe_call("reviews/analyze", {
+        review_results["my_asin"] = safe_call("reviews/analysis", {
             "asins": [my_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews {my_asin}")
     if comp_asins:
-        review_results["top_comp"] = safe_call("reviews/analyze", {
+        review_results["top_comp"] = safe_call("reviews/analysis", {
             "asins": [comp_asins[0]], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews {comp_asins[0]}")
     if not review_results and category_path:
         for lt in ["painPoints", "buyingFactors"]:
-            review_results[lt] = safe_call("reviews/analyze", {
+            review_results[lt] = safe_call("reviews/analysis", {
                 "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
             }, f"reviews cat {lt}")
     results["reviews"] = review_results
@@ -1131,7 +1129,7 @@ def cmd_pricing_analysis(args):
     pbo_data = results.get("price_band_overview", {}).get("data", {})
     best_band = pbo_data.get("bestOpportunityBand", {}) if pbo_data else {}
     if best_band and best_band.get("sampleBandMinPrice") and best_band.get("sampleBandMaxPrice"):
-        drill_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc",
+        drill_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc",
                         "priceMin": best_band["sampleBandMinPrice"], "priceMax": best_band["sampleBandMaxPrice"]}
         if keyword:
             drill_params["keyword"] = keyword
@@ -1206,11 +1204,11 @@ def cmd_daily_radar(args):
     tried_asins = set()
     
     # Round 1: All tracked ASINs
-    r = safe_call("products/product-history", {
+    r = safe_call("products/history", {
         "asins": tracked_asins,
         "startDate": seven_days_ago,
         "endDate": today,
-    }, "product-history round 1")
+    }, "history round 1")
     history_data = r.get("data", [])
     tried_asins.update(tracked_asins)
 
@@ -1251,7 +1249,7 @@ def cmd_daily_radar(args):
 
     # Step 4: New Competitor Detection
     log("Step 4/7: New competitor detection...")
-    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    prod_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         prod_params["keyword"] = keyword
     if category_path:
@@ -1291,7 +1289,7 @@ def cmd_daily_radar(args):
         if rc and rc >= 50:
             review_asin = snap["asin"]
             log(f"  → Analyzing reviews for {review_asin} ({rc} reviews)")
-            r = safe_call("reviews/analyze", {
+            r = safe_call("reviews/analysis", {
                 "asins": [review_asin],
                 "mode": "asin",
                 "labelType": "painPoints",
@@ -1360,7 +1358,7 @@ def cmd_listing_audit(args):
 
     # Step 2: Category Leaders
     log("Step 2/7: Finding category leaders...")
-    prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+    prod_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         prod_params["keyword"] = keyword
     if category_path:
@@ -1368,12 +1366,12 @@ def cmd_listing_audit(args):
     results["leader_products"] = safe_call("products/search", prod_params, "products leaders")
 
     comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+                   "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         comp_params["keyword"] = keyword
     if category_path:
         comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["competitors"] = safe_call("products/competitors", comp_params, "competitors")
     results["meta"]["steps_completed"].append("category_leaders")
 
     # Step 3: Benchmark Realtime (Top 5 leaders, deduplicated)
@@ -1451,21 +1449,21 @@ def cmd_listing_audit(args):
     # ASIN mode first (my_asin + top leader)
     target_rc = results["target_realtime"].get("data", {}).get("ratingCount", 0)
     if target_rc and target_rc >= 50:
-        log(f"  → reviews/analyze ASIN mode: {my_asin}")
-        review_results["my_asin"] = safe_call("reviews/analyze", {
+        log(f"  → reviews/analysis ASIN mode: {my_asin}")
+        review_results["my_asin"] = safe_call("reviews/analysis", {
             "asins": [my_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews {my_asin}")
     if leader_asins:
         top_leader = leader_asins[0]
-        log(f"  → reviews/analyze ASIN mode: {top_leader}")
-        review_results["top_leader"] = safe_call("reviews/analyze", {
+        log(f"  → reviews/analysis ASIN mode: {top_leader}")
+        review_results["top_leader"] = safe_call("reviews/analysis", {
             "asins": [top_leader], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews {top_leader}")
     # Category fallback
     if not review_results and category_path:
         log("  → Falling back to category mode...")
         for lt in ["painPoints", "buyingFactors", "improvements"]:
-            review_results[lt] = safe_call("reviews/analyze", {
+            review_results[lt] = safe_call("reviews/analysis", {
                 "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
             }, f"reviews category {lt}")
     results["reviews"] = review_results
@@ -1476,9 +1474,9 @@ def cmd_listing_audit(args):
     today = time.strftime("%Y-%m-%d")
     thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
     history_asins = [my_asin] + leader_asins[:2]
-    r = safe_call("products/product-history", {
+    r = safe_call("products/history", {
         "asins": history_asins, "startDate": thirty_ago, "endDate": today
-    }, "product-history")
+    }, "history")
     results["product_history"] = {"data": r.get("data", []), "asins_tried": history_asins}
     results["meta"]["steps_completed"].append("trend_context")
 
@@ -1492,7 +1490,7 @@ def cmd_opportunity_scan(args):
     """
     Composite workflow: Opportunity Discovery.
     Supports TWO scanning approaches:
-    1. Mode-based: uses 14 preset modes (beginner, emerging, underserved, etc.)
+    1. Mode-based: uses 13 preset modes (emerging, underserved, etc.)
     2. Custom filters: user-defined criteria (sales-min, ratings-max, price-min/max, rating-max)
     Both can be combined — mode presets + custom overrides.
     """
@@ -1521,7 +1519,7 @@ def cmd_opportunity_scan(args):
     elif has_custom_filters:
         modes = ["custom"]  # Custom-only scan
     else:
-        modes = ["beginner", "emerging", "underserved"]  # Default modes
+        modes = ["emerging", "underserved", "high-demand-low-barrier"]  # Default modes
     
     category_path = parse_category(category) if category else None
     results = {"meta": {"keyword": keyword, "category": category, "modes": modes, 
@@ -1577,7 +1575,7 @@ def cmd_opportunity_scan(args):
         log(f"  → {'Custom filters' if mode == 'custom' else f'Mode: {mode}'}")
         mode_products = []
         for page in range(1, 6):  # 5 pages per mode (100 products max)
-            prod_params = {"pageSize": 20, "page": page, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+            prod_params = {"pageSize": 20, "page": page, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
             if keyword:
                 prod_params["keyword"] = keyword
             if category_path:
@@ -1653,7 +1651,7 @@ def cmd_opportunity_scan(args):
 
     # Step 4: Realtime Validation for Top 10
     log("Step 4/6: Realtime validation (Top 10)...")
-    sorted_candidates = sorted(all_candidates.values(), key=lambda x: x.get("atLeastMonthlySales") or 0, reverse=True)
+    sorted_candidates = sorted(all_candidates.values(), key=lambda x: x.get("monthlySalesFloor") or 0, reverse=True)
     seen = set()
     top_asins = []
     for p in sorted_candidates:
@@ -1676,9 +1674,9 @@ def cmd_opportunity_scan(args):
     log("Step 5/6: Trend check...")
     today = time.strftime("%Y-%m-%d")
     thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
-    r = safe_call("products/product-history", {
+    r = safe_call("products/history", {
         "asins": top_asins[:5], "startDate": thirty_ago, "endDate": today
-    }, "product-history")
+    }, "history")
     results["product_history"] = {"data": r.get("data", []), "asins_tried": top_asins[:5]}
     results["meta"]["steps_completed"].append("trend_check")
 
@@ -1688,7 +1686,7 @@ def cmd_opportunity_scan(args):
     if category_path:
         for lt in ["painPoints", "buyingFactors", "improvements"]:
             log(f"  → category mode: {lt}")
-            r = safe_call("reviews/analyze", {
+            r = safe_call("reviews/analysis", {
                 "categoryPath": category_path, "mode": "category", "labelType": lt, "period": "6m"
             }, f"reviews {lt}")
             if r.get("data") and r.get("data", {}).get("consumerInsights"):
@@ -1699,7 +1697,7 @@ def cmd_opportunity_scan(args):
         log("  → Falling back to ASIN mode...")
         review_asins = [a for a in top_asins[:3]]
         for lt in ["painPoints", "buyingFactors", "improvements"]:
-            r = safe_call("reviews/analyze", {
+            r = safe_call("reviews/analysis", {
                 "asins": review_asins, "mode": "asin", "labelType": lt, "period": "6m"
             }, f"reviews ASIN {lt}")
             review_results[lt] = r
@@ -1759,7 +1757,7 @@ def cmd_review_deepdive(args):
     if target_asin:
         results["target_realtime"] = safe_call("realtime/product", {"asin": target_asin, "marketplace": "US"}, f"realtime {target_asin}")
     if not target_asin and keyword:
-        prod_params = {"pageSize": 20, "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+        prod_params = {"pageSize": 20, "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
         if keyword:
             prod_params["keyword"] = keyword
         if category_path:
@@ -1783,7 +1781,7 @@ def cmd_review_deepdive(args):
     if target_asin:
         for lt in label_types:
             log(f"  → {target_asin}: {lt}")
-            r = safe_call("reviews/analyze", {
+            r = safe_call("reviews/analysis", {
                 "asins": [target_asin], "mode": "asin", "labelType": lt, "period": "6m"
             }, f"reviews {lt}")
             review_results[f"target_{lt}"] = r
@@ -1791,10 +1789,10 @@ def cmd_review_deepdive(args):
     # Competitor comparison (top 2)
     for comp_asin in comp_asins[:2]:
         log(f"  → Competitor {comp_asin}: painPoints + positives")
-        review_results[f"comp_{comp_asin}_painPoints"] = safe_call("reviews/analyze", {
+        review_results[f"comp_{comp_asin}_painPoints"] = safe_call("reviews/analysis", {
             "asins": [comp_asin], "mode": "asin", "labelType": "painPoints", "period": "6m"
         }, f"reviews comp {comp_asin}")
-        review_results[f"comp_{comp_asin}_positives"] = safe_call("reviews/analyze", {
+        review_results[f"comp_{comp_asin}_positives"] = safe_call("reviews/analysis", {
             "asins": [comp_asin], "mode": "asin", "labelType": "positives", "period": "6m"
         }, f"reviews comp+ {comp_asin}")
     
@@ -1834,12 +1832,12 @@ def cmd_review_deepdive(args):
 
     # Competitor lookup
     comp_params = {"pageSize": 20, "dateRange": "30d", "marketplace": "US", "page": 1,
-                   "sortBy": "atLeastMonthlySales", "sortOrder": "desc"}
+                   "sortBy": "monthlySalesFloor", "sortOrder": "desc"}
     if keyword:
         comp_params["keyword"] = keyword
     if category_path:
         comp_params["categoryPath"] = category_path
-    results["competitors"] = safe_call("products/competitor-lookup", comp_params, "competitors")
+    results["competitors"] = safe_call("products/competitors", comp_params, "competitors")
     results["meta"]["steps_completed"].append("market_context")
 
     # Step 5: Price & Trend Context
@@ -1858,9 +1856,9 @@ def cmd_review_deepdive(args):
     thirty_ago = time.strftime("%Y-%m-%d", time.localtime(time.time() - 30 * 86400))
     hist_asins = [target_asin] + comp_asins[:2] if target_asin else comp_asins[:3]
     if hist_asins:
-        r = safe_call("products/product-history", {
+        r = safe_call("products/history", {
             "asins": hist_asins, "startDate": thirty_ago, "endDate": today
-        }, "product-history")
+        }, "history")
         results["product_history"] = {"data": r.get("data", []), "asins_tried": hist_asins}
     results["meta"]["steps_completed"].append("price_trend_context")
 
@@ -1909,7 +1907,7 @@ def cmd_check(args):
         ("categories", {}, "Category tree"),
         ("markets/search", {"categoryKeyword": "pet", "pageSize": 1}, "Market search"),
         ("products/search", {"keyword": "test", "pageSize": 1}, "Product search"),
-        ("products/competitor-lookup", {"keyword": "test", "pageSize": 1}, "Competitor lookup"),
+        ("products/competitors", {"keyword": "test", "pageSize": 1}, "Competitor lookup"),
     ]
 
     results = {}
@@ -1967,7 +1965,7 @@ def cmd_analyze(args):
     if args.period:
         params["period"] = args.period
 
-    result = api_call("reviews/analyze", params)
+    result = api_call("reviews/analysis", params)
     output(result, args.format)
 
 
@@ -2033,7 +2031,7 @@ def cmd_product_history(args):
         "startDate": args.start_date,
         "endDate": args.end_date,
     }
-    result = api_call("products/product-history", params)
+    result = api_call("products/history", params)
     output(result, args.format)
 
 
@@ -2048,7 +2046,7 @@ def main():
 Examples:
   %(prog)s categories --keyword "pet supplies"
   %(prog)s market --category "Pet Supplies,Dogs" --topn 10
-  %(prog)s products --keyword "yoga mat" --mode beginner
+  %(prog)s products --keyword "yoga mat" --mode emerging
   %(prog)s products --keyword "yoga mat" --sales-min 300 --ratings-max 50
   %(prog)s competitors --keyword "wireless earbuds" --brand Anker
   %(prog)s product --asin B09V3KXJPB
@@ -2117,7 +2115,7 @@ Examples:
     p_comp.add_argument("--marketplace", default="US", help="Marketplace (default: US)")
     p_comp.add_argument("--page", type=int, default=1, help="Page number")
     p_comp.add_argument("--page-size", type=int, default=20)
-    p_comp.add_argument("--sort", help="Sort field (default: atLeastMonthlySales)")
+    p_comp.add_argument("--sort", help="Sort field (default: monthlySalesFloor)")
     p_comp.add_argument("--order", choices=["asc", "desc"], default="desc")
     p_comp.set_defaults(func=cmd_competitors)
 
@@ -2178,7 +2176,7 @@ Examples:
     p_os = sub.add_parser("opportunity-scan", help="Multi-mode product opportunity discovery", allow_abbrev=False)
     p_os.add_argument("--keyword", help="Category keyword to scan")
     p_os.add_argument("--category", help="Category path")
-    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. beginner,emerging,underserved). Omit to use custom filters only.")
+    p_os.add_argument("--modes", help="Scan modes (comma-separated, e.g. emerging,underserved,high-demand-low-barrier). Omit to use custom filters only.")
     p_os.add_argument("--sales-min", type=int, help="Min monthly sales (e.g. 300)")
     p_os.add_argument("--sales-max", type=int, help="Max monthly sales")
     p_os.add_argument("--ratings-max", type=int, help="Max review count (e.g. 100 for blue ocean)")
@@ -2237,8 +2235,8 @@ Examples:
     p_bd.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_bd.set_defaults(func=cmd_brand_detail)
 
-    # ── product-history ──
-    p_ph = sub.add_parser("product-history", help="Historical data for ASINs", allow_abbrev=False)
+    # ── history ──
+    p_ph = sub.add_parser("history", help="Historical data for ASINs", allow_abbrev=False)
     p_ph.add_argument("--asins", required=True, help="ASINs (comma-separated)")
     p_ph.add_argument("--start-date", required=True, help="Start date (YYYY-MM-DD)")
     p_ph.add_argument("--end-date", required=True, help="End date (YYYY-MM-DD)")

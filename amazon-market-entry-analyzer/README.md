@@ -67,14 +67,14 @@ All 11 APIClaw endpoints:
 | `categories` | Category tree navigation and resolution |
 | `markets/search` | Market-level metrics + sub-market discovery |
 | `products/search` | Product supply analysis (100+ products) |
-| `products/competitor-lookup` | Competitor discovery |
+| `products/competitors` | Competitor discovery |
 | `realtime/product` | Live competitor details |
-| `reviews/analyze` | AI-powered consumer insights |
+| `reviews/analysis` | AI-powered consumer insights |
 | `products/price-band-overview` | Price band opportunities |
 | `products/price-band-detail` | Detailed 5-band breakdown |
 | `products/brand-overview` | Brand concentration (CR10) |
 | `products/brand-detail` | Per-brand analysis |
-| `products/product-history` | 30-day trend analysis |
+| `products/history` | 30-day trend analysis |
 
 ## Powered By
 

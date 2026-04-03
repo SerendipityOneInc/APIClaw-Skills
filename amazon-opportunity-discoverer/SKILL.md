@@ -34,8 +34,8 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 ## API Pitfalls (see apiclaw skill for full list)
 - **MUST lock categoryPath first** via `categories` — keyword-only queries contaminate results
 - All keyword-based endpoints MUST include `--category` when locked
-- Revenue = `sampleAvgMonthlyRevenue` directly. Sales = `atLeastMonthlySales` (lower bound)
-- `reviews/analyze` needs 50+ reviews
+- Revenue = `sampleAvgMonthlyRevenue` directly. Sales = `monthlySalesFloor` (lower bound)
+- `reviews/analysis` needs 50+ reviews
 - Deduplicate ASINs across modes — same product appears in multiple scans
 - Each mode has **built-in filters that STACK** with user filters (e.g. beginner: $15-60, sales≥300)
 

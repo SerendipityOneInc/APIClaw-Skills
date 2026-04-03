@@ -56,14 +56,14 @@ Select **Amazon Opportunity Discoverer** when prompted.
 | `categories` | Category resolution and selection |
 | `markets/search` | Market metrics for category ranking |
 | `products/search` | Multi-mode product scanning |
-| `products/competitor-lookup` | Competitive landscape |
+| `products/competitors` | Competitive landscape |
 | `realtime/product` | Real-time validation of top candidates |
-| `reviews/analyze` | Pain points and differentiation gaps |
+| `reviews/analysis` | Pain points and differentiation gaps |
 | `products/price-band-overview` | Price opportunity assessment |
 | `products/price-band-detail` | Detailed price band analysis |
 | `products/brand-overview` | Brand concentration |
 | `products/brand-detail` | Per-brand breakdown |
-| `products/product-history` | Trend validation |
+| `products/history` | Trend validation |
 
 ## Credit Cost
 

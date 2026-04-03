@@ -31,7 +31,7 @@ Despite undisclosed weights, all tools converge on the same core dimensions:
 | **Listing Quality** | JS, AMZScout | LQS >70, images, A+ content, keyword coverage |
 | **Price Range** | AMZScout, SmartScout | Sweet spot $15-50 for beginners |
 | **New Entrant Space** | SmartScout, AMZScout | New SKU rate, low review barriers |
-| **Consumer Pain Points** | — (unique to us via reviews/analyze API) | Our differentiation — none of them have 1B+ pre-analyzed reviews |
+| **Consumer Pain Points** | — (unique to us via reviews/analysis API) | Our differentiation — none of them have 1B+ pre-analyzed reviews |
 
 ### Industry Benchmark Thresholds
 
@@ -54,7 +54,7 @@ Despite undisclosed weights, all tools converge on the same core dimensions:
 ### Design Rationale
 
 Based on the industry research above, our framework:
-1. **Covers all 5 consensus dimensions** + 2 unique ones (Price Opportunity via price-band API, Consumer Pain Points via reviews/analyze API)
+1. **Covers all 5 consensus dimensions** + 2 unique ones (Price Opportunity via price-band API, Consumer Pain Points via reviews/analysis API)
 2. **Uses 1-100 scale** (consistent with Helium 10, more granular than JS's 1-10)
 3. **Weights justified by failure mode analysis** — what causes most new seller failures?
 

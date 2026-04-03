@@ -30,12 +30,12 @@ User provides: keyword, category, ASIN, or brand — depending on intent. Use in
 
 1. **Category first**: keyword search is broad → MUST lock `categoryPath` via `categories` endpoint before other calls
 2. **Brand + category**: Brand queries MUST include `--category` to avoid cross-category contamination
-3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER calculate price×sales), sales=`atLeastMonthlySales` (lower bound), opportunity=`sampleOpportunityIndex`
-4. **reviews/analyze**: needs 50+ reviews per ASIN; try category mode first (3 calls for painPoints/buyingFactors/improvements), ASIN mode only if all 3 category calls fail
+3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER calculate price×sales), sales=`monthlySalesFloor` (lower bound), opportunity=`sampleOpportunityIndex`
+4. **reviews/analysis**: needs 50+ reviews per ASIN; try category mode first (3 calls for painPoints/buyingFactors/improvements), ASIN mode only if all 3 category calls fail
 5. **Aggregation without categoryPath**: produces severely distorted data
 6. **`.data` is array**: use `.data[0]`, not `.data.field`
 7. **labelType**: only accepts ONE value per call — do NOT comma-separate
-8. **product-history empty**: try oldest-listed ASINs first, up to 3 rounds of different ASINs before giving up
+8. **history empty**: try oldest-listed ASINs first, up to 3 rounds of different ASINs before giving up
 9. **Sales null fallback**: Monthly sales ≈ 300,000 / BSR^0.65
 
 ## 14 Product Selection Modes

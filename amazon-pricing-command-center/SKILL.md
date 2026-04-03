@@ -44,7 +44,7 @@ On first interaction, tell user: "Give me your ASIN(s). I support single or batc
 
 ## API Pitfalls
 - Revenue = `sampleAvgMonthlyRevenue` directly. **NEVER** calculate price×sales.
-- Sales = `atLeastMonthlySales` (lower bound)
+- Sales = `monthlySalesFloor` (lower bound)
 - Price in realtime: `buyboxWinner.price`, NOT top-level `price`
 - **All keyword-based endpoints MUST include `--category`** once categoryPath is locked
 - FBA fees from products/search are estimates — verify with Amazon FBA calculator

@@ -18,15 +18,15 @@ python3 scripts/apiclaw.py analyze --asin B09V3KXJPB --label-type painPoints,iss
 
 # Step 2 (supplement): Raw review samples for quoting specific examples
 python3 scripts/apiclaw.py product --asin B09V3KXJPB
-# → Use reviews/analyze for structured review insights
+# → Use reviews/analysis for structured review insights
 ```
 
 **Data combination:**
 - Use `analyze` `consumerInsights` as primary structured findings (covers ALL reviews)
-- Use `reviews/analyze` for specific quotes to illustrate key pain points
+- Use `reviews/analysis` for specific quotes to illustrate key pain points
 - Use `analyze` `sentimentDistribution` for overall sentiment overview
 
-**Key Information Extracted from reviews/analyze**:
+**Key Information Extracted from reviews/analysis**:
 
 | Analysis Dimension | Focus Points |
 |---------|-------|
@@ -45,7 +45,7 @@ python3 scripts/apiclaw.py product --asin B09V3KXJPB
 |------|------|------|
 
 ## Positive Review Themes
-[Extract top 3 positive review themes from reviews/analyze]
+[Extract top 3 positive review themes from reviews/analysis]
 
 ## Negative Review Pain Points
 [Extract top 3 negative review themes → These are differentiation opportunities]
@@ -71,24 +71,23 @@ python3 scripts/apiclaw.py product --asin B09XXXXX
 ```
 
 **⚠️ Important:** Use `competitors` (not `product`) as the primary data source for comparison.
-`realtime/product` does NOT return sales, profitMargin, fbaFee, or sellerCount.
+`realtime/product` does NOT return sales, fbaFee, or sellerCount.
 
 **Horizontal Comparison Dimensions**:
 
 | Dimension | Field | Source |
 |------|------|------|
 | Price | `price` | competitors |
-| Monthly Sales | `atLeastMonthlySales` | competitors |
-| BSR | `bsrRank` | competitors |
+| Monthly Sales | `monthlySalesFloor` | competitors |
+| BSR | `bsr` | competitors |
 | Rating | `rating` | competitors |
 | Review Count | `ratingCount` | competitors |
-| Profit Margin | `profitMargin` | competitors |
 | Variant Count | `variantCount` | competitors |
 | FBA Fee | `fbaFee` | competitors |
 | Seller Count | `sellerCount` | competitors |
 | Tags | `isBestSeller` / `isAmazonChoice` | competitors |
 | A+/Video | `hasAPlus` / `hasVideo` | competitors |
-| Review Details | `reviews/analyze` | realtime/product (optional) |
+| Review Details | `reviews/analysis` | realtime/product (optional) |
 | Listing Quality | `features` / `description` | realtime/product (optional) |
 
 ---
@@ -109,7 +108,7 @@ python3 scripts/apiclaw.py analyze --asin B09XXXXX --label-type issues,painPoint
 ```
 
 **⚠️ Note:** Step 1 (`competitors`) provides sales, margins, and seller data needed for risk scoring.
-Step 3 (`product`) only adds review details and listing content — do NOT expect sales/profitMargin from it.
+Step 3 (`product`) only adds review details and listing content — do NOT expect sales from it.
 Step 4 (`analyze`) provides AI-analyzed sentiment distribution and structured issues for risk assessment.
 
 **Six-Dimensional Risk Assessment Matrix**:
@@ -156,20 +155,20 @@ Step 4 (`analyze`) provides AI-analyzed sentiment distribution and structured is
 
 ```bash
 python3 scripts/apiclaw.py competitors --asin B09XXXXX
-# → Get bsrRank and atLeastMonthlySales
+# → Get bsr and monthlySalesFloor
 ```
 
 **Three Estimation Methods**:
 
 | Method | Formula/Logic | Accuracy |
 |-----|---------|------|
-| API Direct Return | `atLeastMonthlySales` field | ⭐⭐⭐⭐ Most accurate (lower bound) |
+| API Direct Return | `monthlySalesFloor` field | ⭐⭐⭐⭐ Most accurate (lower bound) |
 | BSR Rough Estimate | Monthly sales ≈ 300,000 / BSR^0.65 | ⭐⭐ Rough |
 | Review Reverse Calculation | Monthly sales ≈ reviewMonthlyNew / Review rate(1-3%) | ⭐⭐ Reference only |
 
-**Usage Priority**: atLeastMonthlySales → BSR estimate → Review reverse calculation
+**Usage Priority**: monthlySalesFloor → BSR estimate → Review reverse calculation
 
-**Note**: `atLeastMonthlySales` is a lower bound — Amazon shows "10,000+ bought in past month", so actual sales may be higher. Current API has no historical trends, only current snapshot.
+**Note**: `monthlySalesFloor` is a lower bound — Amazon shows "10,000+ bought in past month", so actual sales may be higher. Current API has no historical trends, only current snapshot.
 
 ---
 
@@ -202,9 +201,9 @@ python3 scripts/apiclaw.py analyze --category "Pet Supplies,Dogs,Toys" --period 
 ## Overview
 | Metric | Value |
 |--------|-------|
-| Reviews Analyzed | [totalReviews] |
+| Reviews Analyzed | [reviewCount] |
 | Avg Rating | [avgRating] |
-| Verified Purchase Ratio | [verifiedRatio] |
+| Verified Purchase Ratio | [verifiedRate] |
 | Sentiment | 👍 [positive]% / 😐 [neutral]% / 👎 [negative]% |
 
 ## User Profiles

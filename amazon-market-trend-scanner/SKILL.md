@@ -43,8 +43,8 @@ Required: 1+ category paths or keywords. Optional: scan depth, metric preference
 
 1. **Category first**: resolve categoryPath via `categories --keyword` before anything
 2. **All keyword endpoints MUST include `--category`**; omitting it distorts aggregation
-3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue`, sales=`atLeastMonthlySales`
-4. **Key metrics per subcategory**: sampleAvgMonthlySales, sampleNewSkuRate, topBrandSalesRate, sampleAvgPrice, sampleAvgGrossMargin, totalSkuCount, sampleFbaRate
+3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue`, sales=`monthlySalesFloor`
+4. **Key metrics per subcategory**: sampleAvgMonthlySales, sampleNewSkuRate, topBrandSalesRate, sampleAvgPrice, sampleAPlusRate, totalSkuCount, sampleFbaRate
 
 ## Mode 1: Full Scan
 
@@ -74,7 +74,7 @@ Required: 1+ category paths or keywords. Optional: scan depth, metric preference
 | New entrant wave | sampleNewSkuRate up >5 percentage points | 🟡 |
 | Brand loosening | topBrandSalesRate down >3 percentage points | 🟡 |
 | Price band shift | sampleAvgPrice change >10% | 🟡 |
-| Margin change | sampleAvgGrossMargin change >5 percentage points | 🟡 |
+| Margin change | sampleAPlusRate change >5 percentage points | 🟡 |
 | Minor movement | None of the above triggered | 🟢 Silent log |
 
 ## Auto-Monitor

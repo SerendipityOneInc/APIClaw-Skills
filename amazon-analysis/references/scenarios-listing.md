@@ -33,7 +33,7 @@ python3 scripts/apiclaw.py analyze --asins B09XXXXX,B08YYYYY,B07ZZZZZ --label-ty
 | Data Point | Field | What to Analyze |
 |------------|-------|-----------------|
 | Bullet Points | `features` | Common selling points across competitors |
-| Negative Reviews | `reviews/analyze` | Pain points = differentiation opportunities |
+| Negative Reviews | `reviews/analysis` | Pain points = differentiation opportunities |
 | Star Distribution | `ratingBreakdown` | High 1★% = product flaw to avoid/solve |
 | Product Specs | `specifications` | Feature gaps competitors miss |
 | Image Count | `images` | Benchmark for visual content |

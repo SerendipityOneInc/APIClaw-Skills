@@ -54,14 +54,14 @@ Select **APIClaw** when prompted.
 | 1 | `categories` | Browse/search category tree |
 | 2 | `markets/search` | Market-level metrics (sales, price, concentration) |
 | 3 | `products/search` | Product search with 14 selection modes |
-| 4 | `products/competitor-lookup` | Competitor discovery |
+| 4 | `products/competitors` | Competitor discovery |
 | 5 | `realtime/product` | Live ASIN detail (rating, BSR, Buy Box, variants) |
-| 6 | `reviews/analyze` | AI review insights (sentiment, pain points, keywords) |
+| 6 | `reviews/analysis` | AI review insights (sentiment, pain points, keywords) |
 | 7 | `products/price-band-overview` | Price band summary (hottest, best opportunity) |
 | 8 | `products/price-band-detail` | Full 5-band distribution |
 | 9 | `products/brand-overview` | Brand concentration (CR10) |
 | 10 | `products/brand-detail` | Per-brand breakdown |
-| 11 | `products/product-history` | Daily price/BSR/sales snapshots |
+| 11 | `products/history` | Daily price/BSR/sales snapshots |
 
 ## Credit Cost
 

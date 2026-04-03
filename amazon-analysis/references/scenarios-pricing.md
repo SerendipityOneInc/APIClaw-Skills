@@ -42,10 +42,10 @@ python3 scripts/apiclaw.py products --keyword "wireless earbuds" --page-size 50
 
 ```bash
 python3 scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 20
-# → Compare: price, fbaFee, profitMargin across competitors
+# → Compare: price, fbaFee across competitors
 ```
 
-**Key fields**: `price`, `fbaFee`, `profitMargin`, `fulfillment`
+**Key fields**: `price`, `fbaFee`, removed, `fulfillment`
 
 ---
 
@@ -75,7 +75,7 @@ python3 scripts/apiclaw.py price-band-overview --keyword "yoga mat"
 python3 scripts/apiclaw.py price-band-detail --keyword "yoga mat" --price-min 20 --price-max 40
 
 # Step 3: Historical price trends for key ASINs
-python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+python3 scripts/apiclaw.py history --asin B09XXXXX --period 90d
 ```
 
 **Key metrics**: `sampleOpportunityIndex` > 1.0 = underserved band, Sales/Competition Ratio = Avg Monthly Sales / Avg Review Count (higher = easier entry).

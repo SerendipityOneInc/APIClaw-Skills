@@ -33,10 +33,10 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 - **Category-wide**: keyword/category name → resolve via `categories` first (need ≥3-level deep path)
 
 ## API Pitfalls (see apiclaw skill for full list)
-- `reviews/analyze` needs **50+ reviews** — fallback to `realtime/product` ratingBreakdown
+- `reviews/analysis` needs **50+ reviews** — fallback to `realtime/product` ratingBreakdown
 - **labelType: one per call** — do NOT comma-separate. Make separate calls.
 - Category mode needs precise path (≥3 levels) — broad categories = diluted insights
-- Field name is `reviewRate` (not `reviewPercentage`) for mention frequency
+- Field name is `reviewRate` (not `reviewRate`) for mention frequency
 - ASIN-specific endpoints don't need `--category`; keyword-based ones do
 
 ## 11 Analysis Dimensions
@@ -75,6 +75,6 @@ Respond in user's language. Tag every conclusion: 📊 Data-backed / 🔍 Inferr
 Sections: Review Snapshot → Top 10 Pain Points (with count & %) → Top 10 Positives → Buying Factors → Improvement Wishlist → Consumer Profile → Usage Patterns → Competitor Comparison → Listing Copy Suggestions → Differentiation Roadmap (impact-ranked) → Data Provenance → API Usage
 
 Do NOT invent insights — only report what the API returns. Omit empty dimensions.
-Cross-validate: star distribution (ratingBreakdown) should match sentiment (reviews/analyze).
+Cross-validate: star distribution (ratingBreakdown) should match sentiment (reviews/analysis).
 
 ## API Budget: ~20-30 credits

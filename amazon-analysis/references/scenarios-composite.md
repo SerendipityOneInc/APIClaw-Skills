@@ -48,13 +48,12 @@ python3 scripts/apiclaw.py price-band-overview --keyword "pet toys"
 
 | Dimension | Weight | Field | Source Interface |
 |------|------|---------|---------|
-| Demand Strength | 25% | `atLeastMonthlySales` | `products` / `competitors` |
+| Demand Strength | 25% | `monthlySalesFloor` | `products` / `competitors` |
 | Competition Difficulty | 25% | `ratingCount` + `sellerCount` | `products` / `competitors` |
-| Profit Margin | 20% | `price` × `profitMargin` | `products` / `competitors` |
 | Differentiation Opportunity | 15% | `rating` < 4.3 or `ratingCount` < 200 | `products` / `competitors` |
 | User Match | 15% | Budget/Experience/Preferences | User input |
 
-**⚠️ All scoring fields come from `products`/`competitors` interface. Do NOT use `realtime/product` for scoring — it lacks sales, profitMargin, and sellerCount.**
+**⚠️ All scoring fields come from `products`/`competitors` interface. Do NOT use `realtime/product` for scoring — it lacks sales and sellerCount.**
 
 **Output Template**
 
@@ -84,17 +83,17 @@ python3 scripts/apiclaw.py price-band-overview --keyword "pet toys"
 
 ```bash
 python3 scripts/apiclaw.py competitors --keyword "wireless earbuds" --page-size 50
-# → Filter results by sellerLocation field
+# → Filter results by buyBoxSellerCountryCode field
 ```
 
-**sellerLocation Filtering Logic**:
-- Primary: `sellerLocation` contains "CN" / "China" / Chinese city names: Shenzhen, Guangzhou, Hangzhou, Yiwu, Dongguan, Xiamen, Shanghai, Beijing, Ningbo, Fuzhou
-- Sort by `atLeastMonthlySales`, find Top 5 Chinese sellers by sales volume
+**buyBoxSellerCountryCode Filtering Logic**:
+- Primary: `buyBoxSellerCountryCode` contains "CN" / "China" / Chinese city names: Shenzhen, Guangzhou, Hangzhou, Yiwu, Dongguan, Xiamen, Shanghai, Beijing, Ningbo, Fuzhou
+- Sort by `monthlySalesFloor`, find Top 5 Chinese sellers by sales volume
 
-**⚠️ Fallback when sellerLocation is null** (common — many ASINs don't have this field):
-- Check `buyboxSeller` or `brand` for Chinese seller patterns: all-pinyin names, names ending in "-Direct"/"-Store"/"-Official", or gibberish letter combinations
+**⚠️ Fallback when buyBoxSellerCountryCode is null** (common — many ASINs don't have this field):
+- Check `buyBoxSellerName` or `brand` for Chinese seller patterns: all-pinyin names, names ending in "-Direct"/"-Store"/"-Official", or gibberish letter combinations
 - Cross-reference with product categories typical of Chinese sellers (electronics accessories, phone cases, etc.)
-- If sellerLocation coverage is too low (<30% of results), note this limitation in output
+- If buyBoxSellerCountryCode coverage is too low (<30% of results), note this limitation in output
 
 **Analysis Dimensions**:
 - Chinese sellers count ratio (vs total sellers)
@@ -153,7 +152,7 @@ python3 scripts/apiclaw.py brand-detail --keyword "yoga mat" --brand "TopBrand"
 python3 scripts/apiclaw.py product --asin B09XXXXX
 
 # Step 7: Historical validation
-python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+python3 scripts/apiclaw.py history --asin B09XXXXX --period 90d
 
 # Step 8: Consumer insights
 python3 scripts/apiclaw.py analyze --category "Sports & Outdoors,Exercise & Fitness,Yoga,Yoga Mats" --period 90d
@@ -163,4 +162,4 @@ python3 scripts/apiclaw.py analyze --category "Sports & Outdoors,Exercise & Fitn
 - Market avg price vs price-band distribution (consistency check)
 - Brand concentration from `market` vs `brand-overview` (should align)
 - Top products from `products` should appear in best price band from `price-band-detail`
-- Historical trend from `product-history` should support growth claims from `products`
+- Historical trend from `history` should support growth claims from `products`

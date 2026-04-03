@@ -34,9 +34,9 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 - Keyword search is broad → **MUST lock categoryPath first** via `categories` endpoint
 - Brand/price-band queries **MUST include --category** to avoid cross-category contamination
 - Revenue = `sampleAvgMonthlyRevenue` (NEVER calculate avgPrice × totalSales — overestimates 30-70%)
-- Sales = `atLeastMonthlySales` (lower bound). Fallback: 300,000 / BSR^0.65, tag 🔍
+- Sales = `monthlySalesFloor` (lower bound). Fallback: 300,000 / BSR^0.65, tag 🔍
 - Use `sampleOpportunityIndex`, `sampleTop10BrandSalesRate` directly — never reinvent
-- `reviews/analyze` needs 50+ reviews; fallback to realtime ratingBreakdown
+- `reviews/analysis` needs 50+ reviews; fallback to realtime ratingBreakdown
 - Aggregation endpoints without categoryPath produce severely distorted data
 
 ## Unique Logic
@@ -47,7 +47,7 @@ Run `market --category "{path}" --topn 10 --page-size 20`, paginate all pages. S
 | Dimension | Weight | Field | Good→100 | Bad→0 |
 |-----------|--------|-------|----------|-------|
 | Demand | 25% | sampleAvgMonthlySales | ≥1500 | <200 |
-| Profit | 25% | sampleAvgGrossMargin | ≥0.35 | <0.15 |
+| Profit | 25% | sampleAPlusRate | ≥0.35 | <0.15 |
 | New Entrant | 20% | sampleNewSkuRate | ≥0.20 | <0.05 |
 | Brand Openness | 20% | topBrandSalesRate | ≤0.50 | ≥0.90 (inverted) |
 | Capacity | 10% | totalSkuCount | 300-8000 | extreme |

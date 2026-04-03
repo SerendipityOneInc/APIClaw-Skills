@@ -57,14 +57,14 @@ Select **Amazon Daily Market Radar** when prompted.
 | `categories` | Category resolution |
 | `markets/search` | Market-level metrics |
 | `products/search` | Product landscape |
-| `products/competitor-lookup` | Competitor discovery |
+| `products/competitors` | Competitor discovery |
 | `realtime/product` | Live ASIN polling |
-| `reviews/analyze` | Review spike detection |
+| `reviews/analysis` | Review spike detection |
 | `products/price-band-overview` | Price band shifts |
 | `products/price-band-detail` | Detailed price analysis |
 | `products/brand-overview` | Brand share changes |
 | `products/brand-detail` | Per-brand tracking |
-| `products/product-history` | Trend validation |
+| `products/history` | Trend validation |
 
 ## Credit Cost
 

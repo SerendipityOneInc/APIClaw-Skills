@@ -77,14 +77,14 @@ All 11 APIClaw endpoints:
 | `categories` | Category resolution |
 | `markets/search` | Market context |
 | `products/search` | Find top products to analyze |
-| `products/competitor-lookup` | Discover competitors |
+| `products/competitors` | Discover competitors |
 | `realtime/product` | Live product details + rating breakdown |
-| `reviews/analyze` | Core — 11-dimension review analysis |
+| `reviews/analysis` | Core — 11-dimension review analysis |
 | `products/price-band-overview` | Price context |
 | `products/price-band-detail` | Price band details |
 | `products/brand-overview` | Brand landscape |
 | `products/brand-detail` | Per-brand breakdown |
-| `products/product-history` | Review trend over time |
+| `products/history` | Review trend over time |
 
 ## Credit Cost
 

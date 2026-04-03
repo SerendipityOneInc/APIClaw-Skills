@@ -59,14 +59,14 @@ Select **Amazon Listing Audit Pro** when prompted.
 | `categories` | Category resolution |
 | `markets/search` | Market benchmarks |
 | `products/search` | Category product landscape |
-| `products/competitor-lookup` | Leader discovery |
+| `products/competitors` | Leader discovery |
 | `realtime/product` | Live listing details (yours + leaders) |
-| `reviews/analyze` | Review sentiment and keywords |
+| `reviews/analysis` | Review sentiment and keywords |
 | `products/price-band-overview` | Pricing opportunity |
 | `products/price-band-detail` | Price band analysis |
 | `products/brand-overview` | Brand landscape |
 | `products/brand-detail` | Brand breakdown |
-| `products/product-history` | BSR and price trends |
+| `products/history` | BSR and price trends |
 
 ## Credit Cost
 

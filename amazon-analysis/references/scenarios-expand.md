@@ -6,7 +6,7 @@
 >
 > ⚠️ **Always resolve categoryPath before running these queries.** Tag conclusions with 📊/🔍/💡 confidence labels.
 >
-> **Note**: Use `product-history` for ASIN-level historical trends. Use `brand-overview` for market scanning.
+> **Note**: Use `history` for ASIN-level historical trends. Use `brand-overview` for market scanning.
 
 ---
 
@@ -55,7 +55,6 @@ python3 scripts/apiclaw.py market --category "category path" --topn 10
 | Signal | Data Source | Trigger Condition |
 |--------|-------------|-------------------|
 | Sales decline | `salesGrowthRate` | Negative growth rate (current snapshot) |
-| Profit erosion | `profitMargin` | Margin < 10% |
 | High competition | `sellerCount` | Currently > 10 sellers |
 | BSR worsening | `bsrGrowthRate` | Negative BSR growth (rank number increasing) |
 | Weak market | `sampleAvgMonthlySales` | Category avg below viable threshold |
@@ -92,7 +91,7 @@ python3 scripts/apiclaw.py brand-overview --keyword "pet toys"
 python3 scripts/apiclaw.py price-band-overview --keyword "pet toys"
 
 # Historical validation for specific expansion candidates
-python3 scripts/apiclaw.py product-history --asin B09XXXXX --period 90d
+python3 scripts/apiclaw.py history --asin B09XXXXX --period 90d
 ```
 
 **Expansion evaluation**: Combine `brand-overview` (low concentration = easier entry) with `price-band-overview` (high opportunity index bands) to identify the best entry points.

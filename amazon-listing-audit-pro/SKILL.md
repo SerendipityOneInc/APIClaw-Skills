@@ -40,8 +40,8 @@ Required: my_asin + keyword. Collect missing inputs in ONE message.
 
 1. **Category first**: MUST resolve categoryPath via `categories --keyword` before data collection
 2. **All keyword-based endpoints MUST include `--category`**; ASIN-specific endpoints do NOT
-3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`atLeastMonthlySales`, opportunity=`sampleOpportunityIndex`
-4. **reviews/analyze**: needs 50+ reviews; ASIN mode first, category fallback
+3. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`monthlySalesFloor`, opportunity=`sampleOpportunityIndex`
+4. **reviews/analysis**: needs 50+ reviews; ASIN mode first, category fallback
 5. **Sales null fallback**: Monthly sales ≈ 300,000 / BSR^0.65, tag 🔍
 
 ## Execution

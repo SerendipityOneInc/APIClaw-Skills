@@ -42,8 +42,8 @@ Brand queries MUST also include confirmed `--category`.
 1. **Category first**: MUST resolve and confirm categoryPath with user before any data collection
 2. **All keyword-based endpoints MUST include `--category`**; ASIN-specific endpoints do NOT need it
 3. **Brand + category**: a brand sells across categories — only analyze within locked subcategory
-4. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`atLeastMonthlySales`, concentration=`sampleTop10BrandSalesRate`
-5. **reviews/analyze**: needs 50+ reviews; fallback to ratingBreakdown from realtime/product
+4. **Use API fields directly**: revenue=`sampleAvgMonthlyRevenue` (NEVER price×sales), sales=`monthlySalesFloor`, concentration=`sampleTop10BrandSalesRate`
+5. **reviews/analysis**: needs 50+ reviews; fallback to ratingBreakdown from realtime/product
 
 ## Mode Selection
 

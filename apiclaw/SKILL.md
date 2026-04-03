@@ -15,6 +15,9 @@ description: >
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
+> **📋 Live API Reference**: Field names and parameters may change. If you encounter field errors,
+> check the latest OpenAPI spec at https://apiclaw.io/api/v1/openapi-spec for current field definitions.
+
 # APIClaw — Commerce Data Infrastructure for AI Agents
 
 200M+ Amazon products. 11 endpoints. One API key.
@@ -30,9 +33,9 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 1. **Keyword search is broad** → MUST lock `categoryPath` first via `categories` endpoint
 2. **Brand/price-band queries MUST include --category** to avoid cross-category contamination
 3. **Revenue** = `sampleAvgMonthlyRevenue` directly. **NEVER** calculate avgPrice × totalSales (overestimates 30-70%)
-4. **Sales** = `atLeastMonthlySales` (lower bound). Fallback: 300,000 / BSR^0.65, tag as 🔍
+4. **Sales** = `monthlySalesFloor` (lower bound). Fallback: 300,000 / BSR^0.65, tag as 🔍
 5. **Use API fields directly**: `sampleOpportunityIndex`, `sampleTop10BrandSalesRate` — never reinvent
-6. **reviews/analyze** needs 50+ reviews; fallback to realtime ratingBreakdown
+6. **reviews/analysis** needs 50+ reviews; fallback to realtime ratingBreakdown
 7. **Aggregation endpoints** (price-band, brand) without categoryPath produce severely distorted data
 8. **Price-band and brand endpoints only accept `keyword`** (not categoryPath) — cross-validate returned products
 
@@ -42,39 +45,38 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 |---|----------|---------|------------|
 | 1 | `categories` | Browse/search category tree | categoryPath, productCount |
 | 2 | `markets/search` | Market-level metrics | sampleAvgMonthlySales, sampleAvgPrice, topSalesRate, sampleNewSkuRate |
-| 3 | `products/search` | Product search (14 modes) | asin, price, atLeastMonthlySales, rating, ratingCount, profitMargin |
-| 4 | `products/competitor-lookup` | Competitor discovery | same fields as products/search |
+| 3 | `products/search` | Product search (14 modes) | asin, price, monthlySalesFloor, rating, ratingCount, fbaFee |
+| 4 | `products/competitors` | Competitor discovery | same fields as products/search |
 | 5 | `realtime/product` | Live ASIN detail | rating, features, bestsellersRank[], buyboxWinner.price, variants |
-| 6 | `reviews/analyze` | AI review insights (11 dims) | sentimentDistribution, consumerInsights, topKeywords |
+| 6 | `reviews/analysis` | AI review insights (11 dims) | sentimentDistribution, consumerInsights, topKeywords |
 | 7 | `products/price-band-overview` | Price band summary | hottestBand, bestOpportunityBand, sampleOpportunityIndex |
 | 8 | `products/price-band-detail` | Full 5-band distribution | priceBands[] with sales, brands, ratings per band |
 | 9 | `products/brand-overview` | Brand concentration | sampleTop10BrandSalesRate (CR10), sampleBrandCount |
 | 10 | `products/brand-detail` | Per-brand breakdown | brands[] with sales, revenue, sampleProducts |
-| 11 | `products/product-history` | Daily snapshots | price, bsrRank, subBsrRank, recentSales |
+| 11 | `products/history` | Daily snapshots | price, bsr, subBsr, recentSales |
 
 ## Known Quirks
 - `topN`, `listingAge`, `newProductPeriod` are **strings** (`"10"` not `10`)
 - Response `.data` is always an **array** — use `.data[0]`
 - `ratingCount` not `reviewCount` everywhere
-- `bsrRank` (int) in products vs `bestsellersRank` (array) in realtime
+- `bsr` (int) in products vs `bestsellersRank` (array) in realtime
 - `buyboxWinner.price` — NOT top-level `price` in realtime
-- `realtime/product` does NOT return: atLeastMonthlySales, profitMargin, fbaFee, sellerCount
+- `realtime/product` does NOT return: monthlySalesFloor, fbaFee, sellerCount
 - `reviewCountMin/Max` filters currently broken (API-56)
-- `reviews/analyze` may 500 for certain ASINs (API-58) — retry different ASIN
+- `reviews/analysis` may 500 for certain ASINs (API-58) — retry different ASIN
 - Rate limit: 100 req/min, 10 req/sec burst
 - `categories` uses `categoryKeyword` (not `keyword`) and `parentCategoryPath` (not `parentCategoryName`)
-- `reviews/analyze`: `mode` required ("asin"/"category"), use `asins` (plural array) not `asin`
+- `reviews/analysis`: `mode` required ("asin"/"category"), use `asins` (plural array) not `asin`
 
 ## Field Differences Across Endpoints
 
 | Data | markets | products/competitors | realtime | reviews | price-band | brand | history |
 |------|---------|---------------------|----------|---------|------------|-------|---------|
-| Sales | sampleAvgMonthlySales | atLeastMonthlySales | ❌ | ❌ | sampleSalesRate | sampleGroupMonthlySales | recentSales |
+| Sales | sampleAvgMonthlySales | monthlySalesFloor | ❌ | ❌ | sampleSalesRate | sampleGroupMonthlySales | recentSales |
 | Price | sampleAvgPrice | price | buyboxWinner.price | ❌ | bandMin/MaxPrice | sampleAvgPrice | price |
-| BSR | sampleAvgBsr | bsrRank (int) | bestsellersRank[] | ❌ | ❌ | ❌ | bsrRank |
+| BSR | sampleAvgBsr | bsr (int) | bestsellersRank[] | ❌ | ❌ | ❌ | bsr |
 | Rating | sampleAvgRating | rating | rating | avgRating | sampleAvgRating | sampleAvgRating | ❌ |
-| Reviews | sampleAvgReviewCount | ratingCount | ratingCount | totalReviews | ❌ | sampleAvgRatingCount | ❌ |
-| Profit | ❌ | profitMargin, fbaFee | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Reviews | sampleAvgReviewCount | ratingCount | ratingCount | reviewCount | ❌ | sampleAvgRatingCount | ❌ |
 | Insights | ❌ | ❌ | ❌ | ✅ consumerInsights | ❌ | ❌ | ❌ |
 | Concentration | topSalesRate | ❌ | ❌ | ❌ | sampleTop3BrandSalesRate | CR10 | ❌ |
 | Opportunity | ❌ | ❌ | ❌ | ❌ | sampleOpportunityIndex | ❌ | ❌ |
@@ -87,7 +89,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 Strategy recommendations and subjective conclusions are NEVER 📊. Extreme growth (>200%) = 💡 only.
 
 ## Data Notes
-- Sales (`atLeastMonthlySales`) = lower-bound estimate
+- Sales (`monthlySalesFloor`) = lower-bound estimate
 - Realtime = live; products/competitors = ~T+1 delay
 - Amazon US only (amazon.com) — more marketplaces planned
 - Each call consumes credits; check `meta.creditsConsumed`

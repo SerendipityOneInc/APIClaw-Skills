@@ -54,14 +54,14 @@ Select **Amazon Analysis** when prompted.
 | `categories` | Lock category path before analysis |
 | `markets/search` | Market-level metrics and context |
 | `products/search` | Product scanning with 14 selection modes |
-| `products/competitor-lookup` | Competitive landscape |
+| `products/competitors` | Competitive landscape |
 | `realtime/product` | Live ASIN validation |
-| `reviews/analyze` | Consumer pain points and sentiment |
+| `reviews/analysis` | Consumer pain points and sentiment |
 | `products/price-band-overview` | Price band opportunity |
 | `products/price-band-detail` | Detailed price distribution |
 | `products/brand-overview` | Brand concentration (CR10) |
 | `products/brand-detail` | Per-brand breakdown |
-| `products/product-history` | 30-day trend analysis |
+| `products/history` | 30-day trend analysis |
 
 ## Credit Cost
 

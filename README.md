@@ -35,14 +35,14 @@
 
 ## Skills Overview
 
-This repo contains **9 agent skills** organized in two tiers:
+This repo contains **10 agent skills** organized in two tiers:
 
 **🏗️ Foundation** — data access and full-spectrum analysis:
 
 | Skill | Description | Best For |
 |-------|------------|----------|
 | 📦 [`apiclaw/`](apiclaw/) | Data layer overview, 11 API endpoints, quick integration | Getting started, agent tool-calling |
-| 🎯 [`amazon-analysis/`](amazon-analysis/) | 14 selection strategies, market validation, competitor intelligence | Deep product research, autonomous sourcing |
+| 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 selection strategies, market validation, competitor intelligence | Deep product research, autonomous sourcing |
 
 **⚡ Specialized** — purpose-built for specific workflows:
 
@@ -52,8 +52,9 @@ This repo contains **9 agent skills** organized in two tiers:
 | 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | Daily market pulse check and anomaly detection | Morning briefings, trend alerts |
 | ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | Comprehensive listing quality audit and optimization | Listing health checks, conversion improvement |
 | 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | Market viability assessment for new category entry | Go/no-go decisions, market sizing |
+| 📈 [`amazon-market-trend-scanner/`](amazon-market-trend-scanner/) | Category landscape scanning and trend discovery | Category trends, emerging niches |
 | 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | Underserved niche and opportunity identification | Finding blue ocean markets |
-| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | Dynamic pricing strategy and margin optimization | Price positioning, profit maximization |
+| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | Dynamic pricing strategy and competitive signals | Price positioning, competitive pricing |
 | 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | Deep review sentiment analysis and insight extraction | Customer voice analysis, product improvement |
 
 ## Quick Start
@@ -68,7 +69,7 @@ You'll be prompted to select which skills to install:
 
 **🏗️ Foundation:**
 - **APIClaw** — Data layer overview, 11 API endpoints, quick integration
-- **Amazon Analysis** — 14 selection strategies, market validation, competitor intelligence
+- **Amazon Analysis** — 13 selection strategies, market validation, competitor intelligence
 
 **⚡ Specialized:**
 - **Amazon Competitor War Room** — Competitive monitoring & response
@@ -76,8 +77,9 @@ You'll be prompted to select which skills to install:
 - **Amazon Listing Audit Pro** — Listing quality audit & optimization
 - **Amazon Market Entry Analyzer** — Market viability assessment
 - **Amazon Opportunity Discoverer** — Niche & opportunity identification
-- **Amazon Pricing Command Center** — Pricing strategy & margin optimization
-- **Amazon Review Intelligence Engine** — Review intelligence Review sentiment & insight extraction insight extraction
+- **Amazon Market Trend Scanner** — Category landscape scanning & trend discovery
+- **Amazon Pricing Command Center** — Pricing strategy & competitive signals
+- **Amazon Review Intelligence Engine** — Review sentiment & insight extraction
 
 Or clone manually:
 ```bash
@@ -112,25 +114,24 @@ python amazon-analysis/scripts/apiclaw.py products --keyword "wireless earbuds" 
 
 | Endpoint | Description | Example Use Case |
 |----------|-------------|-----------------|
-| 🔍 `products/search` | Product search with 14 preset modes, 20+ filters | *"Find running shoes under $80 with 4+ stars"* |
+| 🔍 `products/search` | Product search with 13 preset modes, 20+ filters | *"Find running shoes under $80 with 4+ stars"* |
 | 📊 `markets/search` | Market-level metrics — concentration, brand share, pricing | *"How competitive is the yoga mat market?"* |
-| 🏷️ `products/competitor-lookup` | Competitor discovery by keyword, brand, or ASIN | *"Who are the top sellers in this niche?"* |
+| 🏷️ `products/competitors` | Competitor discovery by keyword, brand, or ASIN | *"Who are the top sellers in this niche?"* |
 | ⚡ `realtime/product` | Real-time product details — reviews, features, variants | *"Get current details for ASIN B0D5CRV4KL"* |
-| 💬 `reviews/analyze` | AI-powered review insights — sentiment, pain points | *"What do customers love/hate about this product?"* |
+| 💬 `reviews/analysis` | AI-powered review insights — sentiment, pain points | *"What do customers love/hate about this product?"* |
 | 📁 `categories` | Amazon category tree navigation | *"Show subcategories under Electronics"* |
 | 📈 `products/price-band-overview` | Price band summary with best opportunity band | *"What's the best price range for yoga mats?"* |
 | 📊 `products/price-band-detail` | Full 5-band price distribution analysis | *"Show detailed price band breakdown for wireless earbuds"* |
 | 🏢 `products/brand-overview` | Top-brand concentration metrics (CR10) | *"How concentrated is the brand landscape?"* |
 | 🏷️ `products/brand-detail` | Per-brand breakdown with top products | *"Which brands dominate this category?"* |
-| 📅 `products/product-history` | Historical daily snapshots for ASINs | *"Show price and BSR history for this ASIN"* |
+| 📅 `products/history` | Historical daily snapshots for ASINs | *"Show price and BSR history for this ASIN"* |
 
-## 14 Product Search Modes
+## 13 Product Search Modes
 
-The `products/search` endpoint supports 14 preset modes for different research strategies:
+The `products/search` endpoint supports 13 preset modes for different research strategies:
 
 | Mode | Strategy | Target |
 |------|----------|--------|
-| `beginner` | Low competition, easy entry | New sellers |
 | `fast-movers` | High sales velocity | Quick revenue |
 | `emerging` | Rising trends, low saturation | Early movers |
 | `long-tail` | Niche keywords, steady demand | Sustainable income |
@@ -160,12 +161,12 @@ The `products/search` endpoint supports 14 preset modes for different research s
 │   │   ├── execution-guide.md              # Step-by-step execution playbook
 │   │   ├── scenarios-composite.md          # Comprehensive recommendations
 │   │   ├── scenarios-eval.md               # Product evaluation, risk, reviews
-│   │   ├── scenarios-pricing.md            # Pricing strategy, profit estimation
+│   │   ├── scenarios-pricing.md            # Pricing strategy
 │   │   ├── scenarios-ops.md                # Market monitoring, alerts
 │   │   ├── scenarios-expand.md             # Expansion, trends
 │   │   └── scenarios-listing.md            # Listing writing, optimization
 │   └── scripts/
-│       └── apiclaw.py                      # CLI — 8 subcommands, 14 preset modes
+│       └── apiclaw.py                      # CLI — 8 subcommands, 13 preset modes
 │
 ├── amazon-competitor-intelligence-monitor/  # Competitor intelligence & monitoring
 │   ├── SKILL.md
@@ -202,7 +203,14 @@ The `products/search` endpoint supports 14 preset modes for different research s
 │   └── scripts/
 │       └── apiclaw.py
 │
-├── amazon-pricing-command-center/        # Pricing strategy & margin optimization
+├── amazon-market-trend-scanner/           # Category landscape scanning & trend discovery
+│   ├── SKILL.md
+│   ├── references/
+│   │   └── reference.md
+│   └── scripts/
+│       └── apiclaw.py
+│
+├── amazon-pricing-command-center/        # Pricing strategy & competitive signals
 │   ├── SKILL.md
 │   ├── references/
 │   │   └── reference.md

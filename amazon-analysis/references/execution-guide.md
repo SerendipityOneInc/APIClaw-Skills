@@ -56,7 +56,7 @@ When comparing multiple brands, analyze each brand's ASIN separately — do NOT 
 If `analyze` returns insufficient data (requires 50+ reviews), silently fall back to `realtime/product` ratingBreakdown data. Extract sentiment distribution from star ratings. Never expose API errors to users.
 
 ### Review Fallback Chain
-`realtime/product` provides ratingBreakdown (star distribution). When reviews/analyze is unavailable (insufficient reviews), use this as the consumer insight source. Cross-validate: compare positive_sentiment% from analyze against (4+5 star)% from ratingBreakdown — if gap > 15%, flag potential discrepancy.
+`realtime/product` provides ratingBreakdown (star distribution). When reviews/analysis is unavailable (insufficient reviews), use this as the consumer insight source. Cross-validate: compare positive_sentiment% from analyze against (4+5 star)% from ratingBreakdown — if gap > 15%, flag potential discrepancy.
 
 ---
 
@@ -100,7 +100,7 @@ When `products` or `competitors` returns ASINs in Full-mode analysis, call `prod
 
 ## Sales Estimation Fallback
 
-When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
+When `monthlySalesFloor` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 ---
 
@@ -161,7 +161,7 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 | markets/search | 1 |
 | products/search | 2 |
 | realtime/product | 3 |
-| reviews/analyze | 1 |
+| reviews/analysis | 1 |
 | **Total** | **8** |
 | **Credits consumed** | **8** |
 | **Credits remaining** | **492** |
@@ -180,39 +180,37 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 
 The interfaces return **different fields**. Do NOT assume they share the same structure.
 
-| Data | `market` | `products`/`competitors` | `realtime/product` | `reviews/analyze` | `price-band` | `brand` | `product-history` |
+| Data | `market` | `products`/`competitors` | `realtime/product` | `reviews/analysis` | `price-band` | `brand` | `history` |
 |------|----------|--------------------------|--------------------|--------------------|-------------|---------|-------------------|
-| Monthly Sales | `sampleAvgMonthlySales` | `atLeastMonthlySales` | ❌ | ❌ | per-band avg | per-brand | historical |
-| Revenue | `sampleAvgMonthlyRevenue` | `salesRevenue` | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Monthly Sales | `sampleAvgMonthlySales` | `monthlySalesFloor` | ❌ | ❌ | per-band avg | per-brand | historical |
+| Revenue | `sampleAvgMonthlyRevenue` | `monthlyRevenueFloor` | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Price | `sampleAvgPrice` | `price` | `buyboxWinner.price` | ❌ | band range | ❌ | historical |
-| BSR | `sampleAvgBsr` | `bsrRank` (integer) | `bestsellersRank` (array) | ❌ | ❌ | ❌ | historical |
+| BSR | `sampleAvgBsr` | `bsr` (integer) | `bestsellersRank` (array) | ❌ | ❌ | ❌ | historical |
 | Rating | `sampleAvgRating` | `rating` | `rating` | `avgRating` | ❌ | ❌ | historical |
-| Review Count | `sampleAvgReviewCount` | `ratingCount` | `ratingCount` | `totalReviews` | ❌ | ❌ | ❌ |
+| Review Count | `sampleAvgReviewCount` | `ratingCount` | `ratingCount` | `reviewCount` | ❌ | ❌ | ❌ |
 | Sentiment | ❌ | ❌ | ❌ | `sentimentDistribution` | ❌ | ❌ | ❌ |
 | Consumer Insights | ❌ | ❌ | ❌ | `consumerInsights` (11 dims) | ❌ | ❌ | ❌ |
 | Brand Share | ❌ | ❌ | ❌ | ❌ | ❌ | `sampleTop10BrandSalesRate` | ❌ |
 | Opportunity Index | ❌ | ❌ | ❌ | ❌ | `sampleOpportunityIndex` | ❌ | ❌ |
-| Seller | ❌ | `buyboxSeller` (string) | `buyboxWinner` (object) | ❌ | ❌ | ❌ | ❌ |
-| Profit Margin | ❌ | `profitMargin` | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Seller | ❌ | `buyBoxSellerName` (string) | `buyboxWinner` (object) | ❌ | ❌ | ❌ | ❌ |
 | Features/Bullets | ❌ | ❌ | `features` | ❌ | ❌ | ❌ | ❌ |
 
 **Usage rule:**
 - `products`/`competitors` → sales, pricing, competition
 - `realtime/product` → review details, listing content, seller info
 - `market` → category-level aggregates
-- `reviews/analyze` → AI-powered review insights
+- `reviews/analysis` → AI-powered review insights
 - `price-band-*` → price segment analysis and opportunity
 - `brand-*` → brand landscape and concentration
-- `product-history` → historical trends
+- `history` → historical trends
 - For reports: combine quantitative + qualitative + consumer insights + market structure
 
 ## Common Field Name Mistakes
 
 - `reviewCount` → use `ratingCount`
-- `bsr` → use `bsrRank` (products/competitors) or `bestsellersRank` (realtime, array)
-- `monthlySales` → use `atLeastMonthlySales`
+- `bsr` → use `bsr` (products/competitors) or `bestsellersRank` (realtime, array)
+- `monthlySales` → use `monthlySalesFloor`
 - realtime price → `buyboxWinner.price`
-- realtime has NO `profitMargin`
 - See `reference.md` → Shared Product Object for complete field list
 
 ## Data Structure Reminder
@@ -230,7 +228,7 @@ Self-check: `python3 scripts/apiclaw.py check`
 |-------|-----|
 | `Cannot index array with string` | Use `.data[0].fieldName` (`.data` is array) |
 | Empty `data: []` | Use `categories` to confirm category exists |
-| `atLeastMonthlySales: null` | BSR estimate: 300,000 / BSR^0.65 |
+| `monthlySalesFloor: null` | BSR estimate: 300,000 / BSR^0.65 |
 
 **FORBIDDEN in Data Provenance**: HTTP status codes (422, 500, 403), endpoint failure details, "fallback", "degraded", "retry", internal implementation details. The user should see clean data sourcing, not debugging logs.
 

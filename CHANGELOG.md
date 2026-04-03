@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] — 2026-04-03
+
+### Breaking Changes — API V2 Field Renames
+- `atLeastMonthlySales` → `monthlySalesFloor`, `atLeastMonthlyRevenue` → `monthlyRevenueFloor`
+- `bsrRank` → `bsr`, `subBsrRank` → `subBsr`
+- `ratingConversionRate` → `ratingToSalesRate`, `ratingMonthlyNew` → `monthlyRatingCount`
+- `buyboxSeller` → `buyBoxSellerName`, `sellerLocation` → `buyBoxSellerCountryCode`
+- `sampleEbcSkuRate` → `sampleAPlusRate`, `sampleAvgPackageDimensions` → `sampleAvgPackageVolume`
+- `totalReviews` → `reviewCount`, `reviewPercentage` → `reviewRate`, `verifiedRatio` → `verifiedRate`
+- Endpoint: `products/competitor-lookup` → `products/competitors`
+- Endpoint: `reviews/analyze` → `reviews/analysis`
+- Endpoint: `products/product-history` → `products/history`
+- Removed: `profitMargin`, `sampleAvgGrossMargin`
+- `pageSize` max: 20 → 100
+
+### Bug Fixes
+- Fixed argparse prefix matching: `--page` silently overriding `--page-size`. Added `allow_abbrev=False`.
+
+### Skill Updates
+- **Renamed**: Dynamic Pricing Intelligence Agent → Amazon Pricing Command Center — RAISE/HOLD/LOWER Signals
+- **Renamed**: Market Radar → Amazon Market Trend Scanner — Daily Category Radar
+- **Removed**: amazon-blue-ocean-finder
+- **Disabled**: beginner mode (excludeKeywords not working)
+- Removed cost/COGS/profit from pricing skill
+- Added OpenAPI spec reference to all SKILL.md
+- Unified all reference.md to complete 11-endpoint version
+- 13 selection modes (was 14)
+
 ## [1.1.4] — 2026-04-01
 
 ### amazon-analysis v1.1.4
@@ -48,7 +76,7 @@ All notable changes to this project will be documented in this file.
 - **Reviews/Analyze Endpoint**: new `analyze` command for AI-powered review analysis (11 dimensions)
 - **New Scenario 4.6**: Category Consumer Insights
 - **Breaking**: `review` → `rating` rename across fields, filters, and CLI args
-- **Breaking**: `topReviews` removed from `realtime/product` (use `reviews/analyze`)
+- **Breaking**: `topReviews` removed from `realtime/product` (use `reviews/analysis`)
 - 6 new market response fields for new product metrics
 - Slimmed SKILL.md from 448 → 417 lines
 

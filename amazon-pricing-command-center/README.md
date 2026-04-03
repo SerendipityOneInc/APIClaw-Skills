@@ -58,12 +58,12 @@ Select **Amazon Pricing Command Center** when prompted.
 | `categories` | Category path resolution |
 | `markets/search` | Market-level pricing context |
 | `products/search` | Category product landscape |
-| `products/competitor-lookup` | Competitor pricing |
+| `products/competitors` | Competitor pricing |
 | `products/price-band-overview` | Opportunity band identification |
 | `products/price-band-detail` | Full price distribution |
 | `products/brand-overview` | Brand concentration |
 | `products/brand-detail` | Per-brand pricing |
-| `products/product-history` | Price and BSR trends |
+| `products/history` | Price and BSR trends |
 
 ## Credit Cost
 
