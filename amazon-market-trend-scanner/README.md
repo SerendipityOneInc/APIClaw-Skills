@@ -33,9 +33,9 @@ Select **Amazon Market Trend Scanner** when prompted.
 ## Example Prompts
 
 - *"Scan Pet Supplies for trending subcategories"*
-- *"什么品类在涨？扫一下 Home & Kitchen"*
+- *"Which categories are growing? Scan Home & Kitchen"*
 - *"Which subcategories under Sports & Outdoors are growing fastest?"*
-- *"帮我做品类趋势扫描，看看哪些细分在起势"*
+- *"Run a category trend scan and show me which niches are gaining momentum"*
 - *"Find emerging niches in Beauty & Personal Care"*
 
 ## What You Get

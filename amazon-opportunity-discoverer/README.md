@@ -33,10 +33,10 @@ Select **Amazon Opportunity Discoverer** when prompted.
 ## Example Prompts
 
 - *"I'm a beginner with $5K budget, find me safe product opportunities"*
-- *"我是新手卖家，预算 3 万，帮我找适合的产品"*
+- *"I'm a beginner seller with a $4K budget, find me suitable products"*
 - *"Find aggressive opportunities in home & kitchen, I have 2 years experience"*
 - *"Scan for products under $30 with less than 100 reviews and 300+ monthly sales"*
-- *"帮我做一次快速扫描，看看有什么机会"*
+- *"Run a quick scan and show me what opportunities are out there"*
 
 ## What You Get
 

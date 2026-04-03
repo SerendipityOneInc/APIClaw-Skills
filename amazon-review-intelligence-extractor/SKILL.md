@@ -28,8 +28,8 @@ Pre-analyzed consumer insights. Pain points, buying factors, user profiles, diff
 Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys)
 
 ## Input (one of)
-- **Single ASIN**: "分析 B09V3KXJPB 的评论"
-- **Multi-ASIN**: "对比这 5 个竞品的评论痛点"
+- **Single ASIN**: "Analyze reviews for B09V3KXJPB"
+- **Multi-ASIN**: "Compare review pain points across these 5 competitor ASINs"
 - **Category-wide**: keyword/category name → resolve via `categories` first (need ≥3-level deep path)
 
 ## API Pitfalls (see apiclaw skill for full list)

@@ -32,10 +32,10 @@ Select **Amazon Analysis** when prompted.
 ## Example Prompts
 
 - *"Analyze the yoga mat market on Amazon"*
-- *"帮我用 rising-stars 模式找 $15-30 的产品"*
+- *"Use the rising-stars mode to find products in the $15-30 range"*
 - *"Find beginner-friendly products in kitchen gadgets under $25"*
 - *"Run a full report on keyword 'silicone spatula'"*
-- *"用 underserved 模式找评分低于 3.7 的可改进产品"*
+- *"Use the underserved mode to find improvable products rated below 3.7"*
 
 ## What You Get
 

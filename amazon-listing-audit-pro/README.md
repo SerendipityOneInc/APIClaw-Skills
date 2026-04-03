@@ -33,10 +33,10 @@ Select **Amazon Listing Audit Pro** when prompted.
 ## Example Prompts
 
 - *"Audit my listing for ASIN B0XXXXXXXX, keyword 'yoga mat'"*
-- *"帮我做一次 Listing 健康检查，ASIN B0XXXXXXXX"*
+- *"Run a listing health check for ASIN B0XXXXXXXX"*
 - *"How does my listing compare to the top sellers in my category?"*
 - *"What keywords am I missing compared to competitors?"*
-- *"批量审计这 5 个 ASIN 的 Listing 质量"*
+- *"Batch audit the listing quality for these 5 ASINs"*
 
 ## What You Get
 

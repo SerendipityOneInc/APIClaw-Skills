@@ -8,7 +8,7 @@ description: >
   Quick Check: realtime/product polling, baseline diff, tiered alerts.
   Use when user asks about: competitor analysis, competitive landscape, competitor tracking,
   competitor monitoring, competitive intelligence, competitor comparison, benchmark, track competitor,
-  spy on competitors, 竞品分析, 竞品监控, 竞对追踪.
+  spy on competitors, competitor analysis, competitor monitoring, competitor tracking.
   Requires APICLAW_API_KEY.
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/APIClaw-Skills

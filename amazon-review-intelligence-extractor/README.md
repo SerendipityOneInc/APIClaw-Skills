@@ -53,7 +53,7 @@ Select **Amazon Review Intelligence Extractor** when prompted.
 - *"Analyze reviews for ASIN B09V3KXJPB — what are the main pain points?"*
 - *"Compare review sentiment across these 5 travel mug ASINs"*
 - *"What do customers love and hate about yoga mats in general?"*
-- *"分析这个产品的差评，找出改进方向"*
+- *"Analyze the negative reviews for this product and identify improvement areas"*
 
 ## What You Get
 

@@ -10,7 +10,7 @@ description: >
   changes across all subcategories under a parent category.
   Use when user asks about: market trends, category trends, trending
   categories, what's hot, emerging categories, trend scanner,
-  品类趋势, 市场趋势, 什么品类在涨.
+  category trends, market trends, which categories are growing.
   Requires APICLAW_API_KEY.
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/APIClaw-Skills

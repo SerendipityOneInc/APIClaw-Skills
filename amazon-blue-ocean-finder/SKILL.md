@@ -8,7 +8,7 @@ description: >
   Supports three entry modes: specific market, broad direction, or full-site scan.
   Use when user asks about: blue ocean, find products to sell, untapped niche,
   low competition products, what should I sell, product discovery, hidden gems,
-  high demand low competition, find me opportunities, 蓝海产品, 找蓝海.
+  high demand low competition, find me opportunities, blue ocean products, find blue ocean.
   Requires APICLAW_API_KEY.
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
@@ -34,9 +34,9 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 
 | Entry Mode | User Says | Action |
 |------------|-----------|--------|
-| **Specific Market** | "瑜伽垫蓝海" | Resolve category first |
-| **Broad Direction** | "家居类蓝海" | Resolve category, expect multiple matches → ask user to pick |
-| **Full-Site Scan** | "找蓝海" | Skip category, scan directly |
+| **Specific Market** | "yoga mat blue ocean" | Resolve category first |
+| **Broad Direction** | "home category blue ocean" | Resolve category, expect multiple matches → ask user to pick |
+| **Full-Site Scan** | "find blue ocean" | Skip category, scan directly |
 
 Optional: price range, FBA/FBM preference. Do NOT ask about budget, supply chain, or experience (no API filters).
 

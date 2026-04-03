@@ -32,10 +32,10 @@ Select **Amazon Daily Market Radar** when prompted.
 ## Example Prompts
 
 - *"Set up daily monitoring for my ASINs: B0XXXXXXXX, B0YYYYYYYY"*
-- *"帮我建立每日市场监控，关键词 'yoga mat'，追踪这 3 个 ASIN"*
+- *"Set up daily market monitoring for keyword 'yoga mat', track these 3 ASINs"*
 - *"What changed in my market since yesterday?"*
 - *"Run a daily radar check on my tracked products"*
-- *"我的竞品有什么动态？"*
+- *"Any updates on my competitors?"*
 
 ## What You Get
 

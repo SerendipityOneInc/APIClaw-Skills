@@ -32,10 +32,10 @@ Select **Amazon Competitor Intelligence Monitor** when prompted.
 ## Example Prompts
 
 - *"Analyze my competitors for ASIN B0XXXXXXXX in the yoga mat market"*
-- *"帮我做一次竞品全扫描，关键词 'silicone spatula'"*
+- *"Run a full competitor scan for keyword 'silicone spatula'"*
 - *"Quick check my tracked competitors"*
 - *"Who are the top competitors for 'dog harness' and how do I beat them?"*
-- *"监控竞品价格变化，有异常提醒我"*
+- *"Monitor competitor price changes and alert me on anomalies"*
 
 ## What You Get
 

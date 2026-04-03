@@ -10,7 +10,7 @@ description: >
   Use when user asks about: pricing strategy, how much to price, optimal price,
   price optimization, competitor pricing, price war, BuyBox strategy,
   profit margin, pricing analysis, should I raise price, should I lower price,
-  price comparison, price positioning, repricing, 定价策略, 该涨价还是降价.
+  price comparison, price positioning, repricing, pricing strategy, should I raise or lower price.
   Requires APICLAW_API_KEY.
 author: SerendipityOneInc
 homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
@@ -30,7 +30,6 @@ Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apicl
 
 ## Input
 - **Required**: one or more ASINs (your products). No keyword needed — category is auto-detected.
-- **Recommended**: cost/COGS per ASIN (if "块/元" → RMB, ÷7.2 to USD), target_margin %
 - **Optional**: competitor_asins
 
 On first interaction, tell user: "Give me your ASIN(s). I support single or batch analysis — I'll auto-detect each product's category and analyze the pricing landscape for you."

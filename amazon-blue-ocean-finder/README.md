@@ -42,10 +42,10 @@ Select **Amazon Blue Ocean Product Finder** when prompted.
 ## Example Prompts
 
 - *"Find blue ocean products under $30 with less than 100 reviews"*
-- *"帮我找蓝海产品，价格 $15-35，月销 300 以上"*
+- *"Find blue ocean products, price $15-35, 300+ monthly sales"*
 - *"What are the best untapped product opportunities on Amazon right now?"*
 - *"Scan the pet supplies category for hidden gems"*
-- *"找蓝海"* (full-site scan, no restrictions)
+- *"Find blue ocean"* (full-site scan, no restrictions)
 
 ## What You Get
 

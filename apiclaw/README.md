@@ -32,10 +32,10 @@ Select **APIClaw** when prompted.
 ## Example Prompts
 
 - *"What APIClaw endpoints are available?"*
-- *"APIClaw 有哪些接口？怎么用？"*
+- *"What APIClaw endpoints are available and how do I use them?"*
 - *"Look up real-time data for ASIN B0XXXXXXXX"*
 - *"Search for products in the 'yoga mat' category sorted by sales"*
-- *"帮我查一下这个品类的市场数据"*
+- *"Pull the market data for this product category"*
 
 ## What You Get
 

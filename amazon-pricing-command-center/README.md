@@ -33,10 +33,9 @@ Select **Amazon Pricing Command Center** when prompted.
 ## Example Prompts
 
 - *"Should I raise or lower the price on ASIN B0XXXXXXXX?"*
-- *"帮我分析这个 ASIN 的定价策略：B0XXXXXXXX"*
+- *"Analyze the pricing strategy for ASIN B0XXXXXXXX"*
 - *"Analyze pricing for these 5 ASINs: B0AAA, B0BBB, B0CCC, B0DDD, B0EEE"*
 - *"My COGS is $8, current price $24.99 — am I leaving money on the table?"*
-- *"该涨价还是降价？ASIN B0XXXXXXXX，成本 ¥45"*
 
 ## What You Get
 

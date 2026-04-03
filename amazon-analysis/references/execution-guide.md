@@ -86,7 +86,7 @@ When `products` or `competitors` returns ASINs in Full-mode analysis, call `prod
 - A single product's high growth rate (e.g. +900%) may be seasonal rebound, restock recovery, or promotion spike — NOT necessarily a market trend
 - To validate: check if the MAJORITY of products in the category show positive growth, not just 1-2 outliers
 - Flag seasonal patterns explicitly: "This growth coincides with [season], which may be temporary"
-- Mark single-product growth signals as 💡 **Directional** / **方向参考**, not 📊 **Data-backed** / **数据验证**
+- Mark single-product growth signals as 💡 **Directional**, not 📊 **Data-backed**
 
 ---
 
@@ -121,11 +121,9 @@ When `atLeastMonthlySales` is null: **Monthly sales ≈ 300,000 / BSR^0.65**
 ### Confidence Labels (every conclusion must be tagged)
 
 **Confidence labels — tag every conclusion with one of:**
-- 📊 **Data-backed** / **数据验证** — Supported by API data with cross-validation
-- 🔍 **Inferred** / **合理推断** — Reasonable inference, not directly measured
-- 💡 **Directional** / **方向参考** — Hypothesis only, verify before acting
-
-Use the label in the user's language: English output → "📊 Data-backed", Chinese output → "📊 数据验证".
+- 📊 **Data-backed** — Supported by API data with cross-validation
+- 🔍 **Inferred** — Reasonable inference, not directly measured
+- 💡 **Directional** — Hypothesis only, verify before acting
 
 ### Data Provenance Block (Full Mode Only)
 
