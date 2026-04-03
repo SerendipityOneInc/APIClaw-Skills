@@ -8,14 +8,15 @@ Verifies that:
 4. All 6 affected subcommands: market, products, price-band-overview,
    price-band-detail, brand-overview, brand-detail
 
-Run:
-    python -m pytest test_apiclaw_page_arg.py -v
+Run from repo root:
+    python -m pytest tests/test_apiclaw_page_arg.py -v
     # or without pytest:
-    python test_apiclaw_page_arg.py
+    python tests/test_apiclaw_page_arg.py
 """
 
 import importlib
 import json
+import os
 import sys
 import types
 import unittest
@@ -25,7 +26,7 @@ from unittest.mock import patch
 # ---------------------------------------------------------------------------
 # Load the module under test without executing main()
 # ---------------------------------------------------------------------------
-SCRIPT_PATH = __file__.replace("test_apiclaw_page_arg.py", "apiclaw.py")
+SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "..", "apiclaw", "scripts", "apiclaw.py")
 
 spec = importlib.util.spec_from_file_location("apiclaw", SCRIPT_PATH)
 apiclaw = importlib.util.module_from_spec(spec)
