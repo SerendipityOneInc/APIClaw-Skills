@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 校验所有副本与真源一致
+      # Verify all copies are in sync with the canonical source
       - name: Verify scripts are in sync
         run: |
           shopt -s nullglob
@@ -32,21 +32,21 @@ jobs:
             found=1
             target="${skill_dir}scripts/apiclaw.py"
             if [[ ! -f "$target" ]]; then
-              echo "::error::缺少副本文件: $target"
-              echo "请运行: bash scripts/sync-scripts.sh"
+              echo "::error::Missing copy file: $target"
+              echo "Run: bash scripts/sync-scripts.sh"
               exit 1
             fi
             if ! diff -q apiclaw/scripts/apiclaw.py "$target" &>/dev/null; then
-              echo "::error::$target 与 apiclaw/scripts/apiclaw.py 不一致！"
-              echo "请运行: bash scripts/sync-scripts.sh"
+              echo "::error::$target does not match apiclaw/scripts/apiclaw.py"
+              echo "Run: bash scripts/sync-scripts.sh"
               exit 1
             fi
           done
           if [[ "$found" -eq 0 ]]; then
-            echo "::error::未找到任何 amazon-* skill 目录，无法执行同步校验。"
+            echo "::error::No amazon-* skill directories were found, so sync validation cannot run."
             exit 1
           fi
 
-      # CLI 冒烟测试（用真源验证）
+      # CLI smoke test against the canonical source
       - name: CLI smoke test
         run: python apiclaw/scripts/apiclaw.py --help

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # ============================================================
-# 唯一真源 — 请勿直接编辑各 amazon-* skill 目录下的副本
-# 真源位置: apiclaw/scripts/apiclaw.py
-# 同步方式: pre-commit hook 自动复制 或 bash scripts/sync-scripts.sh
+# Canonical source - do not edit copies under amazon-* skill directories directly
+# Source location: apiclaw/scripts/apiclaw.py
+# Sync method: pre-commit hook auto-copy or bash scripts/sync-scripts.sh
 # ============================================================
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
@@ -288,7 +288,7 @@ def cmd_market(args):
 
 
 def cmd_products(args):
-    """Search products with filters (product selection / 选品)."""
+    """Search products with filters (product selection)."""
     params = {}
     if args.keyword:
         params["keyword"] = args.keyword

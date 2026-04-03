@@ -1,13 +1,13 @@
 #!/bin/bash
 # .git/hooks/pre-commit
-# 当 apiclaw/scripts/apiclaw.py 被 staged 时，自动同步副本并一起 stage
+# When apiclaw/scripts/apiclaw.py is staged, sync copies and stage them too
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# 检查 apiclaw/scripts/apiclaw.py 是否在本次 staged 文件中
+# Check whether apiclaw/scripts/apiclaw.py is staged in this commit
 if git diff --cached --name-only | grep -q "^apiclaw/scripts/apiclaw.py$"; then
-  echo "检测到 apiclaw/scripts/apiclaw.py 变更，自动同步副本..."
+  echo "Detected changes to apiclaw/scripts/apiclaw.py, syncing copies..."
   bash "$REPO_ROOT/scripts/sync-scripts.sh"
   git add "$REPO_ROOT"/amazon-*/scripts/apiclaw.py
-  echo "副本已同步并加入本次 commit。"
+  echo "Copies synced and staged for this commit."
 fi
