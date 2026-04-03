@@ -39,23 +39,23 @@ This repo contains **10 agent skills** organized in two tiers:
 
 **🏗️ Foundation** — data access and full-spectrum analysis:
 
-| Skill | Description | Best For |
-|-------|------------|----------|
-| 📦 [`apiclaw/`](apiclaw/) | Data layer overview, 11 API endpoints, quick integration | Getting started, agent tool-calling |
-| 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 selection strategies, market validation, competitor intelligence | Deep product research, autonomous sourcing |
+| Skill | What It Does | Input | Output | Key Advantage |
+|-------|-------------|-------|--------|---------------|
+| 📦 [`apiclaw/`](apiclaw/) | Direct access to all 11 API endpoints — categories, markets, products, competitors, realtime, reviews, price bands, brands, history | Keyword, category, ASIN, or brand | Raw API data with field mapping and quirk documentation | Complete API reference — every other skill builds on this |
+| 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 built-in selection modes + market research, competitor analysis, ASIN evaluation, pricing, category research | Keyword/category/ASIN + intent | Analysis findings, top products, ASIN deep dives, confidence-tagged insights | Composite commands (`report`, `opportunity`) run multi-endpoint pipelines in one shot |
 
 **⚡ Specialized** — purpose-built for specific workflows:
 
-| Skill | Description | Best For |
-|-------|------------|----------|
-| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | Competitor intelligence with continuous monitoring & tiered alerts | Tracking competitors, price wars |
-| 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | Daily market pulse check and anomaly detection | Morning briefings, trend alerts |
-| ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | Comprehensive listing quality audit and optimization | Listing health checks, conversion improvement |
-| 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | Market viability assessment for new category entry | Go/no-go decisions, market sizing |
-| 📈 [`amazon-market-trend-scanner/`](amazon-market-trend-scanner/) | Category landscape scanning and trend discovery | Category trends, emerging niches |
-| 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | Underserved niche and opportunity identification | Finding blue ocean markets |
-| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | Dynamic pricing strategy and competitive signals | Price positioning, competitive pricing |
-| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | Deep review sentiment analysis and insight extraction | Customer voice analysis, product improvement |
+| Skill | What It Does | Input | Output | Key Advantage |
+|-------|-------------|-------|--------|---------------|
+| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | Deep competitor intelligence — Full Scan or Quick Check with tiered alerts | Keyword or ASIN(s), optionally your ASIN + competitor ASINs | Competitor matrix, brand ranking, price map, 30-day trends, scores (1-100), tiered alerts | Dual-mode (Full ~28-35 credits, Quick ~5-10) with three-tier alert system |
+| 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | Automated daily monitoring — price changes, new competitors, BSR movements, review spikes | Your ASINs (1-10) + keyword | RED/YELLOW/GREEN alerts, KPI dashboard, competitor movement, action items | Set-and-forget with signal validation (7+ day trends vs single-day spikes) |
+| ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | 8-dimension listing health check with optimization recommendations | Your ASIN + keyword | Score (X/100, A-F), 8-dimension scorecard, keyword gaps, priority fix list | Actionable rewrites using high-frequency review language; bulk audit support |
+| 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | One-click market viability — discovers sub-markets, scores (1-100), delivers GO/CAUTION/AVOID | Keyword or category path | Sub-market landscape, verdict, market overview, brand landscape, entry strategy | Auto sub-market discovery with dual-level CR10 check |
+| 📈 [`amazon-market-trend-scanner/`](amazon-market-trend-scanner/) | Category landscape scanning — trending subcategories, emerging niches, market shifts | 1+ category paths or keywords | Trend dashboard, Hot Categories TOP 5, new entrant scan, risk alerts | Category-level trend analysis across ALL subcategories |
+| 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | Profile-driven opportunity scanner — auto-selects strategies, validates with real-time data, 7-dimension scoring | Budget + experience level + keyword/category | Top 10 opportunities (S/A/B/C), detailed top 3 analysis, risk alerts | Profile-driven strategy auto-selection + Quick-Scan (~10 credits) |
+| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | Data-driven pricing signals — auto-detects leaf category, analyzes pricing landscape | One or more ASINs | RAISE/HOLD/LOWER signal, price band heatmap, competitor price map, BuyBox analysis | ASIN-only input (no keyword needed), Sales/Competition Ratio |
+| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | Deep consumer insights from 1B+ pre-analyzed reviews across 11 dimensions | Single ASIN, multiple ASINs, or category keyword | Pain points, buying factors, user profiles, usage patterns, differentiation roadmap | 1B+ pre-analyzed reviews (95% token savings), 11 dimensions |
 
 ## Quick Start
 
@@ -68,18 +68,18 @@ npx skills add SerendipityOneInc/APIClaw-Skills
 You'll be prompted to select which skills to install:
 
 **🏗️ Foundation:**
-- **APIClaw** — Data layer overview, 11 API endpoints, quick integration
-- **Amazon Analysis** — 13 selection strategies, market validation, competitor intelligence
+- **APIClaw — Amazon Commerce Data, 11 Endpoints**
+- **Amazon Analysis — Full-Spectrum Research & Seller Intelligence**
 
 **⚡ Specialized:**
-- **Amazon Competitor War Room** — Competitive monitoring & response
-- **Amazon Daily Market Radar** — Daily market pulse & anomaly detection
-- **Amazon Listing Audit Pro** — Listing quality audit & optimization
-- **Amazon Market Entry Analyzer** — Market viability assessment
-- **Amazon Opportunity Discoverer** — Niche & opportunity identification
-- **Amazon Market Trend Scanner** — Category landscape scanning & trend discovery
-- **Amazon Pricing Command Center** — Pricing strategy & competitive signals
-- **Amazon Review Intelligence Engine** — Review sentiment & insight extraction
+- **Amazon Competitor Intelligence Monitor** — Dual-mode competitive intelligence with tiered alerts
+- **Amazon Daily Market Radar — Automated Monitoring & Alerts**
+- **Amazon Listing Audit Pro — 8-Dimension Health Check**
+- **Amazon Market Entry Analyzer — GO/CAUTION/AVOID Verdicts**
+- **Amazon Market Trend Scanner — Daily Category Radar**
+- **Amazon Opportunity Discoverer — Niche Scanner & Scoring**
+- **Amazon Pricing Command Center — RAISE/HOLD/LOWER Signals**
+- **Amazon Review Intelligence Extractor — Consumer Insights from 1B+ Reviews**
 
 Or clone manually:
 ```bash
