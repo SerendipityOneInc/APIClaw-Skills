@@ -41,23 +41,23 @@
 
 **🏗️ 基础层** — 数据接入与全方位分析：
 
-| 技能 | 说明 | 适用场景 |
-|------|------|----------|
-| 📦 [`apiclaw/`](apiclaw/) | 数据层概览，11 个 API 接口，快速集成 | 快速上手，Agent tool-calling |
-| 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 种选品策略，市场验证，竞品情报 | 深度选品调研，自主选品 Agent |
+| 技能 | 说明 | 输入 | 输出 | 核心优势 |
+|------|------|------|------|----------|
+| 📦 [`apiclaw/`](apiclaw/) | 直接调用全部 11 个 API 端点 | 关键词/品类/ASIN/品牌 | 原始 API 数据 + 字段映射文档 | 所有其他 skill 的底层依赖 |
+| 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 种选品模式 + 市场/竞品/ASIN/定价/品类研究 | 关键词/品类/ASIN + 意图 | 分析发现、Top 产品、深度报告、置信度标签 | report/opportunity 复合命令一键跑完 |
 
 **⚡ 专项层** — 面向特定工作流的专用技能：
 
-| 技能 | 说明 | 适用场景 |
-|------|------|----------|
-| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | 竞品情报监控与三级告警 | 竞品追踪，价格战 |
-| 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | 每日市场脉搏与异常检测 | 晨报简报，趋势预警 |
-| ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | Listing 质量全面审计与优化 | Listing 健康检查，转化率提升 |
-| 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | 新品类市场可行性评估 | Go/No-go 决策，市场规模评估 |
-| 📈 [`amazon-market-trend-scanner/`](amazon-market-trend-scanner/) | 品类全景扫描与趋势发现 | 品类趋势，新兴市场 |
-| 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | 细分蓝海市场与机会发现 | 蓝海市场挖掘 |
-| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | 动态定价策略与竞争信号 | 价格定位，竞争定价 |
-| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | 深度评论智能分析与洞察提取 | 消费者声音分析，产品改进 |
+| 技能 | 说明 | 输入 | 输出 | 核心优势 |
+|------|------|------|------|----------|
+| ⚔️ [`amazon-competitor-intelligence-monitor/`](amazon-competitor-intelligence-monitor/) | 深度竞品情报 — Full Scan + Quick Check 双模式 | 关键词或 ASIN，可选竞品 ASIN | 竞品矩阵、品牌排名、价格地图、竞争力评分(1-100)、三级告警 | 双模式 + 自动监控调度 |
+| 📡 [`amazon-daily-market-radar/`](amazon-daily-market-radar/) | 自动化日常监控 — 价格变化、新竞品、BSR 波动、评论飙升 | 你的 ASIN(1-10) + 关键词 | 分级告警(RED/YELLOW/GREEN)、KPI 仪表盘、行动建议 | 区分持续趋势 vs 单日波动 |
+| ✅ [`amazon-listing-audit-pro/`](amazon-listing-audit-pro/) | 8 维度 Listing 健康检查 + 优化建议 | 你的 ASIN + 关键词 | 总分(X/100, A-F)、8 维度评分卡、关键词差距、修改清单 | 基于高频评论语言的改写建议 |
+| 🚪 [`amazon-market-entry-analyzer/`](amazon-market-entry-analyzer/) | 一键市场可行性评估 → GO/CAUTION/AVOID 判定 | 关键词或品类路径 | 子市场全景、判定结果、品牌格局、进入策略 | 自动发现子市场 + 双层 CR10 检查 |
+| 📈 [`amazon-market-trend-scanner/`](amazon-market-trend-scanner/) | 品类全景扫描 — 趋势子品类、新兴 niche | 1+ 品类路径或关键词 | 趋势仪表盘、热门品类 TOP 5、新进入者扫描 | 覆盖所有子品类的品类级趋势分析 |
+| 💎 [`amazon-opportunity-discoverer/`](amazon-opportunity-discoverer/) | 基于卖家画像的自动化选品 — 13 种模式 + 7 维度评分(1-100) | 预算 + 经验等级 + 关键词/品类 | Top 10 机会(S/A/B/C)、Top 3 详细分析、风险告警 | 画像驱动策略选择 + Quick-Scan |
+| 💰 [`amazon-pricing-command-center/`](amazon-pricing-command-center/) | 数据驱动定价信号 — RAISE/HOLD/LOWER | 一个或多个 ASIN | 价格信号、价格带热力图、竞品价格地图、BuyBox 分析 | 只需 ASIN 不需关键词 |
+| 💬 [`amazon-review-intelligence-extractor/`](amazon-review-intelligence-extractor/) | 从 10 亿+评论中提取消费者洞察，11 个分析维度 | 单个/多个 ASIN 或品类关键词 | 痛点、购买因素、用户画像、差异化路线图 | 省 95% token + 11 维度 |
 
 ## 快速开始
 
@@ -70,18 +70,18 @@ npx skills add SerendipityOneInc/APIClaw-Skills
 安装时会提示选择技能：
 
 **🏗️ 基础层：**
-- **APIClaw** — 数据层概览，11 个 API 接口，快速集成
-- **Amazon Analysis** — 13 种选品策略，市场验证，竞品情报
+- **APIClaw — Amazon Commerce Data, 11 Endpoints**
+- **Amazon Analysis — Full-Spectrum Research & Seller Intelligence**
 
 **⚡ 专项层：**
-- **Amazon Competitor War Room** — 竞品监控与应对
-- **Amazon Daily Market Radar** — 每日市场脉搏与异常检测
-- **Amazon Listing Audit Pro** — Listing 质量审计与优化
-- **Amazon Market Entry Analyzer** — 市场可行性评估
-- **Amazon Opportunity Discoverer** — 蓝海市场与机会发现
-- **Amazon Market Trend Scanner** — 品类全景扫描与趋势发现
-- **Amazon Pricing Command Center** — 定价策略与竞争信号
-- **Amazon Review Intelligence Engine** — 评论智能分析与洞察提取
+- **Amazon Competitor Intelligence Monitor** — 双模式竞品情报与三级告警
+- **Amazon Daily Market Radar — Automated Monitoring & Alerts**
+- **Amazon Listing Audit Pro — 8-Dimension Health Check**
+- **Amazon Market Entry Analyzer — GO/CAUTION/AVOID Verdicts**
+- **Amazon Market Trend Scanner — Daily Category Radar**
+- **Amazon Opportunity Discoverer — Niche Scanner & Scoring**
+- **Amazon Pricing Command Center — RAISE/HOLD/LOWER Signals**
+- **Amazon Review Intelligence Extractor — Consumer Insights from 1B+ Reviews**
 
 也可以手动克隆：
 ```bash

@@ -1,5 +1,5 @@
 ---
-name: Dynamic Pricing Intelligence Agent
+name: Amazon Pricing Command Center — RAISE/HOLD/LOWER Signals
 version: 1.1.0
 description: >
   Data-driven pricing strategy engine for Amazon sellers.
