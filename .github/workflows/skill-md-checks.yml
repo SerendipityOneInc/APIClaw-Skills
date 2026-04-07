@@ -1,0 +1,70 @@
+name: SKILL.md Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/SKILL.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-skill-name-unchanged:
+    name: Check SKILL.md name not renamed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if existing SKILL.md name field changed
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          FAILED=0
+          while IFS= read -r file; do
+            # Only check modified files (not newly added)
+            STATUS=$(git diff --name-status "$BASE" "$HEAD" -- "$file" | cut -f1)
+            if [ "$STATUS" != "M" ]; then
+              continue
+            fi
+
+            OLD_NAME=$(git show "$BASE:$file" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//')
+            NEW_NAME=$(git show "$HEAD:$file" | grep '^name:' | head -1 | sed 's/^name:[[:space:]]*//')
+
+            if [ "$OLD_NAME" != "$NEW_NAME" ]; then
+              echo "ERROR: name changed in $file"
+              echo "  before: $OLD_NAME"
+              echo "  after:  $NEW_NAME"
+              echo ""
+              echo "The 'name' field in SKILL.md determines the installed directory name on users' machines."
+              echo "Changing it leaves orphaned skill directories that cannot be auto-cleaned."
+              FAILED=1
+            fi
+          done < <(git diff --name-only "$BASE" "$HEAD" | grep 'SKILL\.md$')
+
+          exit $FAILED
+
+  check-apiclaw-path-prefix:
+    name: Check scripts/apiclaw.py has skill_base_dir prefix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if scripts/apiclaw.py referenced without {skill_base_dir}/ prefix
+        run: |
+          FAILED=0
+          while IFS= read -r file; do
+            # Find lines that mention scripts/apiclaw.py but are missing the prefix
+            if grep -n 'scripts/apiclaw\.py' "$file" | grep -v '{skill_base_dir}/scripts/apiclaw\.py' | grep -q .; then
+              echo "ERROR: bare 'scripts/apiclaw.py' reference found in $file (missing {skill_base_dir}/ prefix):"
+              grep -n 'scripts/apiclaw\.py' "$file" | grep -v '{skill_base_dir}/scripts/apiclaw\.py'
+              echo ""
+              FAILED=1
+            fi
+          done < <(find . -name 'SKILL.md' | sort)
+
+          exit $FAILED
