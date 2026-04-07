@@ -53,7 +53,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 | 8 | `products/price-band-detail` | Full 5-band distribution | priceBands[] with sales, brands, ratings per band |
 | 9 | `products/brand-overview` | Brand concentration | sampleTop10BrandSalesRate (CR10), sampleBrandCount |
 | 10 | `products/brand-detail` | Per-brand breakdown | brands[] with sales, revenue, sampleProducts |
-| 11 | `products/history` | Daily snapshots | price, bsr, subBsr, recentSales |
+| 11 | `products/history` | Time series (single ASIN per call) | timestamps[], price[], bsr[], monthlySalesFloor[], rating[], ratingCount[], sellerCount[], title/imageUrl/bestSeller/newRelease/aPlus/inventoryStatus changelogs |
 
 ## Known Quirks
 - `topN`, `listingAge`, `newProductPeriod` are **strings** (`"10"` not `10`)
@@ -72,11 +72,11 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 | Data | markets | products/competitors | realtime | reviews | price-band | brand | history |
 |------|---------|---------------------|----------|---------|------------|-------|---------|
-| Sales | sampleAvgMonthlySales | monthlySalesFloor | ❌ | ❌ | sampleSalesRate | sampleGroupMonthlySales | recentSales |
-| Price | sampleAvgPrice | price | buyboxWinner.price | ❌ | bandMin/MaxPrice | sampleAvgPrice | price |
-| BSR | sampleAvgBsr | bsr (int) | bestsellersRank[] | ❌ | ❌ | ❌ | bsr |
-| Rating | sampleAvgRating | rating | rating | avgRating | sampleAvgRating | sampleAvgRating | ❌ |
-| Reviews | sampleAvgReviewCount | ratingCount | ratingCount | reviewCount | ❌ | sampleAvgRatingCount | ❌ |
+| Sales | sampleAvgMonthlySales | monthlySalesFloor | ❌ | ❌ | sampleSalesRate | sampleGroupMonthlySales | monthlySalesFloor[] |
+| Price | sampleAvgPrice | price | buyboxWinner.price | ❌ | bandMin/MaxPrice | sampleAvgPrice | price[] |
+| BSR | sampleAvgBsr | bsr (int) | bestsellersRank[] | ❌ | ❌ | ❌ | bsr[] |
+| Rating | sampleAvgRating | rating | rating | avgRating | sampleAvgRating | sampleAvgRating | rating[] |
+| Reviews | sampleAvgReviewCount | ratingCount | ratingCount | reviewCount | ❌ | sampleAvgRatingCount | ratingCount[] |
 | Insights | ❌ | ❌ | ❌ | ✅ consumerInsights | ❌ | ❌ | ❌ |
 | Concentration | topSalesRate | ❌ | ❌ | ❌ | sampleTop3BrandSalesRate | CR10 | ❌ |
 | Opportunity | ❌ | ❌ | ❌ | ❌ | sampleOpportunityIndex | ❌ | ❌ |
