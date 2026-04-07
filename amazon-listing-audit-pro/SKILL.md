@@ -25,8 +25,8 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 | File | Purpose |
 |------|---------|
-| `scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
-| `references/reference.md` | Load for exact field names or response structure |
+| `{skill_base_dir}/scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
+| `{skill_base_dir}/references/reference.md` | Load for exact field names or response structure |
 
 ## Credential
 

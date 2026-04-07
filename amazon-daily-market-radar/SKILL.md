@@ -24,9 +24,9 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 | File | Purpose |
 |------|---------|
-| `scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
-| `references/reference.md` | Load for exact field names or response structure |
-| `data/` | Runtime: watchlist.json, last-run.json (auto-created) |
+| `{skill_base_dir}/scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
+| `{skill_base_dir}/references/reference.md` | Load for exact field names or response structure |
+| `{skill_base_dir}/data/` | Runtime: watchlist.json, last-run.json (auto-created) |
 
 ## Credential
 
@@ -47,8 +47,8 @@ Collect in ONE message: ✅ my_asins (1-10) | 💡 competitor_asins (up to 20) |
 ## Execution
 
 1. `daily-radar --asins "asin1,asin2,..." [--keyword X] [--category Y]` (composite, auto-detects category from ASINs)
-3. Compare against `data/last-run.json` for change detection (first run = baseline only, no alerts)
-4. Generate alert-prioritized briefing → save snapshot to `data/last-run.json`
+3. Compare against `{skill_base_dir}/data/last-run.json` for change detection (first run = baseline only, no alerts)
+4. Generate alert-prioritized briefing → save snapshot to `{skill_base_dir}/data/last-run.json`
 
 ## Alert Rules
 

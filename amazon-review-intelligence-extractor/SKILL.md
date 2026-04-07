@@ -21,8 +21,8 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 Pre-analyzed consumer insights. Pain points, buying factors, user profiles, differentiation gaps.
 
 ## Files
-- **Script**: `scripts/apiclaw.py` (execute, don't read) — run `--help` for params
-- **Reference**: `references/reference.md` (field names & response structure)
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential
 Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys)
@@ -83,7 +83,7 @@ Align dimensions (pain points vs pain points) across products. If competitor rev
 
 ## Composite Command
 ```bash
-python3 scripts/apiclaw.py review-deepdive --target-asin "{asin}" [--keyword "{kw}"] [--category "{path}"]
+python3 {skill_base_dir}/scripts/apiclaw.py review-deepdive --target-asin "{asin}" [--keyword "{kw}"] [--category "{path}"]
 ```
 Optional: `--comp-asins "{asin1},{asin2}"` for comparison.
 Runs: reviews × 11 dimensions + competitors + realtime + market context + price/trend.

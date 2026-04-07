@@ -23,9 +23,9 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 | File | Purpose |
 |------|---------|
-| `scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
-| `references/reference.md` | Load for exact field names or response structure |
-| `monitor-data/` | Runtime storage (auto-created): config.json, baseline.json, history/, alerts.json |
+| `{skill_base_dir}/scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
+| `{skill_base_dir}/references/reference.md` | Load for exact field names or response structure |
+| `{skill_base_dir}/monitor-data/` | Runtime storage (auto-created): config.json, baseline.json, history/, alerts.json |
 
 ## Credential
 
@@ -54,11 +54,11 @@ Brand queries MUST also include confirmed `--category`.
 
 1. `competitor-analysis --keyword X [--category Y] [--my-asin Z]` (composite, auto-detects category)
 2. If `category_source` is `inferred_from_search`, confirm with user before presenting results
-3. Analyze & score → save baseline to `monitor-data/` → offer Auto-Monitor
+3. Analyze & score → save baseline to `{skill_base_dir}/monitor-data/` → offer Auto-Monitor
 
 ## Quick Check Flow
 
-1. Load config.json + baseline.json from `monitor-data/` (missing → fall back to Full Scan)
+1. Load config.json + baseline.json from `{skill_base_dir}/monitor-data/` (missing → fall back to Full Scan)
 2. Poll `product --asin {asin}` for each tracked ASIN
 3. Diff against baseline with tiered alerts → update baseline → offer Auto-Monitor
 

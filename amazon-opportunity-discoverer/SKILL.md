@@ -20,8 +20,8 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 Tell me your budget and experience. I find opportunities, score them, and rank.
 
 ## Files
-- **Script**: `scripts/apiclaw.py` (execute, don't read) — run `--help` for params
-- **Reference**: `references/reference.md` (field names & response structure)
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential
 Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys)
@@ -79,7 +79,7 @@ Scan with `market --keyword "{broad}" --topn 10`, rank subcategories by: newSkuR
 
 ## Composite Command
 ```bash
-python3 scripts/apiclaw.py opportunity-scan --keyword "{kw}" --category "{path}" --modes "beginner,emerging,underserved"
+python3 {skill_base_dir}/scripts/apiclaw.py opportunity-scan --keyword "{kw}" --category "{path}" --modes "beginner,emerging,underserved"
 ```
 Or with custom filters: `--sales-min 300 --ratings-max 100 --price-min 15 --price-max 35`
 

@@ -25,9 +25,9 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 
 | File | Purpose |
 |------|---------|
-| `scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
-| `references/reference.md` | Load for exact field names or response structure |
-| `scan-data/` | Runtime: watchlist.json, baseline.json, alerts.json, history/ (auto-created) |
+| `{skill_base_dir}/scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
+| `{skill_base_dir}/references/reference.md` | Load for exact field names or response structure |
+| `{skill_base_dir}/scan-data/` | Runtime: watchlist.json, baseline.json, alerts.json, history/ (auto-created) |
 
 ## Credential
 
@@ -53,17 +53,17 @@ Required: 1+ category paths or keywords. Optional: scan depth, metric preference
 3. Record 7 key metrics per subcategory (see Pitfalls #4)
 4. `products --keyword "{sub}" --category "{path}" --mode emerging --page-size 20` per hot subcategory
 5. `products --keyword "{sub}" --category "{path}" --mode new-release --page-size 20` per hot subcategory
-6. Save baseline → `scan-data/baseline.json`, config → `scan-data/watchlist.json`
+6. Save baseline → `{skill_base_dir}/scan-data/baseline.json`, config → `{skill_base_dir}/scan-data/watchlist.json`
 7. Output full trend report (see Output Spec)
 8. Offer Auto-Monitor setup
 
 ## Mode 2: Quick Check (scheduled)
 
-1. Read `scan-data/watchlist.json` + `scan-data/baseline.json`
+1. Read `{skill_base_dir}/scan-data/watchlist.json` + `{skill_base_dir}/scan-data/baseline.json`
 2. `market --category "{path}"` per watched category
 3. Compare vs baseline using signal rules below
 4. 🔴 alerts → notify user; else silent log
-5. Save snapshot to `scan-data/history/{timestamp}.json`, update baseline
+5. Save snapshot to `{skill_base_dir}/scan-data/history/{timestamp}.json`, update baseline
 
 ## Trend Signals
 

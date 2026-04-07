@@ -22,8 +22,8 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 Give me your ASIN(s). I'll tell you whether to raise, hold, or lower — with data.
 
 ## Files
-- **Script**: `scripts/apiclaw.py` (execute, don't read) — run `--help` for params
-- **Reference**: `references/reference.md` (field names & response structure)
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential
 Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys)

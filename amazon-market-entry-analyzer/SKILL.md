@@ -20,8 +20,8 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 One input (keyword/category). Full market viability assessment with sub-market discovery.
 
 ## Files
-- **Script**: `scripts/apiclaw.py` (execute, don't read) — run `--help` for params
-- **Reference**: `references/reference.md` (field names & response structure)
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential
 Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys)
@@ -80,7 +80,7 @@ Present TOP 10 sub-markets. Ask user which to deep-dive (default: top 3). If ≤
 
 ## Composite Command
 ```bash
-python3 scripts/apiclaw.py market-entry --keyword "{kw}" --category "{path}"
+python3 {skill_base_dir}/scripts/apiclaw.py market-entry --keyword "{kw}" --category "{path}"
 ```
 Runs all 11 endpoints (~20 calls). Output JSON is large — use targeted extraction, not full read.
 

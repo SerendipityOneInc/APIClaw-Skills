@@ -3,7 +3,7 @@ name: Amazon Analysis — Full-Spectrum Research & Seller Intelligence
 version: 1.1.4
 description: >
   Amazon seller data analysis tool. Features: market research, product selection, competitor analysis, ASIN evaluation, pricing reference, category research.
-  Uses scripts/apiclaw.py to call APIClaw API, requires APICLAW_API_KEY.
+  Uses {skill_base_dir}/scripts/apiclaw.py to call APIClaw API, requires APICLAW_API_KEY.
 ---
 
 # APIClaw — Amazon Seller Data Analysis
@@ -14,13 +14,13 @@ description: >
 
 | File | Purpose |
 |------|---------|
-| `scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
-| `references/reference.md` | Load when you need exact field names or filter details |
+| `{skill_base_dir}/scripts/apiclaw.py` | **Execute** for all API calls (run `--help` for params) |
+| `{skill_base_dir}/references/reference.md` | Load when you need exact field names or filter details |
 
 
 ## Credential
 
-Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys). Stored in `config.json` in skill root.
+Required: `APICLAW_API_KEY`. Get free key at [apiclaw.io/api-keys](https://apiclaw.io/en/api-keys). Stored in `{skill_base_dir}/config.json` in skill root.
 
 ## Input
 
