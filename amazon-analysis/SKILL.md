@@ -1,6 +1,6 @@
 ---
 name: Amazon Analysis — Full-Spectrum Research & Seller Intelligence
-version: 1.1.4
+version: 1.1.5
 description: >
   Amazon seller data analysis tool. Features: market research, product selection, competitor analysis, ASIN evaluation, pricing reference, category research.
   Uses {skill_base_dir}/scripts/apiclaw.py to call APIClaw API, requires APICLAW_API_KEY.

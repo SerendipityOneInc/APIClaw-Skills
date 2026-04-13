@@ -1,6 +1,6 @@
 ---
 name: Amazon Daily Market Radar — Automated Monitoring & Alerts
-version: 1.0.0
+version: 1.0.1
 description: >
   Automated daily market monitoring and alert system for Amazon sellers.
   Tracks price changes, new competitors, BSR movements, review spikes,

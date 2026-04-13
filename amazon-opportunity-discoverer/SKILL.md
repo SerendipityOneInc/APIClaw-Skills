@@ -1,6 +1,6 @@
 ---
 name: Amazon Opportunity Discoverer — Niche Scanner & Scoring
-version: 1.0.0
+version: 1.0.1
 description: >
   Automated product opportunity scanner for Amazon sellers.
   Scans categories using 14 preset selection strategies, validates candidates with

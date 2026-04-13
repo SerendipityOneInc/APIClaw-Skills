@@ -1,6 +1,6 @@
 ---
 name: Amazon Review Intelligence Extractor — Consumer Insights from 1B+ Reviews
-version: 1.0.0
+version: 1.0.1
 description: >
   Deep consumer insights from 1B+ pre-analyzed Amazon reviews.
   Extracts pain points, buying factors, user profiles, usage patterns,
