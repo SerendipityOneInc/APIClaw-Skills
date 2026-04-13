@@ -7,7 +7,7 @@
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
 
-Single-script interface for all 5 APIClaw endpoints + composite workflows.
+Single-script interface for all 11 APIClaw endpoints + composite workflows.
 Handles authentication, retries, rate limits, parameter quirks, and output formatting.
 
 Usage:

@@ -20,7 +20,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 One input (keyword/category). Full market viability assessment with sub-market discovery.
 
 ## Files
-- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` — run `--help` for params
 - **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential

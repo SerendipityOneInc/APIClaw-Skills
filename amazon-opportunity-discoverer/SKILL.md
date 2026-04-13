@@ -20,7 +20,7 @@ metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": 
 Tell me your budget and experience. I find opportunities, score them, and rank.
 
 ## Files
-- **Script**: `{skill_base_dir}/scripts/apiclaw.py` (execute, don't read) — run `--help` for params
+- **Script**: `{skill_base_dir}/scripts/apiclaw.py` — run `--help` for params
 - **Reference**: `{skill_base_dir}/references/reference.md` (field names & response structure)
 
 ## Credential

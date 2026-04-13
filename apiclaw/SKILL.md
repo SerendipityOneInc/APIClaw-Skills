@@ -12,6 +12,8 @@ description: >
   general commerce data questions. For deep Amazon product selection
   strategies and analysis workflows, use the Amazon-analysis-skill instead.
   Requires APICLAW_API_KEY.
+author: SerendipityOneInc
+homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
 metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 

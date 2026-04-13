@@ -4,6 +4,9 @@ version: 1.1.4
 description: >
   Amazon seller data analysis tool. Features: market research, product selection, competitor analysis, ASIN evaluation, pricing reference, category research.
   Uses {skill_base_dir}/scripts/apiclaw.py to call APIClaw API, requires APICLAW_API_KEY.
+author: SerendipityOneInc
+homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
 ---
 
 # APIClaw — Amazon Seller Data Analysis
