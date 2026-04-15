@@ -1,5 +1,5 @@
 ---
-name: APIClaw — Amazon Commerce Data, 12 Endpoints
+name: APIClaw — Amazon Commerce Data, 11 Endpoints
 version: 1.1.2
 description: >
   General overview, 12 API endpoints.
