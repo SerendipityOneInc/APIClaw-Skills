@@ -1,29 +1,8 @@
 #!/usr/bin/env python3
 # ============================================================
-# CANONICAL SOURCE — do not edit copies under amazon-*/scripts/apiclaw.py directly.
-# Source of truth: apiclaw/scripts/apiclaw.py
-#
-# Sync is enforced at THREE layers — understand all three before editing:
-#
-#   1. Local pre-commit hook (scripts/pre-commit)
-#      When this file is staged, auto-runs sync-scripts.sh and stages the
-#      updated copies. Install once per clone:  bash scripts/install-hooks.sh
-#
-#   2. Sync script (scripts/sync-scripts.sh)
-#      Mirrors canonical → amazon-*/scripts/apiclaw.py. Refuses to overwrite
-#      any copy that differs without an "AUTO-SYNCED" marker (safety against
-#      destroying manual edits). If you hit a CONFLICT, inspect the diff
-#      first, then either (a) merge the manual edit back into canonical, or
-#      (b) add the AUTO-SYNCED marker to the copy and re-run sync.
-#
-#   3. CI check (.github/workflows/shared-files-distribution.yml)
-#      Every PR touching scripts/** or *scripts/apiclaw.py runs a strict
-#      `diff` against canonical. Mismatched copies fail the PR hard with an
-#      "::error::" annotation — no merge until all 9 copies are identical.
-#
-# If you inherit a repo where copies drift without markers, resolve once by:
-#   bash scripts/sync-scripts.sh   # lists CONFLICTs
-#   # then add the AUTO-SYNCED marker to each copy and re-run
+# Canonical source - do not edit copies under amazon-* skill directories directly
+# Source location: apiclaw/scripts/apiclaw.py
+# Sync method: pre-commit hook auto-copy or bash scripts/sync-scripts.sh
 # ============================================================
 """
 APIClaw CLI — Amazon Product Research via APIClaw API
