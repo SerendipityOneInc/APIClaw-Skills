@@ -1,0 +1,11 @@
+{
+  "date": "2026-04-26",
+  "note": "Seller Sprite MCP not connected — data unavailable for this run",
+  "asins": [
+    {"asin": "B0FDQJFRYS", "brand": "Veken",    "price": null, "ratings": null, "reviews": null, "bsr_coffee_presses": null},
+    {"asin": "B00JE36GLQ", "brand": "Secura",   "price": null, "ratings": null, "reviews": null, "bsr_coffee_presses": null},
+    {"asin": "B0047BIWSK", "brand": "AeroPress", "price": null, "ratings": null, "reviews": null, "bsr_coffee_presses": null},
+    {"asin": "B00008XEWG", "brand": "Bodum",     "price": null, "ratings": null, "reviews": null, "bsr_coffee_presses": null},
+    {"asin": "B07JGBK6XV", "brand": "Mueller",   "price": null, "ratings": null, "reviews": null, "bsr_coffee_presses": null}
+  ]
+}
