@@ -42,7 +42,8 @@ directly** — sync is enforced at three layers:
 1. **Local pre-commit hook** — auto-syncs copies when canonical is staged.
    Install once per clone: `bash scripts/install-hooks.sh`
 2. **`scripts/sync-scripts.sh`** — mirrors canonical → copies. Refuses to
-   overwrite copies that differ without an `AUTO-SYNCED` marker.
+   overwrite copies that differ without the canonical-source banner
+   (`# Canonical source - do not edit copies under amazon-* skill directories directly`).
 3. **CI check** (`.github/workflows/shared-files-distribution.yml`) — every
    PR touching `scripts/**` or `*scripts/apiclaw.py` runs a strict diff;
    mismatched copies fail the PR.

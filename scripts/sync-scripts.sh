@@ -30,14 +30,15 @@ for skill_dir in "$REPO_ROOT"/amazon-*/; do
   elif diff -q "$SOURCE" "$target" &>/dev/null; then
     echo "  OK   $skill_name"
   else
-    # If the target differs, only overwrite files that are marked as managed copies
-    if grep -q "AUTO-SYNCED" "$target"; then
+    # If the target differs, only overwrite files that are marked as managed copies.
+    # The canonical-source banner (added in #47) is the marker we look for.
+    if grep -q "Canonical source - do not edit copies" "$target"; then
       # The marker indicates a managed copy, so it is safe to overwrite
       cp "$SOURCE" "$target"
       echo "  SYNC $skill_name"
       ((changed++))
     else
-      echo "  CONFLICT $skill_name - scripts/apiclaw.py differs from the canonical source and has no AUTO-SYNCED marker"
+      echo "  CONFLICT $skill_name - scripts/apiclaw.py differs from the canonical source and has no managed-copy marker"
       echo "           Do not edit copies directly; submit changes to apiclaw/scripts/apiclaw.py"
       ((conflict++))
     fi
