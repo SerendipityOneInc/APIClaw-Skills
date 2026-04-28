@@ -322,6 +322,98 @@ class TestCategoryParamPassing(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# 9. cmd_market_entry: categoryPath → keyword fallback (regression for #XX)
+# ---------------------------------------------------------------------------
+class TestMarketEntryCategoryFallback(unittest.TestCase):
+    """cmd_market_entry must downgrade to keyword-only mode when a deep-leaf
+    categoryPath returns no aggregation data from markets/search.
+
+    Without this fallback, all 11 downstream endpoints inherit the dead
+    categoryPath and return empty/HTTP 500 — the symptom Kimi 2.5 reported when
+    asked to analyze a 5-level leaf like
+    'Electronics > … > Over-Ear Headphones'.
+    """
+
+    DEEP_LEAF = "Electronics,Headphones,Earbuds & Accessories,Headphones & Earbuds,Over-Ear Headphones"
+
+    def _run(self, market_when_categoryPath, market_when_categoryKeyword):
+        """Run market-entry, returning the ordered list of (endpoint, params) calls."""
+        calls = []
+        # Endpoints whose response.data is a dict (others use list)
+        dict_data_endpoints = {
+            "products/brand-overview", "products/brand-detail",
+            "products/price-band-overview", "products/price-band-detail",
+            "reviews/analysis", "realtime/product", "realtime/reviews",
+            "products/history",
+        }
+
+        def fake_api_call(endpoint, params):
+            calls.append((endpoint, dict(params)))
+            if endpoint == "markets/search":
+                if "categoryPath" in params:
+                    return market_when_categoryPath
+                return market_when_categoryKeyword
+            empty_data = {} if endpoint in dict_data_endpoints else []
+            return {"success": True, "data": empty_data, "meta": {"total": 0},
+                    "_query": {"endpoint": endpoint, "params": params}}
+
+        argv = ["apiclaw.py", "market-entry",
+                "--keyword", "Over-Ear Headphones",
+                "--category", self.DEEP_LEAF]
+        with patch.object(apiclaw, "api_call", side_effect=fake_api_call), \
+             patch.object(apiclaw, "output"), \
+             patch.object(sys, "argv", argv):
+            apiclaw.main()
+        return calls
+
+    @staticmethod
+    def _market_resp(empty=False):
+        if empty:
+            return {"success": True, "data": [], "meta": {"total": 0},
+                    "_query": {"endpoint": "markets/search", "params": {}}}
+        return {"success": True, "data": [{"asin": "B0EXAMPLE"}],
+                "meta": {"total": 1234},
+                "_query": {"endpoint": "markets/search", "params": {}}}
+
+    def test_empty_categoryPath_triggers_keyword_retry(self):
+        calls = self._run(self._market_resp(empty=True), self._market_resp())
+        market_calls = [p for ep, p in calls if ep == "markets/search"]
+        self.assertGreaterEqual(len(market_calls), 2,
+            "Expected an initial categoryPath call followed by a keyword fallback retry")
+        self.assertIn("categoryPath", market_calls[0])
+        self.assertIn("categoryKeyword", market_calls[1])
+        self.assertNotIn("categoryPath", market_calls[1])
+
+    def test_subsequent_endpoints_drop_categoryPath_after_downgrade(self):
+        calls = self._run(self._market_resp(empty=True), self._market_resp())
+        # Skip the very first markets/search (which legitimately uses
+        # categoryPath); every call after the downgrade must not carry it.
+        seen_first_market = False
+        for ep, p in calls:
+            if ep == "markets/search" and not seen_first_market:
+                seen_first_market = True
+                continue
+            self.assertNotIn("categoryPath", p,
+                f"{ep} should not carry categoryPath after downgrade, got {p}")
+
+    def test_nonempty_categoryPath_does_not_retry(self):
+        calls = self._run(self._market_resp(), self._market_resp())
+        market_calls = [p for ep, p in calls if ep == "markets/search"]
+        self.assertEqual(len(market_calls), 1,
+            "No fallback retry should fire when categoryPath returns data")
+        self.assertIn("categoryPath", market_calls[0])
+
+    def test_failed_categoryPath_call_also_triggers_retry(self):
+        # success=False (HTTP 500-equivalent) should also trigger downgrade
+        failed = {"success": False, "error": {"status": 500, "message": "boom"},
+                  "_query": {"endpoint": "markets/search", "params": {}}}
+        calls = self._run(failed, self._market_resp())
+        market_calls = [p for ep, p in calls if ep == "markets/search"]
+        self.assertGreaterEqual(len(market_calls), 2)
+        self.assertIn("categoryKeyword", market_calls[1])
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":

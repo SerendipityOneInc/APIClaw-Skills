@@ -1020,6 +1020,26 @@ def cmd_market_entry(args):
         market_params["categoryKeyword"] = keyword
     results["market"] = safe_call("markets/search", market_params, "market")
 
+    # 1a-fallback: deep-leaf categoryPath has no aggregation data on the
+    # backend → downgrade to keyword-only mode so all subsequent steps use
+    # categoryKeyword instead of categoryPath. Only applies when both keyword
+    # and categoryPath were provided (otherwise we have nothing to fall back to).
+    if category_path and keyword:
+        m = results["market"] or {}
+        m_data = m.get("data") or []
+        m_total = (m.get("meta") or {}).get("total", 0)
+        if m.get("success") is False or not m_data or m_total == 0:
+            log(f"  → categoryPath {' > '.join(category_path)} returned empty; "
+                f"downgrading to keyword-only mode for subsequent steps")
+            results["meta"]["category_downgrade"] = {
+                "from": category_path,
+                "reason": "empty_aggregation",
+            }
+            category_path = None
+            market_params = {"topN": "10", "pageSize": 20, "categoryKeyword": keyword}
+            results["market"] = safe_call("markets/search", market_params,
+                                          "market (keyword fallback)")
+
     # 1b. Brand overview (keyword + category, fallback to category-only)
     brand_ov_params = {"pageSize": 20}
     if category_path:
