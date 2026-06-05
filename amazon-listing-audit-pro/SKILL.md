@@ -1,6 +1,6 @@
 ---
-name: Amazon Listing Audit Pro — 8-Dimension Health Check
-version: 1.0.2
+name: amazon-listing-audit-pro
+version: 1.0.3
 description: >
   Comprehensive listing health check and optimization engine for Amazon sellers.
   Scores listings across 8 dimensions, benchmarks against category leaders,

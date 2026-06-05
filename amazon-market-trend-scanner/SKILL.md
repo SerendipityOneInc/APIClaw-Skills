@@ -1,7 +1,8 @@
 ---
-name: Market Radar — Daily Trend Scanner
-version: 1.0.1
+name: amazon-market-trend-scanner
+version: 1.0.2
 description: >
+  Daily Trend Scanner.
   Scan Amazon category landscapes to discover trending subcategories,
   emerging niches, and market shifts. Complements Daily Market Radar
   (defensive monitoring) with offensive trend discovery for product

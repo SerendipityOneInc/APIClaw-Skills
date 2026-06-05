@@ -1,6 +1,6 @@
 ---
-name: Amazon Competitor Intelligence Monitor
-version: 1.1.2
+name: amazon-competitor-intelligence-monitor
+version: 1.1.3
 description: >
   Deep competitor intelligence for Amazon sellers with continuous monitoring.
   Two modes: Full Scan (complete analysis, 28-35 credits) and Quick Check (lightweight monitoring, 5-10 credits).
