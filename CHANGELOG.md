@@ -21,6 +21,32 @@ All notable changes to this project will be documented in this file.
 - Reference docs updated with `realtime/reviews` and `reviews/search` schemas (`apiclaw/references/{openapi-reference,reference}.md`, `amazon-review-intelligence-extractor/references/reference.md`).
 - All 9 `amazon-*/scripts/apiclaw.py` copies force-resynced to canonical (one-time cleanup of pre-existing drift; future syncs now safe via AUTO-SYNCED marker in file header).
 
+## [1.2.2] — 2026-06-05
+
+### Spec Compliance — SKILL.md `name` field
+
+All 10 SKILL.md `name:` fields rewritten to kebab-case matching the parent directory name, per the [Agent Skills open standard](https://agentskills.io/specification). Previous values were human-readable titles (e.g., `Amazon Daily Market Radar — Automated Monitoring & Alerts`) which violated the spec rules: lowercase alphanumeric + hyphens only, max 64 characters, must match parent directory. This caused strict loaders (Codex) to skip these skills at startup.
+
+### Impact per install path
+
+- **ClawHub (`openclaw skills install`)**: URL, slug, install directory, page display all unchanged. `openclaw skills update` will refuse on fingerprint mismatch — pass `--force` to overwrite.
+- **Claude Code**: No user-visible change. Claude Code uses the directory name for slash commands; the `name:` field is just a display name.
+- **Codex**: Skills now load successfully. `npx skills add` users with pre-existing installs from the old long-name version will have orphaned directories.
+
+### Cleanup for `npx skills add` users with old installs
+
+```bash
+npx skills list
+npx skills remove "amazon-daily-market-radar-automated-monitoring-alerts"
+npx skills remove "amazon-review-intelligence-extractor-consumer-insights-from-1b-reviews"
+# (and any other long-name orphans shown by `list`)
+npx skills add SerendipityOneInc/APIClaw-Skills
+```
+
+### CI
+
+- Removed `check-skill-name-unchanged` job. Its premise (that `name:` determines installed directory) was incorrect — ClawHub uses its own slug fixed at publish time, and other install paths are independent.
+
 ## [1.2.0] — 2026-04-03
 
 ### Breaking Changes — API V2 Field Renames

@@ -1,6 +1,6 @@
 ---
-name: Amazon Market Entry Analyzer — GO/CAUTION/AVOID Verdicts
-version: 1.0.2
+name: amazon-market-entry-analyzer
+version: 1.0.3
 description: >
   One-click market viability assessment for Amazon sellers.
   Analyzes market size, competition intensity, brand landscape, pricing structure,

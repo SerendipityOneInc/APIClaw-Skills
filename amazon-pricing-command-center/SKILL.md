@@ -1,6 +1,6 @@
 ---
-name: Dynamic Pricing Intelligence Agent
-version: 1.1.1
+name: amazon-pricing-command-center
+version: 1.1.2
 description: >
   Data-driven pricing strategy engine for Amazon sellers.
   Give me your ASIN(s) — I auto-detect the leaf category, analyze pricing landscape,

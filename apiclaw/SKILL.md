@@ -1,6 +1,6 @@
 ---
-name: APIClaw — Amazon Commerce Data, 11 Endpoints
-version: 1.1.2
+name: apiclaw
+version: 1.1.3
 description: >
   General overview, 12 API endpoints.
   AI-powered commerce data infrastructure with 200M+ Amazon products.
