@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.2.2] — 2026-06-05
 
-### Added
+### Added — Realtime Reviews Fallback Toolkit (#57)
 - **`/openapi/v2/realtime/reviews` endpoint integration** — cursor-paginated raw review fetch (10 reviews/page, max 100 reviews / 10 pages, 1 credit/page, US+UK only). Spider-live, no AI tags.
 - **Local Review Toolkit in `apiclaw.py`** — prompt-as-data fallback path when `/reviews/analysis` lacks aggregation (ASIN <50 reviews or no daily snapshot). New CLI commands:
   - `reviews-raw` — fetch raw reviews with auto-pagination + early exit
@@ -14,26 +14,23 @@ All notable changes to this project will be documented in this file.
 - **Three-layer sync enforcement docs** in `apiclaw/scripts/apiclaw.py` file header (pre-commit hook + `sync-scripts.sh` + CI workflow).
 - **CONTRIBUTING.md** sections on local branch hygiene and shared CLI script sync mechanism.
 
-### Changed
+### Changed — Realtime Reviews Fallback Documentation (#57)
 - All 8 review-using SKILL.md files now document the realtime/reviews fallback chain (each self-contained, no cross-skill references):
   - Tier A (deep update): `apiclaw`, `amazon-review-intelligence-extractor`, `amazon-analysis`
   - Tier B (pitfall expansion): `amazon-competitor-intelligence-monitor`, `amazon-daily-market-radar`, `amazon-listing-audit-pro`, `amazon-market-entry-analyzer`, `amazon-opportunity-discoverer`
 - Reference docs updated with `realtime/reviews` and `reviews/search` schemas (`apiclaw/references/{openapi-reference,reference}.md`, `amazon-review-intelligence-extractor/references/reference.md`).
 - All 9 `amazon-*/scripts/apiclaw.py` copies force-resynced to canonical (one-time cleanup of pre-existing drift; future syncs now safe via AUTO-SYNCED marker in file header).
 
-## [1.2.2] — 2026-06-05
-
-### Spec Compliance — SKILL.md `name` field
+### Fixed — SKILL.md `name` Field Spec Compliance (#65)
 
 All 10 SKILL.md `name:` fields rewritten to kebab-case matching the parent directory name, per the [Agent Skills open standard](https://agentskills.io/specification). Previous values were human-readable titles (e.g., `Amazon Daily Market Radar — Automated Monitoring & Alerts`) which violated the spec rules: lowercase alphanumeric + hyphens only, max 64 characters, must match parent directory. This caused strict loaders (Codex) to skip these skills at startup.
 
-### Impact per install path
-
+**Impact per install path:**
 - **ClawHub (`openclaw skills install`)**: URL, slug, install directory, page display all unchanged. `openclaw skills update` will refuse on fingerprint mismatch — pass `--force` to overwrite.
 - **Claude Code**: No user-visible change. Claude Code uses the directory name for slash commands; the `name:` field is just a display name.
 - **Codex**: Skills now load successfully. `npx skills add` users with pre-existing installs from the old long-name version will have orphaned directories.
 
-### Cleanup for `npx skills add` users with old installs
+**Cleanup for `npx skills add` users with old installs:**
 
 ```bash
 npx skills list
@@ -43,8 +40,13 @@ npx skills remove "amazon-review-intelligence-extractor-consumer-insights-from-1
 npx skills add SerendipityOneInc/APIClaw-Skills
 ```
 
-### CI
+### Other (#51–#56, #62, #63)
+- Sync infrastructure: `scripts/sync-scripts.sh` repointed at canonical-source banner (#63); SKILL.md PR CI checks for path prefix (#53)
+- Bug fixes: market-entry keyword-only fallback when `categoryPath` empty (#62); API v2 field renames + rate limiting + category auto-detection (#52)
+- ClawHub: security scan warnings resolved (#55); patch version bumps for republish (#56)
+- Docs: README skill tables updated with input/output format (#51); README updates (#54)
 
+### CI
 - Removed `check-skill-name-unchanged` job. Its premise (that `name:` determines installed directory) was incorrect — ClawHub uses its own slug fixed at publish time, and other install paths are independent.
 
 ## [1.2.0] — 2026-04-03
