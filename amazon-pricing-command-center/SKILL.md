@@ -15,11 +15,7 @@ metadata:
   version: "1.1.2"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-  openclaw:
-    requires:
-      env:
-        - APICLAW_API_KEY
-    primaryEnv: "APICLAW_API_KEY"
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Dynamic Pricing Intelligence Agent — RAISE / HOLD / LOWER

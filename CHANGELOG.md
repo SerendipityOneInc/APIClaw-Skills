@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed — SKILL.md Frontmatter Spec Compliance
 
-Frontmatter of all 10 SKILL.md files restructured to comply with the [Agent Skills open standard](https://agentskills.io/specification). The spec recognizes only `name`, `description`, `license`, `compatibility`, `metadata`, and `allowed-tools` as top-level fields; previously the files used `version`, `author`, `homepage` at the top level. These are now nested under the spec-recognized `metadata` field (the spec's official example shows `version` and `author` as `metadata` sub-keys). The `openclaw` runtime contract (`requires.env`, `primaryEnv`) is preserved at `metadata.openclaw` — relocated, not removed. The inline JSON was also rewritten in YAML block style for readability.
+Frontmatter of all 10 SKILL.md files restructured to comply with the [Agent Skills open standard](https://agentskills.io/specification). The spec recognizes only `name`, `description`, `license`, `compatibility`, `metadata`, and `allowed-tools` as top-level fields; previously the files used `version`, `author`, `homepage` at the top level. These are now nested under the spec-recognized `metadata` field (the spec's official example shows `version` and `author` as `metadata` sub-keys). The `openclaw` runtime contract (`requires.env`, `primaryEnv`) is preserved as inline JSON at `metadata.openclaw` — relocated, not rewritten.
 
 **Impact per install path:**
 - **ClawHub (`openclaw skills install`)**: URL, slug, install directory, page display all unchanged. `openclaw skills update` will refuse on fingerprint mismatch (SKILL.md bytes changed even though semantics didn't) — pass `--force` to overwrite.

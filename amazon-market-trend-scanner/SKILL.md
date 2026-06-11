@@ -16,11 +16,7 @@ metadata:
   version: "1.0.2"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-  openclaw:
-    requires:
-      env:
-        - APICLAW_API_KEY
-    primaryEnv: "APICLAW_API_KEY"
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # APIClaw — Market Trend Scanner

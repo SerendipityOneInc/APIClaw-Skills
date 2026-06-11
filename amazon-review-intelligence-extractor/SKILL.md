@@ -14,11 +14,7 @@ metadata:
   version: "1.0.3"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-  openclaw:
-    requires:
-      env:
-        - APICLAW_API_KEY
-    primaryEnv: "APICLAW_API_KEY"
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Amazon Review Intelligence Extractor — 11 Dimensions, 1B+ Reviews
