@@ -19,7 +19,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 # Dynamic Pricing Intelligence Agent — RAISE / HOLD / LOWER

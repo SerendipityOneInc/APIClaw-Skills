@@ -17,7 +17,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 # APIClaw — Competitor Intelligence Monitor

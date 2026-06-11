@@ -18,7 +18,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 # APIClaw — Amazon Seller Data Analysis

@@ -20,7 +20,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 # APIClaw — Market Trend Scanner

@@ -18,7 +18,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 # Amazon Review Intelligence Extractor — 11 Dimensions, 1B+ Reviews

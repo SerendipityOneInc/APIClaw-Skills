@@ -20,7 +20,7 @@ metadata:
     requires:
       env:
         - APICLAW_API_KEY
-    primaryEnv: APICLAW_API_KEY
+    primaryEnv: "APICLAW_API_KEY"
 ---
 
 > **📋 Live API Reference**: Field names and parameters may change. If you encounter field errors,
