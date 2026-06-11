@@ -1,6 +1,5 @@
 ---
 name: amazon-market-trend-scanner
-version: 1.0.2
 description: >
   Daily Trend Scanner.
   Scan Amazon category landscapes to discover trending subcategories,
@@ -13,9 +12,11 @@ description: >
   categories, what's hot, emerging categories, trend scanner,
   category trends, market trends, which categories are growing.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.2"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # APIClaw — Market Trend Scanner

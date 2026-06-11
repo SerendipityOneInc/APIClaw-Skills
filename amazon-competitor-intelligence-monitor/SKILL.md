@@ -1,6 +1,5 @@
 ---
 name: amazon-competitor-intelligence-monitor
-version: 1.1.3
 description: >
   Deep competitor intelligence for Amazon sellers with continuous monitoring.
   Two modes: Full Scan (complete analysis, 28-35 credits) and Quick Check (lightweight monitoring, 5-10 credits).
@@ -8,11 +7,13 @@ description: >
   Quick Check: realtime/product polling, baseline diff, tiered alerts.
   Use when user asks about: competitor analysis, competitive landscape, competitor tracking,
   competitor monitoring, competitive intelligence, competitor comparison, benchmark, track competitor,
-  spy on competitors, competitor analysis, competitor monitoring, competitor tracking.
+  spy on competitors.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.1.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # APIClaw — Competitor Intelligence Monitor

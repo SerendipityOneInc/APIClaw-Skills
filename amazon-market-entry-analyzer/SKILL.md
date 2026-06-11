@@ -1,6 +1,5 @@
 ---
 name: amazon-market-entry-analyzer
-version: 1.0.3
 description: >
   One-click market viability assessment for Amazon sellers.
   Analyzes market size, competition intensity, brand landscape, pricing structure,
@@ -10,9 +9,11 @@ description: >
   is this niche worth it, category analysis, market opportunity, market assessment,
   niche evaluation, product category research.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Amazon Market Entry Analyzer — GO / CAUTION / AVOID

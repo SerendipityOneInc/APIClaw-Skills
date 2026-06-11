@@ -1,6 +1,5 @@
 ---
 name: amazon-daily-market-radar
-version: 1.0.3
 description: >
   Automated daily market monitoring and alert system for Amazon sellers.
   Tracks price changes, new competitors, BSR movements, review spikes,
@@ -11,9 +10,11 @@ description: >
   competitor alerts, review monitoring, stock alerts, market dashboard,
   daily report, market updates, what changed today.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # APIClaw — Amazon Daily Market Radar

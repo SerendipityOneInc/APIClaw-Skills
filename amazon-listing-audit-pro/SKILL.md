@@ -1,6 +1,5 @@
 ---
 name: amazon-listing-audit-pro
-version: 1.0.3
 description: >
   Comprehensive listing health check and optimization engine for Amazon sellers.
   Scores listings across 8 dimensions, benchmarks against category leaders,
@@ -12,9 +11,11 @@ description: >
   title optimization, bullet point optimization, keyword gaps, listing benchmark,
   A+ content, listing health check, listing comparison.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # APIClaw — Amazon Listing Audit Pro

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed — SKILL.md Frontmatter Spec Compliance
+
+Frontmatter of all 10 SKILL.md files restructured to comply with the [Agent Skills open standard](https://agentskills.io/specification). The spec recognizes only `name`, `description`, `license`, `compatibility`, `metadata`, and `allowed-tools` as top-level fields; previously the files used `version`, `author`, `homepage` at the top level. These are now nested under the spec-recognized `metadata` field (the spec's official example shows `version` and `author` as `metadata` sub-keys). The `openclaw` runtime contract (`requires.env`, `primaryEnv`) is preserved as inline JSON at `metadata.openclaw` — relocated, not rewritten.
+
+**Impact per install path:**
+- **ClawHub (`openclaw skills install`)**: URL, slug, install directory, page display all unchanged. `openclaw skills update` will refuse on fingerprint mismatch (SKILL.md bytes changed even though semantics didn't) — pass `--force` to overwrite.
+- **Claude Code**: No user-visible change. Frontmatter is parsed by a standard YAML parser; inline JSON and YAML block style are equivalent.
+- **Codex / Cursor / Gemini CLI**: Improved spec compliance for strict skill loaders.
+
+### Fixed — Description content quality
+
+- **amazon-pricing-command-center**: rewrote description from first-person ("Give me your ASIN(s) — I auto-detect...") to third-person, per spec guidance. Removed duplicate `pricing strategy` trigger keyword.
+- **amazon-competitor-intelligence-monitor**: removed duplicate trigger keywords (`competitor analysis`, `competitor monitoring`, `competitor tracking` each appeared twice).
+- **amazon-analysis**: added explicit `Use when user asks about...` trigger keyword list (previously missing) and added a routing hint pointing strict/specialized intents to the corresponding specialized skill.
+
 ## [1.2.2] — 2026-06-05
 
 ### Added — Realtime Reviews Fallback Toolkit (#57)

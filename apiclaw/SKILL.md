@@ -1,6 +1,5 @@
 ---
 name: apiclaw
-version: 1.1.3
 description: >
   General overview, 12 API endpoints.
   AI-powered commerce data infrastructure with 200M+ Amazon products.
@@ -13,9 +12,11 @@ description: >
   general commerce data questions. For deep Amazon product selection
   strategies and analysis workflows, use the Amazon-analysis-skill instead.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.1.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 > **📋 Live API Reference**: Field names and parameters may change. If you encounter field errors,

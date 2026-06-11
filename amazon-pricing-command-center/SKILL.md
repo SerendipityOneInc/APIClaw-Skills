@@ -1,20 +1,21 @@
 ---
 name: amazon-pricing-command-center
-version: 1.1.2
 description: >
   Data-driven pricing strategy engine for Amazon sellers.
-  Give me your ASIN(s) — I auto-detect the leaf category, analyze pricing landscape,
-  and deliver RAISE/HOLD/LOWER signals with profit simulation.
+  Given one or more ASINs, auto-detects each product's leaf category, analyzes
+  the pricing landscape, and delivers RAISE/HOLD/LOWER signals with profit simulation.
   Supports single ASIN or batch (multiple ASINs, auto-grouped by category).
   Uses APIClaw API endpoints with cross-validation.
   Use when user asks about: pricing strategy, how much to price, optimal price,
   price optimization, competitor pricing, price war, BuyBox strategy,
   profit margin, pricing analysis, should I raise price, should I lower price,
-  price comparison, price positioning, repricing, pricing strategy, should I raise or lower price.
+  price comparison, price positioning, repricing, should I raise or lower price.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.1.2"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Dynamic Pricing Intelligence Agent — RAISE / HOLD / LOWER

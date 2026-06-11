@@ -1,6 +1,5 @@
 ---
 name: amazon-review-intelligence-extractor
-version: 1.0.3
 description: >
   Deep consumer insights from 1B+ pre-analyzed Amazon reviews.
   Extracts pain points, buying factors, user profiles, usage patterns,
@@ -11,9 +10,11 @@ description: >
   review insights, sentiment analysis, consumer insights, product improvements, voice of customer,
   review comparison, negative reviews, customer complaints, buying factors, user profile.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Amazon Review Intelligence Extractor — 11 Dimensions, 1B+ Reviews

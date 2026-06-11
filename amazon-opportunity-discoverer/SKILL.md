@@ -1,6 +1,5 @@
 ---
 name: amazon-opportunity-discoverer
-version: 1.0.3
 description: >
   Automated product opportunity scanner for Amazon sellers.
   Scans categories using 14 preset selection strategies, validates candidates with
@@ -10,9 +9,11 @@ description: >
   niche discovery, profitable products, selection strategy, product scanner, opportunity scan,
   winning products, untapped niches, product ideas, market gaps.
   Requires APICLAW_API_KEY.
-author: SerendipityOneInc
-homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
-metadata: {"openclaw": {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}}
+metadata:
+  version: "1.0.3"
+  author: SerendipityOneInc
+  homepage: https://github.com/SerendipityOneInc/APIClaw-Skills
+  openclaw: {"requires": {"env": ["APICLAW_API_KEY"]}, "primaryEnv": "APICLAW_API_KEY"}
 ---
 
 # Amazon Opportunity Discoverer — Niche Scanner & Scoring
