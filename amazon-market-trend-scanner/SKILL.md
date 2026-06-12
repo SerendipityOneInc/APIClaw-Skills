@@ -5,8 +5,6 @@ description: >
   trending subcategories, emerging niches, and market shifts. Tracks demand
   surges, brand consolidation, new entrant waves, price band migration, and
   margin changes across all subcategories under a parent category.
-  Designed for offensive trend discovery — a snapshot read of where the
-  market is heading, not an opportunity-by-opportunity selection ranking.
   Use when user asks about: market trends, category trends, trending
   categories, what's hot, emerging categories, trend scanner,
   which categories are growing, where the market is heading.
