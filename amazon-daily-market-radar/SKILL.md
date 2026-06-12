@@ -1,16 +1,20 @@
 ---
 name: amazon-daily-market-radar
 description: >
-  Market-level daily monitoring and alert system. Triggered by a CATEGORY or
-  KEYWORD (not specific ASINs). Watches the whole market: price-band shifts,
-  new brand entrants, BSR landscape changes, review wave detection, stockout
-  signals across the category.
-  Designed for unattended scheduled automation (cron-style daily briefings).
-  Use ONLY when the user wants observation at the CATEGORY or MARKET level
-  without naming specific competitor ASINs or brands to watch.
-  Use when user asks: what changed in my category today, daily category briefing,
-  emerging brands in the market, BSR shifts category-wide, market dashboard,
-  new entrants alert, stockout signals across a category.
+  Automated daily market digest. Given the user's own ASINs (1-10) and any
+  competitor ASINs they want included (up to 20), produces a daily
+  change-detection briefing: price moves, BSR shifts, new entrants in the
+  surrounding category, review wave detection, stockout signals. Output is
+  a triaged alert dashboard (RED/YELLOW/GREEN) comparing today against
+  yesterday's snapshot.
+  Designed for unattended scheduled automation (cron-style daily run) — set
+  it once, get an alert digest every day.
+  Use when the user wants ongoing OPERATIONAL daily monitoring of their
+  products and the surrounding market — a "what changed since yesterday"
+  digest, not a one-shot focused teardown of named competitors.
+  Use when user asks: what changed in my category today, daily category
+  briefing, set up daily monitoring, emerging brands alert, BSR shifts
+  daily, stockout signals, set-it-and-forget-it market watch.
   Requires APICLAW_API_KEY.
 metadata:
   version: "1.0.3"

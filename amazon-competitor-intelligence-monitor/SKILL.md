@@ -1,17 +1,19 @@
 ---
 name: amazon-competitor-intelligence-monitor
 description: >
-  ASIN-level competitor intelligence. Triggered when the user names SPECIFIC
-  competitor ASINs or branded competitors to analyze, teardown, or watch.
-  Produces deep one-shot teardowns (Full Scan: 28-35 credits, 11 endpoints,
-  battle card, side-by-side analysis, pricing/review/inventory breakdown) AND
-  ongoing per-ASIN monitoring with tiered alerts (Quick Check: 5-10 credits,
-  realtime polling, baseline diff).
-  Use ONLY when the user names SPECIFIC competitor ASINs or brands — never
-  for category-wide or market-level observation without named competitors.
+  Deep competitor intelligence engine. Produces analytical output focused on
+  a defined set of competitors: either a one-shot deep teardown (Full Scan:
+  28-35 credits, 11 endpoints, battle card, side-by-side comparison,
+  pricing/review/inventory breakdown) OR sustained per-competitor monitoring
+  with alerts (Quick Check: 5-10 credits, realtime polling, baseline diff).
+  Input: keyword, ASIN(s), or brand — whatever identifies the competitor set
+  to analyze. Output is per-competitor analytical insight, not a daily
+  market-wide change digest.
+  Use when the user wants focused analysis on identified competitors:
+  a one-shot teardown or an ongoing per-competitor watch.
   Use when user asks: analyze competitor B07XXX, battle card for ASIN Y,
-  track my 5 competitors daily, side-by-side competitor teardown,
-  spy on a specific brand, ongoing watch on named ASINs.
+  side-by-side competitor teardown, spy on a brand, deep analysis of these
+  3 competitors, ongoing watch on a defined competitor set.
   Requires APICLAW_API_KEY.
 metadata:
   version: "1.1.3"
