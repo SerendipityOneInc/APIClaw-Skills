@@ -1,8 +1,8 @@
 ---
 name: apiclaw
 description: >
-  API endpoint reference for the APIClaw Amazon commerce data platform.
-  Provides the 12 endpoints (categories, markets, products, competitors, realtime ASIN,
+  API endpoint reference for the APIClaw data platform. Provides the 12
+  endpoints (categories, markets, products, competitors, realtime ASIN,
   AI review analysis, raw reviews, price band, brand, history), their
   inputs/outputs, parameter quirks, Quick Start (auth, base URL), how
   credits are tracked (meta.creditsConsumed field), and the Local Review
