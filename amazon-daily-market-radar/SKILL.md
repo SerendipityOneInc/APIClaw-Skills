@@ -1,10 +1,10 @@
 ---
 name: amazon-daily-market-radar
 description: >
-  Automated daily market digest. Given the user's own ASINs (1-10) and any
-  competitor ASINs they want included (up to 20), produces a daily
-  change-detection briefing: price moves, BSR shifts, new entrants in the
-  surrounding category, review wave detection, stockout signals. Output is
+  Automated daily Amazon market digest. Given the user's own ASINs (1-10) and
+  any competitor ASINs they want included (up to 20), produces a daily
+  change-detection briefing on Amazon: price moves, BSR shifts, new entrants
+  in the surrounding category, review wave detection, stockout signals. Output is
   a triaged alert dashboard (RED/YELLOW/GREEN) comparing today against
   yesterday's snapshot.
   Designed for unattended scheduled automation (cron-style daily run) — set

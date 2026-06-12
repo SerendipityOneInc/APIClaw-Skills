@@ -1,7 +1,7 @@
 ---
 name: amazon-competitor-intelligence-monitor
 description: >
-  Deep competitor intelligence engine. Produces analytical output focused on
+  Amazon competitor intelligence engine. Produces analytical output focused on
   a defined set of competitors: either a one-shot deep teardown (Full Scan:
   28-35 credits, 11 endpoints, battle card, side-by-side comparison,
   pricing/review/inventory breakdown) OR sustained per-competitor monitoring
