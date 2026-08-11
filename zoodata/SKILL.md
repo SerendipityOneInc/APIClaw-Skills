@@ -286,8 +286,9 @@ Keyword value boundary:
   (`asinSnapshot.latestRating`, `asinSnapshot.latestRatingCount`), traffic estimate (`traffic.*`
   plus placement averages), and listing events (`asinSnapshot.latestTitle`, `asinSnapshot.latestMainImageLink`)
 - Key groups: listing/product/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR impression points
-  in `traffic`; positions/pages/observation times in `placement`; weekly search/ABA fields and
-  `metricWindow` in `keywordMetrics`; observation/campaign/ad counts in `adActivity`
+  in `traffic`; positions/pages/observation times in `placement`; `keywordEstimateSearchCount`,
+  `keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`;
+  observation/campaign/ad counts in `adActivity`
 
 ## Local Review Toolkit
 

@@ -276,7 +276,7 @@ Response:
   - `asinSnapshot`: title, price, link/image, brand, badges, sales, rating, BSR, video
   - `traffic`: ORG/SP/SB/SBV/SPR impression points
   - `placement`: organic/ad positions, pages, observation timestamps, average observations
-  - `keywordMetrics`: `metricWindow` plus search count, ABA rank, Top3 shares
+  - `keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, `keywordAbaRank`, and Top3 shares
   - `adActivity`: observation count, day coverage, campaign count, ad count
 
 Interpret the series' snapshot, weekly-period, metric-window, placement, traffic, and ad-activity fields through `traffic-observation-semantics.md`.

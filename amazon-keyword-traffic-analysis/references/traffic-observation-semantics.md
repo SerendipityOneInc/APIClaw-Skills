@@ -13,6 +13,7 @@ Load this file after retrieving `product-traffic-terms`, `competitor-product-key
 ## Timeline observations
 
 - `asinSnapshot` is tied to the series date. Traffic, placement, and `adActivity` belong to the returned weekly period. `keywordMetrics` belongs to its own weekly `metricWindow`; do not merge these grains into one timestamp.
+- `keywordEstimateSearchCount` and `keywordAbaRank` are keyword-level context scoped to `keywordMetrics.metricWindow`; they do not describe ASIN-level traffic, placement, clicks, conversion, or sales attribution.
 - Exposure-position fields under `placement` return `null` both when period data is unavailable and when no position was observed. A null position cannot distinguish those states by itself: use returned period boundaries plus observation and coverage fields, and never coerce the position to numeric zero.
 - Compare like fields across aligned returned periods. One observation supports only a point-in-time description; at least two comparable observations are required to describe directional movement.
 - `adActivity` counts and coverage describe observed ad participation. They do not establish CPC, auction competition, spend posture, ROI, or campaign intent.

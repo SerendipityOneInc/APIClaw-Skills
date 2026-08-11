@@ -616,8 +616,9 @@ Diagnosis curves and events:
 - Listing events: changes in `asinSnapshot.latestTitle` / `asinSnapshot.latestMainImageLink`
 
 Key groups: product/listing/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR impression points in
-`traffic`; positions/pages/observation timestamps in `placement`; weekly search/ABA fields and
-`metricWindow` in `keywordMetrics`; observation/campaign/ad counts in `adActivity`.
+`traffic`; positions/pages/observation timestamps in `placement`; `keywordEstimateSearchCount`,
+`keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`; observation/campaign/ad
+counts in `adActivity`.
 
 ---
 

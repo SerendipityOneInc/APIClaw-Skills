@@ -624,6 +624,27 @@ def test_timeline_health_probe_omits_unsupported_pagination():
     assert '"pageSize"' not in timeline_probe
 
 
+def test_timeline_keyword_metric_fields_are_documented_consistently():
+    reference = read("references/reference.md")
+    semantics = read("references/traffic-observation-semantics.md")
+    zoodata_skill = (ROOT.parent / "zoodata" / "SKILL.md").read_text(encoding="utf-8")
+    openapi_reference = (
+        ROOT.parent / "zoodata" / "references" / "openapi-reference.md"
+    ).read_text(encoding="utf-8")
+
+    contract_phrase = (
+        "`keywordEstimateSearchCount`, `keywordAbaRank`, Top3 shares, and "
+        "`metricWindow` in `keywordMetrics`"
+    )
+    assert contract_phrase in " ".join(zoodata_skill.split())
+    assert contract_phrase in " ".join(openapi_reference.split())
+    assert (
+        "`keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, "
+        "`keywordAbaRank`, and Top3 shares"
+    ) in reference
+    assert "scoped to `keywordMetrics.metricWindow`" in semantics
+
+
 def test_scenarios_are_capability_guides_without_independent_scoring_or_gates():
     for relative_path in (
         "references/scenarios-expand.md",
