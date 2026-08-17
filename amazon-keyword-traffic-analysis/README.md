@@ -1,6 +1,6 @@
 # Amazon Keyword Traffic Analysis
 
-This package provides the `amazon-keyword-traffic-analysis` Codex skill for Amazon keyword demand, market structure, traffic-term discovery, and evidence-bounded ASIN × keyword diagnosis.
+This package provides the `amazon-keyword-traffic-analysis` Codex skill for Amazon keyword value analysis and ASIN-centered product traffic health analysis.
 
 This README is a human-facing overview and module index. Runtime behavior is defined by [`SKILL.md`](SKILL.md) and the owner modules it routes to; this file does not add or override skill policy.
 
@@ -15,6 +15,9 @@ This README is a human-facing overview and module index. Runtime behavior is def
 - `references/metrics-*.md`, [`serp-and-rollover.md`](references/serp-and-rollover.md), and [`traffic-observation-semantics.md`](references/traffic-observation-semantics.md) — returned-field semantics and inference limits
 - [`references/sqp-field-semantics.md`](references/sqp-field-semantics.md) — seller-artifact acquisition and field semantics
 - `references/scenarios-*.md` — scenario-specific stage entry requirements, capability selection, conclusion authority, and report-section content
+- [`references/scenarios-expand.md`](references/scenarios-expand.md) — keyword expansion
+- [`references/scenarios-keyword-analysis.md`](references/scenarios-keyword-analysis.md) — keyword demand, market structure, trend, value, and ASIN fit
+- [`references/scenarios-product-traffic-analysis.md`](references/scenarios-product-traffic-analysis.md) — product traffic structure, terms, change, trend, health, and diagnosis
 - [`scripts/zoodata.py`](scripts/zoodata.py) — bundled ZooData CLI
 
 ## Data & privacy

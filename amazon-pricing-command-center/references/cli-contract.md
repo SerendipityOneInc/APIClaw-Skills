@@ -39,21 +39,23 @@ Apply this gate before classifying a connection or network failure as a CLI/API 
 
 1. Always inspect stdout, even when the process exits non-zero. Exit `1` with valid structured JSON means at least one API call failed; it does not make the JSON unreadable.
 2. Treat `_transport.status` as the authoritative outer HTTP status. Response-body or nested status-like fields never override it.
-3. For a composite payload, inspect nested endpoint results before classifying the whole workflow. Preserve returned `_query`, credit metadata, successful sections, and failure details internally.
+3. The CLI applies one fixed blind retry budget to every HTTP non-2xx or network failure. It does not assign HTTP-status meaning, select a status-specific workflow action, or vary retry behavior by status. Preserve the final non-2xx response body after those retries and never attach an earlier attempt's body to the final transport status. A structured JSON error remains the primary result with CLI-owned `success=false`, `_transport`, and `_query` metadata added; non-object JSON and non-JSON text remain available under explicit raw-response fields. Never replace a returned `error.code`, `error.message`, `error.details`, request ID, or replacement path with a generic CLI message.
+4. For a composite payload, inspect nested endpoint results before classifying the whole workflow. Preserve returned `_query`, credit metadata, successful sections, and failure details internally.
 
 ## Classification order
 
 After the execution-environment permission gate is resolved or found inapplicable, apply these routes in order:
 
 1. Missing credentials before an evidence call follow the local skill's missing-key procedure.
-2. `_transport.status=401` and `_transport.status=402` follow the local skill's credential and credit procedures. Do not retry, switch endpoints, or change credential sources.
-3. `_transport.status=422` is validation failure. Preserve the structured server error and `_query.params`; do not retry the unchanged request. Correct only fields identified by the server contract.
-4. A terminal interface failure is present when the result carries `error.action="STOP_CURRENT_TURN. APPLY_SKILL_INTERFACE_FAILURE_TEMPLATE. DO_NOT_SELECT_ANOTHER_COMMAND."`, or represents exhausted HTTP 5xx, exhausted 429, exhausted non-HTTP transport failure after host permission restrictions have been ruled out or resolved, endpoint unavailability, `MALFORMED_RESPONSE`, or non-zero execution without valid structured JSON.
-5. A valid `status=empty` or a documented business/coverage error is not automatically terminal. A local skill fallback is allowed only when its contract explicitly supports that result and no terminal interface-failure signal is present.
+2. `_transport.status=401` and `_transport.status=402` follow the local skill's credential and credit procedures. Do not retry externally, switch endpoints, or change credential sources after the CLI returns.
+3. `_transport.status=422` is validation failure. Preserve the structured server error and `_query.params`; do not retry the unchanged request externally. Correct only fields identified by the server contract.
+4. `_transport.status=410` is a retired-interface response. Do not retry externally, silently forward, mutate parameters, or derive a CLI command from the replacement path. Preserve and report the server's structured migration details. A replacement may be invoked only when it already maps to an exact literal subcommand in the current client's help and the active skill independently allows that route; otherwise stop the workflow and state that the installed skill/client must be updated.
+5. A terminal interface failure is present when the final result represents HTTP 404, HTTP 408, HTTP 429, HTTP 5xx, exhausted non-HTTP transport failure after host permission restrictions have been ruled out or resolved, `MALFORMED_RESPONSE`, or non-zero execution without valid structured JSON.
+6. A valid `status=empty` or a documented business/coverage error is not automatically terminal. A local skill fallback is allowed only when its contract explicitly supports that result and no terminal interface-failure signal is present.
 
 ## Retry and terminal behavior
 
-The shared CLI owns transport retries. Once the execution-environment permission gate is resolved or found inapplicable, a terminal interface failure requires:
+The shared CLI owns the blind transport retry budget; the Agent owns all classification after the final result. Once the execution-environment permission gate is resolved or found inapplicable, a terminal interface failure requires:
 
 1. Stop the current workflow turn. Do not retry externally, mutate parameters, switch endpoints or acquisition surfaces, start another tool command, or continue to a later workflow step.
 2. Do not reinterpret an HTTP 5xx body as validation, credential, credit, empty coverage, or permission to try another date, subject, marketplace, filter, or page.

@@ -25,7 +25,7 @@ Usage:
     python zoodata.py keyword-search-results --keyword "yoga mat" --date 2025-06-01
     python zoodata.py keyword-competitor-product-keywords --asin B09V3KXJPB --date 2025-06-01
     python zoodata.py keyword-product-traffic-terms --asin B09V3KXJPB --date 2025-06-01
-    python zoodata.py product-traffic-terms-overview --asin B09V3KXJPB --date 2025-06-01
+    python zoodata.py product-traffic-terms-profile --asins "B09V3KXJPB,B07FR2V8SH" --date 2025-06-01
     python zoodata.py product-traffic-terms-timeline --asin B09V3KXJPB --keywords "yoga mat,pilates mat" --date-from 2026-07-06 --date-to 2026-07-12
 
 Environment:
@@ -38,7 +38,6 @@ import io
 import json
 import os
 import sys
-import random
 import time
 import urllib.request
 import urllib.error
@@ -85,11 +84,9 @@ def _resolve_base_url():
 BASE_URL = _resolve_base_url()  # ZooData API base URL
 BASE_URL_TRUSTED = _is_trusted_host(BASE_URL)  # gates Bearer-token transmission
 API_DOCS = "https://api.zoodata.ai/api-docs"   # API documentation URL
-MAX_RETRIES = 3       # Total attempt budget for ordinary failed requests
+MAX_RETRIES = 3       # Fixed attempt budget for HTTP and network failures
 RETRY_DELAY = 2       # Initial retry delay in seconds; doubles on each retry
-RATE_LIMIT_RETRIES = 4  # Total attempt budget for 429 rate limits
 REALTIME_EMPTY_RETRIES = 3  # Total attempts when realtime/product returns a transient 200-empty (scrape miss)
-RATE_LIMIT_DELAY = 5    # Initial delay for 429 retries (seconds); doubles each time
 MIN_REQUEST_INTERVAL = 0.6  # Minimum seconds between requests (100 req/min = 0.6s)
 REQUEST_TIMEOUT = 60  # Request timeout in seconds; realtime/product can be slow (up to 30s)
 
@@ -103,13 +100,6 @@ _cli_had_error = False
 # progress/retry diagnostics produced along the way are suppressed. Failures
 # that occur before a structured result exists keep using stderr exclusively.
 _cli_emitted_output = False
-
-# Terminal signal consumed by Agent workflows. The CLI classifies the failure;
-# the active skill owns the resulting stop behavior and user-facing rendering.
-INTERFACE_FAILURE_ACTION = (
-    "STOP_CURRENT_TURN. APPLY_SKILL_INTERFACE_FAILURE_TEMPLATE. "
-    "DO_NOT_SELECT_ANOTHER_COMMAND."
-)
 
 # Global request pacer — prevents burst rate limit violations
 _last_request_time = 0.0
@@ -330,8 +320,8 @@ def api_call(endpoint: str, params: dict) -> dict:
     """
     Make a POST request to ZooData API with retry and error handling.
 
-    Returns the parsed JSON response on success, with _query metadata injected.
-    Exits with a clear error message on failure.
+    Returns the parsed JSON response with _query and authoritative _transport
+    metadata. Structured non-2xx response bodies are preserved for the caller.
     """
     global _last_request_time
 
@@ -370,8 +360,7 @@ def api_call(endpoint: str, params: dict) -> dict:
         time.sleep(MIN_REQUEST_INTERVAL - elapsed)
 
     delay = RETRY_DELAY
-    max_attempts = MAX_RETRIES
-    for attempt in range(1, max(MAX_RETRIES, RATE_LIMIT_RETRIES) + 1):
+    for attempt in range(1, MAX_RETRIES + 1):
         _last_request_time = time.monotonic()
         try:
             req = urllib.request.Request(url, data=body, headers=headers, method="POST")
@@ -387,80 +376,30 @@ def api_call(endpoint: str, params: dict) -> dict:
                 response_text = e.read().decode("utf-8", errors="replace")
             except Exception:
                 response_text = ""
-            if status == 401:
-                return _error_result(401, "API Key invalid or expired",
-                    "Check your API Key or get a new one at https://zoodata.ai/en/api-keys",
-                    endpoint, actual_params)
-            elif status == 402:
-                return _error_result(402, "API quota exhausted or subscription expired",
-                    "Top up credits at https://zoodata.ai/en/pricing",
-                    endpoint, actual_params)
-            elif status == 429:
-                # Switch to longer retry strategy for rate limits
-                if max_attempts != RATE_LIMIT_RETRIES:
-                    max_attempts = RATE_LIMIT_RETRIES
-                    delay = RATE_LIMIT_DELAY
-                if attempt < max_attempts:
-                    jitter = random.uniform(0, delay * 0.25)
-                    wait = delay + jitter
-                    print(f"Rate limited (429). Waiting {wait:.1f}s before retry {attempt}/{max_attempts}...", file=sys.stderr)
-                    time.sleep(wait)
-                    delay *= 2
-                    continue
-                else:
-                    result = _error_result(
-                        429,
-                        "Rate limit exceeded after retries",
-                        INTERFACE_FAILURE_ACTION,
-                        endpoint,
-                        actual_params,
-                    )
-                    result["error"]["retryExhausted"] = True
-                    return result
-            elif status == 404:
-                return _error_result(404, f"Endpoint '{endpoint}' not found",
-                    INTERFACE_FAILURE_ACTION,
-                    endpoint, actual_params)
-            elif status == 422:
-                server_response = None
-                detail = response_text.strip()
-                if detail:
-                    try:
-                        server_response = json.loads(detail)
-                    except json.JSONDecodeError:
-                        pass
-                return _error_result(422, "Request validation failed",
-                    detail or "Check request parameters, especially date formats and required fields",
-                    endpoint, actual_params, server_response=server_response)
-            else:
-                if attempt < max_attempts:
-                    print(f"HTTP {status}. Retrying {attempt}/{max_attempts}...", file=sys.stderr)
-                    time.sleep(delay)
-                    continue
-                else:
-                    if status >= 500:
-                        action = INTERFACE_FAILURE_ACTION
-                    else:
-                        action = (
-                            "Stop this workflow and review the HTTP error; change request "
-                            "parameters only when the server reports a validation error"
-                        )
-                    result = _error_result(status, f"HTTP {status} after {max_attempts} attempts",
-                        action,
-                        endpoint, actual_params)
-                    if status >= 500:
-                        result["error"]["retryExhausted"] = True
-                    return result
-        except Exception as e:
-            if attempt < max_attempts:
-                print(f"Request failed: {e}. Retrying {attempt}/{max_attempts}...", file=sys.stderr)
+            if attempt < MAX_RETRIES:
+                print(f"HTTP {status}. Retrying {attempt}/{MAX_RETRIES}...", file=sys.stderr)
                 time.sleep(delay)
+                delay *= 2
+                continue
+            else:
+                return _http_error_result(
+                    status,
+                    f"HTTP {status} after {MAX_RETRIES} attempts",
+                    endpoint,
+                    actual_params,
+                    response_text,
+                    retry_exhausted=True,
+                )
+        except Exception as e:
+            if attempt < MAX_RETRIES:
+                print(f"Request failed: {e}. Retrying {attempt}/{MAX_RETRIES}...", file=sys.stderr)
+                time.sleep(delay)
+                delay *= 2
                 continue
             else:
                 result = _error_result(
                     0,
                     f"Request failed: {e}",
-                    INTERFACE_FAILURE_ACTION,
                     endpoint,
                     actual_params,
                 )
@@ -527,7 +466,7 @@ def api_call(endpoint: str, params: dict) -> dict:
         data["_query"] = {"endpoint": endpoint, "params": actual_params}
         return data
 
-    return _error_result(0, "Unexpected retry loop exit", "This should not happen", endpoint, actual_params)
+    return _error_result(0, "Unexpected retry loop exit", endpoint, actual_params)
 
 
 def _filter_review_insights(result, label_type):
@@ -728,11 +667,10 @@ def _mark_cli_error():
 
 
 def _malformed_response_result(endpoint, params, transport_status, detail):
-    """Return a terminal Agent-control result for local response failures."""
+    """Return the technical facts for a local response-decoding failure."""
     result = _error_result(
         0,
         f"Malformed response from endpoint '{endpoint}'",
-        INTERFACE_FAILURE_ACTION,
         endpoint,
         params,
     )
@@ -743,10 +681,62 @@ def _malformed_response_result(endpoint, params, transport_status, detail):
     return result
 
 
+def _http_error_result(
+    status: int,
+    fallback_message: str,
+    endpoint: str,
+    params: dict,
+    response_text: str = "",
+    *,
+    retry_exhausted: bool = False,
+) -> dict:
+    """Preserve a non-2xx server response and add only CLI-owned metadata.
+
+    Structured JSON objects with an ``error`` object remain the primary result.
+    Other JSON values and non-JSON text are retained under explicit raw-response
+    keys while the CLI supplies only a generic transport fallback.
+    """
+    stripped = (response_text or "").strip()
+    parsed = None
+    parsed_ok = False
+    if stripped:
+        try:
+            parsed = json.loads(stripped)
+            parsed_ok = True
+        except json.JSONDecodeError:
+            pass
+
+    if isinstance(parsed, dict) and isinstance(parsed.get("error"), dict):
+        result = _error_result(
+            status,
+            fallback_message,
+            endpoint,
+            params,
+            server_response=parsed,
+        )
+    else:
+        result = _error_result(
+            status,
+            fallback_message,
+            endpoint,
+            params,
+        )
+        if parsed_ok:
+            result["_serverResponse"] = parsed
+        elif stripped:
+            result["_serverResponseText"] = stripped
+
+    error = result.get("error")
+    if isinstance(error, dict):
+        if retry_exhausted:
+            error["retryExhausted"] = True
+    _CREDITS.record(result.get("meta"))
+    return result
+
+
 def _error_result(
     status: int,
     message: str,
-    action: str,
     endpoint: str,
     params: dict,
     server_response=None,
@@ -781,7 +771,6 @@ def _error_result(
         "error": {
             "status": status,
             "message": message,
-            "action": action,
         },
         "_query": {
             "endpoint": endpoint,
@@ -2976,7 +2965,11 @@ def cmd_check(args):
             endpoints.extend([
                 ("keywords/product-traffic-terms", {"asin": args.asin, "date": date, "pageSize": 1}, "ASIN traffic terms"),
                 ("keywords/competitor-product-keywords", {"asin": args.asin, "date": date, "pageSize": 1}, "ASIN keyword coverage"),
-                ("keywords/product-traffic-terms-overview", {"asin": args.asin, "date": date}, "ASIN traffic overview"),
+                (
+                    "keywords/product-traffic-terms-profile",
+                    {"asin": args.asin, "date": date, "granularity": "week"},
+                    "ASIN traffic profile",
+                ),
             ])
             if keyword:
                 endpoints.append((
@@ -2990,7 +2983,7 @@ def cmd_check(args):
     results = {}
     all_ok = True
 
-    for index, (endpoint, params, desc) in enumerate(endpoints):
+    for endpoint, params, desc in endpoints:
         try:
             result = api_call(endpoint, params)
             if result.get("success"):
@@ -3004,18 +2997,6 @@ def cmd_check(args):
                 print(f"❌ {endpoint:30} FAILED: {message}", file=sys.stderr)
                 results[endpoint] = {"status": "failed", "message": message}
                 all_ok = False
-                transport = result.get("_transport")
-                transport_status = (
-                    transport.get("status") if isinstance(transport, dict) else None
-                )
-                if transport_status in (401, 402):
-                    for skipped_endpoint, _, _ in endpoints[index + 1:]:
-                        results[skipped_endpoint] = {
-                            "status": "skipped",
-                            "reason": "terminal account failure",
-                            "afterStatus": transport_status,
-                        }
-                    break
         except SystemExit:
             print(f"❌ {endpoint:30} FAILED", file=sys.stderr)
             results[endpoint] = {"status": "failed"}
@@ -3167,6 +3148,22 @@ def _keyword_subject(args, max_items=20):
     if len(set(normalized)) != len(normalized):
         raise SystemExit("ERROR: --keywords contains case-insensitive duplicates")
     return "keywords", keywords
+
+
+def _asin_subject(args, max_items=20):
+    """Return the single or batch ASIN request field after local validation."""
+    asin = getattr(args, "asin", None)
+    if asin is not None:
+        return "asin", _require_nonempty_text(asin, "--asin")
+    asins = _split_csv(getattr(args, "asins", None)) or []
+    if not asins:
+        raise SystemExit("ERROR: --asins must contain at least one non-empty ASIN")
+    if len(asins) > max_items:
+        raise SystemExit(f"ERROR: --asins accepts at most {max_items} ASINs, got {len(asins)}")
+    normalized = [asin.casefold() for asin in asins]
+    if len(set(normalized)) != len(normalized):
+        raise SystemExit("ERROR: --asins contains case-insensitive duplicates")
+    return "asins", asins
 
 
 def _require_yyyy_mm_dd(value, name):
@@ -3332,15 +3329,17 @@ def cmd_keyword_product_traffic_terms(args):
     output(result, args.format)
 
 
-def cmd_product_traffic_terms_overview(args):
-    """Get weekly product traffic-term overview for one ASIN."""
+def cmd_product_traffic_terms_profile(args):
+    """Get weekly product traffic-term profiles for one or more ASINs."""
     _require_yyyy_mm_dd(args.date, "--date")
+    subject_field, subject_value = _asin_subject(args)
     params = {
-        "asin": _require_nonempty_text(args.asin, "--asin"),
+        subject_field: subject_value,
         "date": args.date,
         "marketplace": args.marketplace,
+        "granularity": "week",
     }
-    result = api_call("keywords/product-traffic-terms-overview", params)
+    result = api_call("keywords/product-traffic-terms-profile", params)
     output(result, args.format)
 
 
@@ -3722,12 +3721,14 @@ Examples:
     p_kptt.add_argument("--sort-order", choices=["asc", "desc"], default="desc")
     p_kptt.set_defaults(func=cmd_keyword_product_traffic_terms)
 
-    # ── product-traffic-terms-overview ──
-    p_ptto = sub.add_parser("product-traffic-terms-overview", help="Weekly ASIN traffic-term overview", allow_abbrev=False)
-    p_ptto.add_argument("--asin", required=True, help="ASIN (required)")
-    p_ptto.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_ptto.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
-    p_ptto.set_defaults(func=cmd_product_traffic_terms_overview)
+    # ── product-traffic-terms-profile ──
+    p_pttp = sub.add_parser("product-traffic-terms-profile", help="Weekly ASIN traffic-term profile", allow_abbrev=False)
+    pttp_subject = p_pttp.add_mutually_exclusive_group(required=True)
+    pttp_subject.add_argument("--asin", help="One ASIN")
+    pttp_subject.add_argument("--asins", help="ASINs (comma-separated, max 20)")
+    p_pttp.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
+    p_pttp.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_pttp.set_defaults(func=cmd_product_traffic_terms_profile)
 
     # ── product-traffic-terms-timeline ──
     p_pttt = sub.add_parser("product-traffic-terms-timeline", help="ASIN + keyword traffic-term timeline", allow_abbrev=False)

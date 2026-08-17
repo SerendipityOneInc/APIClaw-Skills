@@ -520,41 +520,63 @@ Key row fields: `latestObservedAt`, `exploreType`, `absolutePosition`, `pageInde
 
 ---
 
-## 18. /openapi/v2/keywords/product-traffic-terms-overview
+## 18. /openapi/v2/keywords/product-traffic-terms-profile
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
-| asin | String | **Yes** | Target ASIN |
-| date | String | **Yes** | Lookup date `YYYY-MM-DD`; prefer T-1 or earlier; returns the latest weekly all-keyword impression traffic-change overview on or before this date |
+| asin | String | Conditional | One target ASIN; exactly one of `asin` / `asins` |
+| asins | List\<String\> | Conditional | Batch of 1–20 target ASINs; exactly one of `asin` / `asins` |
+| date | String | **Yes** | Lookup date `YYYY-MM-DD`; prefer T-1 or earlier |
 | marketplace | String | No | Marketplace code, default `US` |
+| granularity | String | No | `week` only |
 
-**Response:** Single overview object **or `null`**.
+**Response:** `data.context + data.items[]`, preserving ASIN request order.
 
-Purpose:
-- Shows estimated impression traffic changes across all keywords under the ASIN versus the previous period
-- Current placement-level impression-point fields are paired with matching `*Prev` previous-period fields
-- Lists keywords newly entering ORG first three pages and keywords dropping out of ORG first three pages
+Observed context fields: `marketplace`, `requestedDate`, nullable `resolvedDate`, `granularity`, and
+`dataWindow.{currentPeriod,previousPeriod}`.
 
-Key fields from live MCP response:
-`periodStartDate`, `periodEndDate`, `asin`, `site`, `organicImpressionPoint`,
-`sponsoredProductImpressionPoint`, `sponsoredBrandImpressionPoint`,
-`sponsoredBrandVideoImpressionPoint`, `sponsoredRecommendImpressionPoint`,
-`organicImpressionPointPrev`, `sponsoredProductImpressionPointPrev`,
-`sponsoredBrandImpressionPointPrev`, `sponsoredBrandVideoImpressionPointPrev`,
-`sponsoredRecommendImpressionPointPrev`, `first3PagesNewOrganicKeywords`,
-`first3PagesLostOrganicKeywords`.
+Each item contains `identity.{asin,site}`, `status=ok|empty`, `emptyReason`, and nullable
+`productTrafficTermsProfile`. An unavailable current period returns `status=empty`,
+`emptyReason=current_period_unavailable`, and `productTrafficTermsProfile=null`; this is a coverage
+result, not evidence of weak traffic.
 
-`*Prev` fields are previous-period baselines for the matching current impression-point fields. The legacy response returns only the current `periodStartDate` / `periodEndDate`; it does not return separate previous-period date boundaries. A `*Prev` field may be null or absent when no previous-period value is available.
+Billing is per successfully returned ASIN item: each item with `status=ok` is billed once, while an
+item with `status=empty` is not billed. Use the response's `meta.creditsConsumed` and
+`meta.creditsConsumedExact` as the authoritative usage record rather than calculating credits from
+the number of requested ASINs.
 
-`first3PagesNewOrganicKeywords` and `first3PagesLostOrganicKeywords` items contain
-`keyword`, `pageIndex`, and `pagePosition`.
+A non-null `productTrafficTermsProfile` has the following observed structure:
 
-`first3PagesNewOrganicKeywords` lists keywords newly entering ORG first three pages;
-`first3PagesLostOrganicKeywords` lists keywords that dropped out of ORG first three pages.
+- `summary`
+  - `currEstimateImpressionPoint`, `prevEstimateImpressionPoint`
+  - `impressionPointChangeCount`, `impressionPointChangeRate`
+  - `currTermCount`, `prevTermCount`, `termCountChange`, `termCountChangeRate`
+  - `totalIncreaseImpressionPoint`, `totalDecreaseImpressionPoint`
+- `trafficStructureChange`: keyed by each traffic type returned by the service. A live response
+  returned `ORG`, `SP`, `SB`, and `SPR`; do not invent an absent channel. Each channel object has
+  `currEstimateImpressionPoint`, `currAsinTrafficShare`, `prevEstimateImpressionPoint`,
+  `prevAsinTrafficShare`, `impressionPointChangeCount`, `impressionPointChangeRate`,
+  `currTermCount`, `prevTermCount`, `termCountChange`, and `termCountChangeRate`.
+- `organicStructureChange`: `currTermCount`, `prevTermCount`, `termCountChange`,
+  `termCountChangeRate`, `newTermCount`, `lostTermCount`, `newTerms[]`, and `lostTerms[]`.
+- `termChangeDrivers`: `gainerCount`, `loserCount`, `top10Gainers[]`, and `top10Losers[]`.
 
-Live validation source: MCP tool surface
-`openapi_v2_product_traffic_terms_overview`, request
-`{"asin":"B01CGLCGRA","date":"2026-06-29","marketplace":"US"}`.
+For this profile's previous-period count, share, and impression-point fields, `null` means the
+previous weekly data is unavailable. A numeric `0` means the previous weekly period exists but the
+relevant signal was not observed. Do not coerce `null` to zero or zero to missing data. If
+`dataWindow.previousPeriod` is null, empty
+comparison arrays do not establish zero new/lost/gaining/losing terms. The live response used to
+validate the container structure returned
+empty arrays, so their item schema remains response-led: preserve fields from a non-empty response
+and do not invent array-item fields.
+
+Treat the object as a server-calculated metric. Preserve its returned modules, channel keys,
+values, and period scope. Do not read retired flat overview fields or synthesize missing profile
+modules client-side.
+
+Retired routes are intentionally absent from the bundled CLI. Generic HTTP 410 behavior is owned by
+`cli-contract.md`: preserve the migration response, do not retry, and do not infer a new CLI command
+from `replacementPath`.
 
 ---
 
@@ -577,6 +599,10 @@ Each item has `identity`, `status=ok|empty`, `series[]`, `emptyReason`, and null
 `date` plus nested `asinSnapshot`, `traffic`, `placement`,
 `keywordMetrics`, and `adActivity` groups.
 
+Exposure-position fields under `placement` are nullable for both unavailable period data and no
+observed position. A null position does not distinguish those states by itself; inspect returned
+period boundaries and observation/coverage fields. Never convert a null position to numeric zero.
+
 ⚠️ Do not send `page`, `pageSize`, `sortBy`, or `sortOrder`. `day`, `month`, `lately_day`, and
 `lookbackDays` are unsupported.
 
@@ -590,8 +616,9 @@ Diagnosis curves and events:
 - Listing events: changes in `asinSnapshot.latestTitle` / `asinSnapshot.latestMainImageLink`
 
 Key groups: product/listing/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR impression points in
-`traffic`; positions/pages/observation timestamps in `placement`; weekly search/ABA fields and
-`metricWindow` in `keywordMetrics`; observation/campaign/ad counts in `adActivity`.
+`traffic`; positions/pages/observation timestamps in `placement`; `keywordEstimateSearchCount`,
+`keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`; observation/campaign/ad
+counts in `adActivity`.
 
 ---
 

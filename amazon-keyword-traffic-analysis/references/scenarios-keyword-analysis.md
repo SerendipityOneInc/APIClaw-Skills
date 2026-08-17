@@ -1,6 +1,15 @@
-# Target-Keyword Analysis Capability Guide
+# Keyword Analysis Capability Guide
 
 Use this downstream scenario after loading the applicable top-level references. It selects evidence combinations for a target-keyword question and must align upward with `execution-guide.md`, `evidence-protocols.md`, `output-rules.md`, `reference.md`, and the field-semantic references; it does not define independent decision or action rules.
+
+## Scenario boundary
+
+This scenario owns keyword-centered analysis. The keyword is the primary subject; ASIN evidence may refine product fit without turning the conclusion into a product traffic-health diagnosis.
+
+- Analyze keyword demand, keyword-market and SERP traffic structure, and keyword trend to judge the term's evidence-bounded value.
+- Use keyword analysis as supporting evidence for product traffic analysis when a product-side movement question requires external demand, competition, or SERP context. The keyword conclusion does not by itself establish product traffic health or cause.
+- Treat traffic-term value as demand, structure, trend, visibility, and product-fit evidence. Without seller ABA-SQP, Ads performance, and required economics, do not equate it with measured conversion, profitability, bid, or budget value.
+- Requests outside this keyword-centered conclusion boundary must be reclassified through the routing owner in `SKILL.md`.
 
 ## Capability combinations
 
@@ -8,7 +17,7 @@ Use this downstream scenario after loading the applicable top-level references. 
 |---|---|---|
 | Market demand, structure, or entry context for a keyword | `market-profile` + `trend-profile` | `search-results` for observed product type, intent, or placement structure; `detail` for a documented raw field absent from the metric contract |
 | Official ZooData organic rollover/stability indicator | `detail.snapshotData.organicRolloverRate` | Load `serp-and-rollover.md`; do not relabel it as a Top-N turnover calculation |
-| Keyword plus ASIN, without a movement or causal question | Carry compatible market evidence + `keywords/product-traffic-terms` filtered to the target keyword + `realtime/product` or compatible carried direct product evidence | `search-results` only for a named SERP question. Route movement, anomaly, and causal questions to `scenarios-keyword-traffic-diagnosis.md`; do not substitute `keywords/competitor-product-keywords` for the target-ASIN route. |
+| Keyword plus ASIN admitted to this scenario | Carry compatible market evidence + `keywords/product-traffic-terms` filtered to the target keyword + `realtime/product` or compatible carried direct product evidence | `search-results` only for a named SERP question; do not substitute `keywords/competitor-product-keywords` for the target-ASIN route. |
 | Seller-real calibration | User-provided ABA-SQP, plus Amazon Ads data when economics or execution settings are requested | Load `sqp-field-semantics.md` before interpreting SQP fields |
 
 ## Evidence stages
@@ -22,6 +31,15 @@ Use this downstream scenario after loading the applicable top-level references. 
 | 5. Ads-performance calibration | Explicit Ads-performance request + compatible earlier-stage evidence + Ads artifact for one named target term | Compatible carried evidence plus the user-provided Ads search-term report interpreted through `sqp-field-semantics.md` | Give only the attributed Ads-performance conclusion supported for the named scope. Do not infer profitability or recommend a bid or budget. |
 | 6. Profitability calibration | Explicit profitability request + compatible earlier-stage and Ads evidence + seller-supplied unit economics or an economics-grounded break-even/target ACOS or ROAS | Compatible carried evidence plus the supplied Ads performance and economics interpreted through `sqp-field-semantics.md` | Give only the named profitability conclusion supported for the preserved scope. Do not give an exact bid or budget decision. |
 | 7. Advertising-control decision | Explicit exact bid or budget request + compatible earlier-stage evidence + the complete controlled-target, performance, current-control, objective/economics, and validation inputs required by `diagnosis-action-protocols.md` | Compatible carried evidence plus only the seller inputs required for the named control under `diagnosis-action-protocols.md` and `sqp-field-semantics.md` | Give only the named reversible control decision when fully authorized; otherwise conclude with the exact unresolved evidence boundary and no number. |
+
+## ASIN-fit posture labels
+
+Use these labels only in Stage 2 or Stage 3 after the required keyword-market and directly observed ASIN evidence is available. They describe keyword value or fit for the product; they are not product traffic-health labels or operating decisions.
+
+- `Established posture`: the target term has directly observed product fit and meaningful current ASIN traffic or comparatively strong placement evidence.
+- `Headroom validation`: keyword-market and product-fit evidence support further validation, but seller-funnel evidence is still required for final product-specific priority.
+- `Observe`: evidence is relevant but sparse, unstable, mixed, or insufficient for a stronger value conclusion.
+- `No current support`: current evidence shows weak fit or lacks support for further validation. Do not assign it merely because one endpoint is empty or one observation is poor.
 
 ### Stage application constraints
 

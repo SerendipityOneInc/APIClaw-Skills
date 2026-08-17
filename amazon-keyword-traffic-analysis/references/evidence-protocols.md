@@ -32,7 +32,7 @@ Inside the active stage, keep acquisition and judgment logically separate:
 
 Documentation alone is never a metric result. An additional call is justified only when one named stage inference remains unresolved, another documented contract contains the missing evidence, and no interface failure has occurred.
 
-When a required comparison value or period boundary is absent, use another documented capability only if it preserves the claim's subject, grain, marketplace, and comparison meaning inside the active stage. A named ASIN × keyword timeline may resolve a named keyword movement question, but it cannot replace an ASIN-wide aggregate overview. If no equivalent authorized capability exists, leave the comparison unavailable and do not infer the missing value or period from cadence.
+When a required comparison value or period boundary is absent, use another documented capability only if it preserves the claim's subject, grain, marketplace, and comparison meaning inside the active stage. A named ASIN × keyword timeline may resolve a named keyword movement question, but it cannot replace an ASIN-wide aggregate traffic-term profile. If no equivalent authorized capability exists, leave the comparison unavailable and do not infer the missing value or period from cadence.
 
 ## Tool and contract discipline
 

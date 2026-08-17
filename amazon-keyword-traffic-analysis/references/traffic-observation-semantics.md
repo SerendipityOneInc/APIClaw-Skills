@@ -1,6 +1,6 @@
 # Traffic Observation Field Semantics
 
-Load this file after retrieving `product-traffic-terms`, `competitor-product-keywords`, `product-traffic-terms-timeline`, or `product-traffic-terms-overview`. It owns the meaning and inference limits of their returned traffic, placement, coverage, timeline, and aggregate-observation fields.
+Load this file after retrieving `product-traffic-terms`, `competitor-product-keywords`, `product-traffic-terms-timeline`, or `product-traffic-terms-profile`. It owns the meaning and inference limits of their returned traffic, placement, coverage, timeline, and aggregate-profile fields.
 
 ## Traffic-term rows
 
@@ -13,22 +13,25 @@ Load this file after retrieving `product-traffic-terms`, `competitor-product-key
 ## Timeline observations
 
 - `asinSnapshot` is tied to the series date. Traffic, placement, and `adActivity` belong to the returned weekly period. `keywordMetrics` belongs to its own weekly `metricWindow`; do not merge these grains into one timestamp.
+- `keywordEstimateSearchCount` and `keywordAbaRank` are keyword-level context scoped to `keywordMetrics.metricWindow`; they do not describe ASIN-level traffic, placement, clicks, conversion, or sales attribution.
+- Exposure-position fields under `placement` return `null` both when period data is unavailable and when no position was observed. A null position cannot distinguish those states by itself: use returned period boundaries plus observation and coverage fields, and never coerce the position to numeric zero.
 - Compare like fields across aligned returned periods. One observation supports only a point-in-time description; at least two comparable observations are required to describe directional movement.
 - `adActivity` counts and coverage describe observed ad participation. They do not establish CPC, auction competition, spend posture, ROI, or campaign intent.
 - Product, demand, placement, traffic, and ad-activity changes are observations. Time-aligned co-movement can narrow an explanation but does not establish causality by itself.
 - An ASIN appearing only in sponsored placements is a placement-posture observation, not proof of weak organic relevance or conversion.
 
-## Aggregate overview
+## Aggregate traffic-term profile
 
-- Current ORG/SP/SB/SBV/SPR impression-point fields support the ASIN's aggregate observed channel/placement exposure structure for the returned current period.
-- When all included current channel fields share one returned scope and have compatible non-null values, an Agent-derived current channel mix may be calculated as `channel impression points ÷ sum of included current channel impression points`. Name the included channels and missing-value handling; do not call the result exact Amazon traffic share.
-- Current and matching non-null `*Prev` fields support a transparent same-channel current-versus-previous-baseline comparison. The legacy overview does not return separate previous-period date boundaries: label that boundary unavailable and never derive it from weekly cadence. If a matching `*Prev` value is null or absent, the movement comparison for that channel is unavailable.
-- `first3PagesNewOrganicKeywords[]` and `first3PagesLostOrganicKeywords[]` are membership changes in the endpoint-defined first-three-page organic Top-N set between its matching previous and current returned periods. `new` means present in the current set and absent from the previous set; `lost` means absent from the current set and present in the previous set.
-- Report those arrays with the returned current period, disclose that the previous-period boundary is not returned, and preserve the exact first-three-page organic set boundary. Do not infer the missing previous dates. Use a numeric `Top N` label only when returned context or a documented, verified ordering/pagination contract establishes N; otherwise retain the endpoint's `first-three-page organic Top-N` wording. Entry or exit does not establish per-keyword traffic gain/loss, a newly created or deleted market keyword, magnitude, cause, or broader trend.
-- The overview has no keyword contribution rows. It cannot identify per-keyword gainers, losers, contribution, or cause.
+- `productTrafficTermsProfile` is a server-calculated metric object for the item identity and returned data window. Preserve each returned module, channel key, field name, value, and period scope.
+- `status=empty`, a null profile, or an omitted/nullable module field is a coverage boundary. It does not establish low traffic, zero exposure, stability, or absence of change.
+- In the profile's previous-period count, share, and impression-point fields, `null` means the previous weekly data is unavailable. Numeric `0` means that weekly period exists but the relevant signal was not observed. This rule does not apply to exposure-position fields, whose null value covers both unavailable data and no observation. Never coerce `null` to zero, relabel zero as missing data, or calculate a comparison across an unavailable previous period.
+- Compare current and previous evidence only when the profile explicitly returns compatible values and both period scopes. Do not infer a missing previous window from weekly cadence.
+- When `dataWindow.previousPeriod` is null, empty `newTerms`, `lostTerms`, `top10Gainers`, or `top10Losers` arrays carry no zero-change conclusion. When the previous period exists, interpret a returned zero count as no observation for that field within the endpoint's resolved scope, not proof of global absence outside that scope.
+- Do not project retired flat overview fields, channel lists, `*Prev` values, or entry/exit arrays onto the profile. Do not reconstruct a missing profile from traffic-term rows.
+- Report per-keyword new/lost/gainer/loser detail only from a non-empty returned profile array and preserve its actual item fields. Do not infer an array-item schema from an empty array or turn a returned driver list into causal proof.
 
 ## Cross-source limits
 
 - Search demand falling across multiple comparable weekly points is a demand-trend concern only for that returned window.
-- Timeline evidence owns ASIN × keyword movement observations; overview evidence owns current ASIN-wide aggregate channel structure and previous-period movement. Neither substitutes for keyword-level traffic-term rows.
+- Timeline evidence owns ASIN × keyword movement observations; profile evidence owns its returned ASIN-wide aggregate dimensions and compatible period comparisons. Neither substitutes for keyword-level traffic-term rows.
 - Keep all traffic observations below seller-funnel and Ads evidence authority defined in `execution-guide.md`.

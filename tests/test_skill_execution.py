@@ -142,7 +142,8 @@ class TestSkillCliExecutes(unittest.TestCase):
             "rerun the exact unchanged CLI command",
             "Always inspect stdout, even when the process exits non-zero",
             "Treat `_transport.status` as the authoritative outer HTTP status",
-            "STOP_CURRENT_TURN. APPLY_SKILL_INTERFACE_FAILURE_TEMPLATE. DO_NOT_SELECT_ANOTHER_COMMAND.",
+            "one fixed blind retry budget to every HTTP non-2xx or network failure",
+            "does not assign HTTP-status meaning",
             "A valid `status=empty` or a documented business/coverage error is not automatically terminal",
             "A partial pagination failure must return `success=false`",
         ):
@@ -153,6 +154,7 @@ class TestSkillCliExecutes(unittest.TestCase):
         )
         self.assertNotIn("## Default interface failure output", contract)
         self.assertNotIn("Service is currently unavailable", contract)
+        self.assertNotIn("STOP_CURRENT_TURN", contract)
 
     def test_all_non_keyword_zoodata_skills_route_to_shared_cli_contract(self):
         expected = {

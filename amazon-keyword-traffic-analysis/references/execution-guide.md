@@ -11,7 +11,6 @@ This file defines the shared scenario/stage contract and Gate system for Amazon 
 - [Shared evidence levels](#shared-evidence-levels)
 - [Stage execution sequence](#stage-execution-sequence)
 - [Gate order](#gate-order)
-- [ASIN Traffic Diagnosis Intent Clarification Gate](#asin-traffic-diagnosis-intent-clarification-gate)
 - [Structured Field Identity Gate](#structured-field-identity-gate)
 - [Interactive Stage Gate](#interactive-stage-gate)
 - [Interface Failure Stop Gate](#interface-failure-stop-gate)
@@ -48,7 +47,7 @@ When owner modules conflict, apply the stricter evidence/action limit. Never rec
 | Task type | Mode | Stage behavior |
 |---|---|---|
 | One exact field or snapshot lookup | Quick | Answer under `output-rules.md § Quick Mode Output`; no scenario stage is required unless the follow-up broadens the task. |
-| Expansion, target-keyword judgment, traffic-structure diagnosis, traffic-change diagnosis | Full | Select and complete exactly one applicable scenario stage, then render the stage-end selection list. |
+| Expansion, target-keyword judgment, product traffic analysis, or product traffic-health diagnosis | Full | Select and complete exactly one applicable scenario stage, then render the stage-end selection list. |
 
 Quick Mode still applies the Structured Field Identity Gate, Interface Failure Stop Gate, and Final Output Gate. It is not a multi-stage workflow and does not require the stage-end list.
 
@@ -108,32 +107,18 @@ Retrieval and interpretation remain separate operations inside the stage, while 
 
 | Order | Gate | Apply when | Effect |
 |---:|---|---|---|
-| 1 | ASIN Traffic Diagnosis Intent Clarification Gate | An ASIN keyword-traffic request does not explicitly distinguish current structure from temporal change | Stop before scenario selection and show the intent list. |
-| 2 | Interactive Stage Gate | A full-mode scenario has been selected | Select one stage whose entry input exists; block later-stage calls. |
-| 3 | Interface Failure Stop Gate | After every tool/result | Hard-stop the turn on a qualifying interface failure. |
-| 4 | Structured Field Identity Gate | Before translating or interpreting any field | Block interpretation when source identity is unresolved. |
-| 5 | Evidence Gate | Before drafting a claim | Require the correct evidence type and forbid endpoint substitution. |
-| 6 | General Conclusion Authority Gate | Before the stage conclusion | Cap the conclusion at the shared and scenario-specific authority. |
-| 7 | Diagnostic Closure Gate | A causal or anomaly branch is part of the active stage | Block unsupported or abandoned diagnostic branches. |
-| 8 | Stage Handoff Closure Gate | After the stage conclusion | Determine which continuation items, if any, are supported without assigning a workflow status. |
-| 9 | Stage-End Selection List Rule | Every normally completed full-mode stage | Render all supported continuations plus the fixed new-question/exit item. |
-| 10 | Final Output Gate | Immediately before every user-facing send | Validate the entire rendered draft against its selected output route; discard and re-render any noncompliant draft. |
-| 11 | Pending Handoff Reclassification Rule | At the next user turn | Follow the user's actual reply instead of forcing the pending path. |
+| 1 | Interactive Stage Gate | A full-mode scenario has been selected | Select one stage whose entry input exists; block later-stage calls. |
+| 2 | Interface Failure Stop Gate | After every tool/result | Hard-stop the turn on a qualifying interface failure. |
+| 3 | Structured Field Identity Gate | Before translating or interpreting any field | Block interpretation when source identity is unresolved. |
+| 4 | Evidence Gate | Before drafting a claim | Require the correct evidence type and forbid endpoint substitution. |
+| 5 | General Conclusion Authority Gate | Before the stage conclusion | Cap the conclusion at the shared and scenario-specific authority. |
+| 6 | Diagnostic Closure Gate | A causal or anomaly branch is part of the active stage | Block unsupported or abandoned diagnostic branches. |
+| 7 | Stage Handoff Closure Gate | After the stage conclusion | Determine which continuation items, if any, are supported without assigning a workflow status. |
+| 8 | Stage-End Selection List Rule | Every normally completed full-mode stage | Render all supported continuations plus the fixed new-question/exit item. |
+| 9 | Final Output Gate | Immediately before every user-facing send | Validate the entire rendered draft against its selected output route; discard and re-render any noncompliant draft. |
+| 10 | Pending Handoff Reclassification Rule | At the next user turn | Follow the user's actual reply instead of forcing the pending path. |
 
 The hard-stop interface, credential, and credit failure routes are not normally completed stages and do not render a stage-end list.
-
-### ASIN Traffic Diagnosis Intent Clarification Gate
-
-Apply this gate when `SKILL.md` classifies a generic ASIN keyword-traffic diagnosis request as lacking an explicit desired output that distinguishes the two valid diagnosis types. Broad requests for an analysis, overview, health check, or keyword-traffic perspective remain ambiguous even when they do not mention change; absence of change intent is not traffic-structure intent. An explicit named-keyword question about current ASIN fit, relevance, or targeting value is the target-keyword route defined by `SKILL.md`, not an ambiguous diagnosis request.
-
-1. Apply this gate before any user-visible progress or classification prose. Perform any reference reads needed to load this gate silently, without announcing their purpose. Do not select a scenario, inspect product/keyword evidence, or execute an API/tool evidence call before clarification.
-2. Make the localized clarification question or heading and the following numbered list the first user-visible content:
-   - `1` **Traffic-structure diagnosis** — examine the ASIN's current observed traffic terms, traffic-source and placement structure, and candidate keywords.
-   - `2` **Traffic-change diagnosis** — compare current and previous aggregate movement, then locate the changed scope or keywords.
-   - `3` **Ask another question or end this analysis**
-3. Omit progress preambles and internal process explanations. Do not expose the skill, Gate, scenario/module names, capability checks, credits, or quota.
-4. Do not mark a diagnosis route as recommended unless the user's wording already supports it; when the wording is sufficient, skip this gate and route directly.
-5. Treat the user's displayed final-list number, localized label, or equivalent natural-language reply as the new explicit intent. Internally start only the selected scenario.
 
 ### Structured Field Identity Gate
 
@@ -249,8 +234,8 @@ A stage-end list closes the current turn; it does not reserve the next turn.
 
 ### Scenario Selection Rule
 
-- Select a scenario by the user's input shape and requested judgment, then select one stage whose entry input exists and whose authority matches the current question.
-- Treat traffic-structure diagnosis through reverse ASIN and traffic-change diagnosis as mutually exclusive active routes. Apply the clarification gate when neither meaning is explicit; give traffic-change diagnosis precedence when the request clearly asks about movement or cause.
+- Use the scenario already selected through `SKILL.md`; this guide does not redefine the skill-owned subject or conclusion routing map.
+- Inside that scenario, select one stage whose entry input exists and whose conclusion authority matches the current question.
 - Combine scenario capabilities only when scenario boundaries are non-exclusive and every call belongs to the same active stage. Never combine scenarios to bypass a Gate or stage ceiling.
 
 ### Candidate Validation Rule

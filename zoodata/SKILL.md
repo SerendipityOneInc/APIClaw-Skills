@@ -5,7 +5,8 @@ description: >
   endpoints plus 10 keyword-intelligence endpoints (categories, markets,
   products, competitors, realtime ASIN, AI review analysis, raw reviews,
   price band, brand, history, and the keyword detail/trend/extends/search/
-  market-profile/product-traffic/competitor-keywords/traffic-timeline
+  market-profile/product-traffic/competitor-keywords/traffic-profile/
+  traffic-timeline
   family) — their inputs/outputs, parameter quirks, Quick Start (auth,
   base URL), how credits are tracked (meta.creditsConsumed), and the Local
   Review Toolkit (Map/Reduce for raw reviews).
@@ -15,7 +16,7 @@ description: >
   is reported, how to get started, or how the Local Review Toolkit works.
   Requires ZOODATA_API_KEY.
 metadata:
-  version: "1.1.9"
+  version: "1.1.11"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/ZooData-Skills
   openclaw: {"requires": {"env": ["ZOODATA_API_KEY"]}, "primaryEnv": "ZOODATA_API_KEY"}
@@ -86,8 +87,7 @@ When no key is found through any mechanism:
 
 ## On 401 Invalid Key
 
-When `zoodata.py` returns a structured error with `_transport.status=401`,
-`error.status=401`, and `error.message="API Key invalid or expired"`:
+When `zoodata.py` returns a structured error with `_transport.status=401`, apply this route regardless of whether the preserved server `error` object contains `status` or uses the CLI fallback message:
 
 1. **STOP further endpoint calls immediately.** Do not retry — a rejected key won't be accepted on a second try; every subsequent call will return 401 too.
 2. **Keep the selected credential authoritative.** Do not inspect, compare, export, or switch to a lower-priority legacy credential after rejection. A legacy credential may be selected only when neither new source is configured; trying another endpoint or asking to continue does not change this precedence.
@@ -99,8 +99,7 @@ When `zoodata.py` returns a structured error with `_transport.status=401`,
 
 ## On 402 Credit Exhausted
 
-When `zoodata.py` returns a structured error with `_transport.status=402`,
-`error.status=402`, and `error.message="API quota exhausted or subscription expired"`:
+When `zoodata.py` returns a structured error with `_transport.status=402`, apply this route regardless of whether the preserved server `error` object contains `status` or uses the CLI fallback message:
 
 1. **STOP further endpoint calls immediately.** Do not retry. Do not switch endpoints as a workaround — 402 is account-level (key/subscription), not endpoint-level.
 2. **Report to the user** with all four of:
@@ -138,7 +137,7 @@ For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as t
 | 17 | `/openapi/v2/keywords/search-results` | Weekly keyword SERP snapshot | `data.context + data.identity + data.rows[]` with placement, product, and impression fields |
 | 18 | `/openapi/v2/keywords/competitor-product-keywords` | Keyword set where an ASIN appears as a competitor | `data.context + data.identity + data.rows[]` with keyword, position, demand, and traffic share |
 | 19 | `/openapi/v2/keywords/product-traffic-terms` | Traffic-driving keywords for an ASIN | same response shape as competitor-product-keywords |
-| 20 | `/openapi/v2/keywords/product-traffic-terms-overview` | Weekly ASIN all-keyword traffic-change overview | current vs previous-period placement-level impression points, ORG first-3-page keyword entries/exits |
+| 20 | `/openapi/v2/keywords/product-traffic-terms-profile` | Weekly ASIN traffic-term profile | `data.context + data.items[].productTrafficTermsProfile` for one ASIN or a batch of up to 20 |
 | 21 | `/openapi/v2/keywords/product-traffic-terms-timeline` | ASIN + keyword weekly timeline | `data.context + data.items[].series[]` with nested ASIN, traffic, placement, keyword, and ad groups |
 
 ## Known Quirks
@@ -164,7 +163,7 @@ For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as t
 - For keyword endpoints that require `date` or `dateTo`, prefer T-1 or earlier and avoid the current date unless the user explicitly asks for today's lookup
 - `keywords/search-results` requires `date` + `keyword`; `exploreTypes` values are `ORG`, `SP`, `SB`, `SBV`, `SPR`
 - `keywords/competitor-product-keywords` and `keywords/product-traffic-terms` require `date` + `asin`; both currently return the same live item shape, including `trafficShare`
-- `keywords/product-traffic-terms-overview` requires `date` + `asin`; it returns the latest weekly overview of all keyword impression traffic changes under that ASIN at or before the date, compared with the previous period
+- `keywords/product-traffic-terms-profile` is the current ASIN aggregate route; the retired overview route is not exposed by the CLI. See `references/openapi-reference.md § 18` for its exact contract.
 - `keywords/product-traffic-terms-timeline` requires `asin` + exactly one of `keyword` / `keywords[]` + `dateFrom` + `dateTo`; the date range cannot exceed 61 days and the series request has no pagination or sort parameters
 - `keywords/search-results` is the default source for explaining what products currently appear on a keyword SERP because it already returns listing-level product fields
 - `products/search` is a broader ZooData product-database query and must not be presented as Amazon live keyword SERP ordering
@@ -269,26 +268,10 @@ Keyword value boundary:
 - Live validation note: current live response item shape matches `keywords/competitor-product-keywords`
   field-for-field; keep the semantic distinction in output wording rather than assuming a unique schema
 
-### `/openapi/v2/keywords/product-traffic-terms-overview`
-- Input: `asin`, `date`, optional `marketplace`
-- Data window: latest weekly overview snapshot at or before the requested date; compares all keyword impression traffic under the ASIN with the previous period
-- Date rule: prefer T-1 or earlier for `date`; avoid current-date lookup unless explicitly requested
-- Response shape: `data` is an object or `null`
-- Key fields from live MCP response: `periodStartDate`, `periodEndDate`, `asin`, `site`,
-  `organicImpressionPoint`, `sponsoredProductImpressionPoint`, `sponsoredBrandImpressionPoint`,
-  `sponsoredBrandVideoImpressionPoint`, `sponsoredRecommendImpressionPoint`,
-  `organicImpressionPointPrev`, `sponsoredProductImpressionPointPrev`,
-  `sponsoredBrandImpressionPointPrev`, `sponsoredBrandVideoImpressionPointPrev`,
-  `sponsoredRecommendImpressionPointPrev`, `first3PagesNewOrganicKeywords`,
-  `first3PagesLostOrganicKeywords`
-- `*Prev` fields are previous-period baselines for the matching current impression-point fields
-- The legacy response returns only the current `periodStartDate` / `periodEndDate`; it does not return separate previous-period boundaries. A `*Prev` field may be null or absent when no previous-period value is available.
-- `first3PagesNewOrganicKeywords` and `first3PagesLostOrganicKeywords` are arrays of objects with
-  `keyword`, `pageIndex`, and `pagePosition`
-- `first3PagesNewOrganicKeywords` lists keywords newly entering ORG first three pages; `first3PagesLostOrganicKeywords`
-  lists keywords that dropped out of ORG first three pages
-- Live validation request: MCP tool `openapi_v2_product_traffic_terms_overview`,
-  `asin="B01CGLCGRA"`, `date="2026-06-29"`, `marketplace="US"`
+### `/openapi/v2/keywords/product-traffic-terms-profile`
+- Production supports one ASIN or a batch of up to 20 ASINs at weekly granularity.
+- Read `references/openapi-reference.md § 18` for the request, response, status, field, date, batching, and billing contract.
+- Apply `references/cli-contract.md` to every result, including a server-provided endpoint migration response.
 
 ### `/openapi/v2/keywords/product-traffic-terms-timeline`
 - Input: required `asin`, exactly one of `keyword` / `keywords[]` (1–20), `dateFrom`, `dateTo`, `granularity=week` only; optional `marketplace`
@@ -303,8 +286,9 @@ Keyword value boundary:
   (`asinSnapshot.latestRating`, `asinSnapshot.latestRatingCount`), traffic estimate (`traffic.*`
   plus placement averages), and listing events (`asinSnapshot.latestTitle`, `asinSnapshot.latestMainImageLink`)
 - Key groups: listing/product/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR impression points
-  in `traffic`; positions/pages/observation times in `placement`; weekly search/ABA fields and
-  `metricWindow` in `keywordMetrics`; observation/campaign/ad counts in `adActivity`
+  in `traffic`; positions/pages/observation times in `placement`; `keywordEstimateSearchCount`,
+  `keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`;
+  observation/campaign/ad counts in `adActivity`
 
 ## Local Review Toolkit
 

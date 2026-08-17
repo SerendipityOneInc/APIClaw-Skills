@@ -49,25 +49,18 @@ def test_skill_is_a_concise_router_not_a_second_execution_guide():
     assert "### Two-Pass Metric Interpretation Gate" not in skill
     assert "### Evidence-to-Action Authorization Gate" not in skill
     assert "### Candidate Validation Rule" not in skill
-    assert "current traffic terms, traffic-source structure, candidate discovery" in skill
-    assert "This diagnosis route takes precedence" in skill
-    assert "ASIN traffic-structure diagnosis through reverse ASIN" in skill
-    assert "ASIN traffic-change diagnosis" in skill
-    assert "First apply the ambiguity check to every generic ASIN-scoped keyword-traffic diagnosis request" in skill
-    assert "analyze this ASIN from a keyword-traffic angle" in skill
-    assert "Exact phrase matching is not required" in skill
-    assert "The absence of change language does not imply traffic-structure intent" in skill
-    assert "Before emitting any user-facing text or making any evidence call" in skill
-    assert "output-rules.md § Retrieval Progress Updates" in skill
-    assert "Make those reference reads the first actions" in skill
-    assert "without a preceding or interstitial assistant message" in skill
-    assert "never announce that a clarification rule or reference must be loaded" in skill
-    assert "without an intervening progress update" in skill
-    assert "Do not select or load either diagnosis scenario until the user chooses a route" in skill
-    assert "This check does not apply when the user names a target keyword" in skill
-    assert "Route an explicit target keyword + ASIN question" in skill
-    assert "to target-keyword analysis" in skill
-    assert "ASIN-wide change/anomaly diagnosis without a named keyword" in skill
+    assert "keyword-centered questions about demand, market/SERP structure, trend, value" in skill
+    assert "ASIN-centered questions about traffic health, current traffic terms or sources" in skill
+    assert "Do not ask the user to choose between structure and change first" in skill
+    assert "For an ASIN × keyword request" in skill
+    assert "value/fit/relevance questions without movement or causal intent" in skill
+    assert "visibility, placement, exposure, movement, anomaly, or causal questions" in skill
+    assert "If product traffic analysis identifies a term" in skill
+    assert "start target-keyword analysis" in skill
+    assert "references/scenarios-product-traffic-analysis.md" in skill
+    assert "scenarios-reverse-asin.md" not in skill
+    assert "scenarios-keyword-traffic-diagnosis.md" not in skill
+    assert "ambiguity check" not in skill
     assert "Route to one applicable scenario, or multiple non-exclusive scenarios" in skill
     assert "Load exactly one scenario" not in skill
     assert "Before requesting or interpreting a seller artifact" in skill
@@ -105,12 +98,12 @@ def test_source_of_truth_boundaries_define_exclusive_module_ownership():
     assert "They define evidence levels, not report headings/order, workflow-completion states" in skill
     assert "must not restate, relax, replace, or create exceptions" in skill
     assert "For the documented keyword endpoints and `realtime/product` used by this skill" in skill
-    assert "`{skill_base_dir}/scripts/zoodata.py` owns deterministic transport retries" in skill
-    assert "machine-readable Agent-control signal vocabulary" in skill
-    assert "Within those command paths, it must not define field meaning" in skill
+    assert "`{skill_base_dir}/scripts/zoodata.py` owns a fixed blind transport retry budget" in skill
+    assert "It must not assign HTTP-status meaning, choose status-specific workflow actions, or emit Agent-control instructions" in skill
+    assert "Within those command paths, it also must not define field meaning" in skill
     assert "Other commands bundled in the shared CLI remain outside this skill's responsibility map" in skill
     assert "must not define field meaning, stage selection, evidence interpretation" in skill
-    assert "`cli-contract.md` owns shared invocation and result handling" in skill
+    assert "`cli-contract.md` owns result classification and shared invocation handling" in skill
     assert "`execution-guide.md` owns keyword-stage Gate consequences" in skill
     assert "`output-rules.md` owns rendered prose including the local interface-failure template" in skill
     assert "The credential-only `check` path and opt-in endpoint probes are diagnostic utilities outside this evidence-command contract" in skill
@@ -184,8 +177,7 @@ def test_module_files_do_not_declare_foreign_owner_sections():
     scenario_paths = (
         "references/scenarios-expand.md",
         "references/scenarios-keyword-analysis.md",
-        "references/scenarios-reverse-asin.md",
-        "references/scenarios-keyword-traffic-diagnosis.md",
+        "references/scenarios-product-traffic-analysis.md",
     )
 
     assert api_headings.isdisjoint({
@@ -287,8 +279,13 @@ def test_interface_failure_policy_respects_module_ownership():
 
     # The local shared contract owns result classification and retry/stop policy.
     assert "Treat `_transport.status` as the authoritative outer HTTP status" in contract
-    assert "The shared CLI owns transport retries" in contract
-    assert "exhausted HTTP 5xx" in contract
+    assert "The shared CLI owns the blind transport retry budget" in contract
+    assert "does not assign HTTP-status meaning, select a status-specific workflow action" in contract
+    assert "Preserve the final non-2xx response body after those retries" in contract
+    assert "never attach an earlier attempt's body to the final transport status" in contract
+    assert "`_transport.status=410` is a retired-interface response" in contract
+    assert "Do not retry externally, silently forward, mutate parameters" in contract
+    assert "HTTP 404, HTTP 408, HTTP 429, HTTP 5xx" in contract
     assert "Do not retry externally, mutate parameters, switch endpoints" in contract
     assert "Do not reinterpret an HTTP 5xx body as validation" in contract
     assert "A valid `status=empty` or a documented business/coverage error is not automatically terminal" in contract
@@ -304,12 +301,15 @@ def test_interface_failure_policy_respects_module_ownership():
     assert "`error.retryExhausted=true`" not in guide
     assert "HTTP 422 is a parameter validation error" not in guide
 
-    # The CLI owns deterministic retry mechanics, technical failure state, and
-    # control-signal vocabulary; the guide owns triggered behavior and output.
-    assert '"STOP_CURRENT_TURN. APPLY_SKILL_INTERFACE_FAILURE_TEMPLATE. "' in script
-    assert '"DO_NOT_SELECT_ANOTHER_COMMAND."' in script
-    assert 'result["error"]["retryExhausted"] = True' in script
+    # The CLI owns blind retry mechanics and transport facts; the contract and
+    # guide own classification, triggered behavior, and output.
+    assert '"STOP_CURRENT_TURN. APPLY_SKILL_INTERFACE_FAILURE_TEMPLATE. "' not in script
+    assert '"DO_NOT_SELECT_ANOTHER_COMMAND."' not in script
+    assert 'error["retryExhausted"] = True' in script
     assert 'data["_transport"] = {"status": transport_status}' in script
+    assert "fallback_messages" not in script
+    assert "fallback_actions" not in script
+    assert "RATE_LIMIT_RETRIES" not in script
     assert "workflowDisposition" not in script
     assert "retryPolicy" not in script
     assert "parameterMutationAllowed" not in script
@@ -335,7 +335,7 @@ def test_execution_guide_is_the_core_stage_and_gate_source():
     assert "## Stage execution sequence" in guide
     assert "## Gate order" in guide
     assert "[Structured Field Identity Gate](#structured-field-identity-gate)" in guide
-    assert "[ASIN Traffic Diagnosis Intent Clarification Gate](#asin-traffic-diagnosis-intent-clarification-gate)" in guide
+    assert "ASIN Traffic Diagnosis Intent Clarification Gate" not in guide
     assert "[Stage Handoff Closure Gate](#stage-handoff-closure-gate)" in guide
     assert "[Stage-End Selection List Rule](#stage-end-selection-list-rule)" in guide
     assert "[Final Output Gate](#final-output-gate)" in guide
@@ -355,19 +355,14 @@ def test_execution_guide_is_the_core_stage_and_gate_source():
     assert "Do not add a transition, completion, next-stage trigger" in guide
     assert "Retrieval and interpretation remain separate operations inside the stage" in guide
     assert "Two-Pass" not in guide
-    assert "### ASIN Traffic Diagnosis Intent Clarification Gate" in guide
-    assert "lacking an explicit desired output that distinguishes the two valid diagnosis types" in guide
-    assert "Do not select a scenario, inspect product/keyword evidence, or execute an API/tool evidence call" in guide
-    assert "Make the localized clarification question or heading and the following numbered list the first user-visible content" in guide
-    assert "Omit progress preambles and internal process explanations" in guide
-    assert "Do not expose the skill, Gate, scenario/module names" in guide
-    assert "Traffic-structure diagnosis" in guide
-    assert "Traffic-change diagnosis" in guide
+    assert "product traffic analysis, or product traffic-health diagnosis" in guide
+    assert "Use the scenario already selected through `SKILL.md`" in guide
+    assert "does not redefine the skill-owned subject or conclusion routing map" in guide
+    assert "Route by the primary subject and requested conclusion" not in guide
+    assert "For an ASIN × keyword request" not in guide
     assert "Ask another question or end this analysis" in guide
     assert "with no description or explanatory suffix" in guide
     assert "enter a different question or state that no further analysis is needed" not in guide
-    assert "Do not mark a diagnosis route as recommended" in guide
-    assert "Treat the user's displayed final-list number, localized label, or equivalent natural-language reply" in guide
     assert "### Interactive Stage Gate" in guide
     assert "### Stage Handoff Closure Gate" in guide
     assert "Re-read the user's still-current question and the current stage conclusion" in guide
@@ -431,9 +426,8 @@ def test_execution_guide_is_the_core_stage_and_gate_source():
     assert "`status=empty` route; none of those routes may override a terminal classification" in guide
     assert "Never transfer either behavior to HTTP 5xx" not in guide
     assert "evidence → analysis → stage conclusion" in guide
-    assert "Treat traffic-structure diagnosis through reverse ASIN and traffic-change diagnosis as mutually exclusive active routes" in guide
-    assert "Apply the clarification gate when neither meaning is explicit" in guide
-    assert "give traffic-change diagnosis precedence" in guide
+    assert "keyword demand, market structure, trend, value, relevance, or fit belongs to target-keyword analysis" not in guide
+    assert "ASIN traffic structure, sources, health, movement, anomaly, or cause belongs to product traffic analysis" not in guide
     assert "Combine scenario capabilities only when scenario boundaries are non-exclusive" in guide
 
 
@@ -630,12 +624,32 @@ def test_timeline_health_probe_omits_unsupported_pagination():
     assert '"pageSize"' not in timeline_probe
 
 
+def test_timeline_keyword_metric_fields_are_documented_consistently():
+    reference = read("references/reference.md")
+    semantics = read("references/traffic-observation-semantics.md")
+    zoodata_skill = (ROOT.parent / "zoodata" / "SKILL.md").read_text(encoding="utf-8")
+    openapi_reference = (
+        ROOT.parent / "zoodata" / "references" / "openapi-reference.md"
+    ).read_text(encoding="utf-8")
+
+    contract_phrase = (
+        "`keywordEstimateSearchCount`, `keywordAbaRank`, Top3 shares, and "
+        "`metricWindow` in `keywordMetrics`"
+    )
+    assert contract_phrase in " ".join(zoodata_skill.split())
+    assert contract_phrase in " ".join(openapi_reference.split())
+    assert (
+        "`keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, "
+        "`keywordAbaRank`, and Top3 shares"
+    ) in reference
+    assert "scoped to `keywordMetrics.metricWindow`" in semantics
+
+
 def test_scenarios_are_capability_guides_without_independent_scoring_or_gates():
     for relative_path in (
         "references/scenarios-expand.md",
         "references/scenarios-keyword-analysis.md",
-        "references/scenarios-reverse-asin.md",
-        "references/scenarios-keyword-traffic-diagnosis.md",
+        "references/scenarios-product-traffic-analysis.md",
     ):
         text = read(relative_path)
         assert "Capability Guide" in text.splitlines()[0]
@@ -649,7 +663,7 @@ def test_scenarios_are_capability_guides_without_independent_scoring_or_gates():
 
 def test_all_scenarios_inherit_stage_handoff_closure_gate():
     scenarios = sorted((ROOT / "references").glob("scenarios-*.md"))
-    assert len(scenarios) == 4
+    assert len(scenarios) == 3
 
     for path in scenarios:
         text = path.read_text(encoding="utf-8")
@@ -676,15 +690,14 @@ def test_all_scenarios_inherit_stage_handoff_closure_gate():
 def test_scenarios_define_evidence_stages_and_conclusion_authority():
     target = read("references/scenarios-keyword-analysis.md")
     expand = read("references/scenarios-expand.md")
-    reverse = read("references/scenarios-reverse-asin.md")
-    diagnosis = read("references/scenarios-keyword-traffic-diagnosis.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
 
     assert "## Evidence stages" in target
     assert "target ASIN" in target
     assert "ABA-SQP" in target
     assert "### Stage application constraints" in target
     assert "Do not request price, contribution margin" in target
-    for scenario in (target, expand, reverse, diagnosis):
+    for scenario in (target, expand, product):
         assert "Use the canonical Full-Mode Stage Output template" in scenario
         assert "## Section content requirements" in scenario
     assert "4. Seller-funnel calibration" in target
@@ -704,13 +717,14 @@ def test_scenarios_define_evidence_stages_and_conclusion_authority():
     assert "do not substitute `keywords/competitor-product-keywords` for the target-ASIN route" in target
     assert "current placement/traffic evidence" not in target
     assert "`product-traffic-terms-timeline`" not in target
-    assert "Route movement, anomaly, and causal questions" in target
+    assert "Requests outside this keyword-centered conclusion boundary must be reclassified" in target
+    assert "Route product visibility, placement, exposure, movement, anomaly, and causal questions" not in target
     assert "movement posture" not in target
-    for text in (expand, reverse, diagnosis):
+    for text in (expand, product):
         assert "## Evidence stages" in text
         assert "sqp-field-semantics.md" in text
 
-    for text in (target, expand, reverse, diagnosis):
+    for text in (target, expand, product):
         assert "Interactive Stage Gate" in text
         assert "Stage-End Selection List Rule" in text
 
@@ -740,106 +754,84 @@ def test_expansion_does_not_define_an_undocumented_composite_score():
     assert "If seller calibration is needed" not in scenario
 
 
-def test_reverse_asin_defines_evidence_levels_without_required_progression():
-    scenario = read("references/scenarios-reverse-asin.md")
+def test_product_traffic_analysis_unifies_structure_change_trend_and_health():
+    scenario = read("references/scenarios-product-traffic-analysis.md")
+    target = read("references/scenarios-keyword-analysis.md")
 
-    assert "| 1A. Aggregate channel structure" in scenario
-    assert "| 1B. Traffic-term discovery" in scenario
-    assert "| 2. Candidate keyword examination" in scenario
-    assert "| 3. Seller-funnel calibration" in scenario
+    assert "# Product Traffic Analysis Capability Guide" in scenario
+    assert "The ASIN is the primary subject" in scenario
+    assert "structure, change, trend, and health questions" in scenario
+    assert "A broad ASIN traffic analysis, overview, or health request enters" in scenario
+    assert "Do not require the user to choose between structure and change" in scenario
+    assert "| 1A. Product traffic health overview" in scenario
+    assert "| 1B. Current traffic-term or named-visibility structure" in scenario
+    assert "| 2. Named traffic-term trend diagnosis" in scenario
+    assert "| 3. Seller-funnel impact calibration" in scenario
     assert "| 4. Ads-performance calibration" in scenario
     assert "| 5. Profitability calibration" in scenario
     assert "| 6. Advertising-control decision" in scenario
-    assert "Seller-data handoff" not in scenario
-    assert "### Stage application constraints" in scenario
-    assert "A raw-list-only request uses only the returned-list conclusion authority and must be explicit" in scenario
-    assert "Stages 1A and 1B are mutually exclusive active entries" in scenario
+    assert "Stages 1A and 1B are alternative current-product entry points" in scenario
     assert "Stage 1A follows metric-first access" in scenario
-    assert "complete Stage 1A first under metric-first access" in scenario
-    assert "expose Stage 1B only as a supported continuation" in scenario
-    assert "Label the lists with the returned current period" in scenario
-    assert "disclose the unavailable previous-period boundary" in scenario
-    assert "never infer the missing dates" in scenario
-    assert "use numeric Top-N wording only when N is verified" in scenario
-    assert "Do not make numeric `*Prev` comparisons" in scenario
-    assert "Stage 1B may use Top-N wording when the shared ranked-detail protocol verifies" in scenario
-    assert "Otherwise describe only the returned rows" in scenario
-    assert "Stage 1B is discovery, not keyword judgment" in scenario
-    assert "Do not call `realtime/product` or page acquisition during Stage 1A or Stage 1B" in scenario
-    assert "Retain any compatible carried product evidence without rendering or interpreting it during either stage" in scenario
-    assert "Stage 2 entry requires a candidate list explicitly supplied or confirmed" in scenario
-    assert "Do not call `market-profile` before the Stage 2 candidate list is supplied or confirmed" in scenario
-    assert "Bare `continue` or `analyze these terms` satisfies that entry input only when" in scenario
-    assert "Do not retrieve new market or SERP evidence before candidate confirmation" in scenario
-    assert "Every candidate included in the Stage 2 posture conclusion must have completed market-profile validation" in scenario
-    assert "`realtime/product` for the target ASIN" in scenario
-    assert "sufficient directly observed ASIN/product-fit evidence" in scenario
-    assert "`Headroom validation` remains provisional below Stage 3 seller-funnel evidence" in scenario
-    assert "never a `Final calibrated conclusion`" in scenario
-    assert "For aggregate channel structure" in scenario
-    assert "For traffic-term discovery" in scenario
-    assert "For candidate examination" in scenario
-    assert "Do not repeat the full discovery report" in scenario
-    assert "Do not collapse Stage 1A, Stage 1B, or Stage 2 evidence or conclusions into one response" in scenario
-    assert "## Posture labels" in scenario
-    assert "Use these labels only after Stage 2 candidate market validation" in scenario
+    assert "Do not reconstruct the profile from traffic rows" in scenario
+    assert "Stage 1B may use Top-N wording only when" in scenario
+    assert "Stage 1B discovers product traffic terms or describes one named term's current product-side observation" in scenario
+    assert "named ASIN × keyword visibility/placement/exposure question without movement or causal intent" in scenario
+    assert "narrowed locally to the exact returned keyword row" in scenario
+    assert "Do not infer movement from one period" in scenario
+    assert "Reclassify any follow-up through `SKILL.md`" in scenario
+    assert "routes to `scenarios-keyword-analysis.md`" not in scenario
+    assert "Stage 2 requires one named keyword and a relevant range" in scenario
+    assert "Separate external keyword movement from product-side movement" in scenario
+    assert "not an API health score" in scenario
+    assert "undocumented composite score" in scenario
+    assert "## ASIN-fit posture labels" not in scenario
+    assert "## ASIN-fit posture labels" in target
     for label in ("`Established posture`", "`Headroom validation`", "`Observe`", "`No current support`"):
-        assert label in scenario
-    for action_label in ("`Defend`", "`Expand`", "`Avoid`"):
-        assert action_label not in scenario
-    assert "sole source for acquisition, sequencing, sufficiency, and field interpretation" in scenario
-    assert "Interpret Stage 1A and Stage 1B traffic, placement, contribution, and coverage fields only through `traffic-observation-semantics.md`" in scenario
-    assert "sponsored-only row" not in scenario
-    assert "Do not call coverage" not in scenario
+        assert label in target
+    for obsolete_path in ("scenarios-reverse-asin.md", "scenarios-keyword-traffic-diagnosis.md"):
+        assert obsolete_path not in scenario
+        assert not (ROOT / "references" / obsolete_path).exists()
 
 
-def test_reverse_and_diagnosis_have_exclusive_question_boundaries():
-    reverse = read("references/scenarios-reverse-asin.md")
-    diagnosis = read("references/scenarios-keyword-traffic-diagnosis.md")
+def test_keyword_value_and_product_traffic_have_subject_based_boundaries():
+    skill = read("SKILL.md")
+    target = read("references/scenarios-keyword-analysis.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
 
-    assert "## Scenario boundary" in reverse
-    assert "# Reverse-ASIN Traffic-Structure Diagnosis Capability Guide" in reverse
-    assert "diagnoses the ASIN's current observed traffic structure" in reverse
-    assert "does not diagnose broader temporal movement, anomalies, or causes" in reverse
-    assert "Do not claim a broad ASIN keyword-traffic analysis" in reverse
-    assert "shared clarification gate must disambiguate it" in reverse
-    assert "`analyze this ASIN's keyword traffic`" not in reverse
-    assert "`map this ASIN's current traffic terms`" in reverse
-    assert "Route them to `scenarios-keyword-traffic-diagnosis.md`" in reverse
-    assert "Do not call `product-traffic-terms-timeline`" in reverse
-    assert "Use `product-traffic-terms-overview` for its current ORG/SP/SB/SBV/SPR fields" in reverse
-    assert "first-three-page organic entry/exit lists" in reverse
-    assert "bounded Top-N set membership changes" in reverse
-    assert "| ASIN × keyword movement |" not in reverse
-    assert "Aggregate ASIN traffic movement" not in reverse
-    assert "returned listing-event signals" not in reverse
-
-    assert "## Scenario boundary" in diagnosis
-    assert "# ASIN Keyword Traffic-Change Diagnosis Capability Guide" in diagnosis
-    assert "owns traffic-change diagnosis" in diagnosis
-    assert "temporal movement, anomaly, and causal questions" in diagnosis
-    assert "Do not produce a full current traffic-term map, candidate pool" in diagnosis
-    assert "| 1A. ASIN-wide change triage" in diagnosis
-    assert "| 1B. ASIN × keyword diagnosis" in diagnosis
-    assert "A keyword-level explanation belongs to Stage 1B" in diagnosis
-    assert "requires one named keyword as its entry input" in diagnosis
-    assert "Stage 1A does not authorize SQP interpretation" in diagnosis
+    assert "# Keyword Analysis Capability Guide" in target
+    assert "The keyword is the primary subject" in target
+    assert "keyword-market and SERP traffic structure" in target
+    assert "keyword trend to judge the term's evidence-bounded value" in target
+    assert "supporting evidence for product traffic analysis" in target
+    assert "does not by itself establish product traffic health or cause" in target
+    assert "Market demand, structure, or entry context for a keyword" in target
+    assert "Route keyword-centered questions about demand, market/SERP structure" in skill
+    assert "Route ASIN-centered questions about traffic health" in skill
+    assert "For an ASIN × keyword request" in skill
+    assert "Requests outside this keyword-centered conclusion boundary must be reclassified" in target
+    assert "Requests outside this conclusion boundary must be reclassified" in product
+    assert "Route a keyword-centered question about demand, market structure, trend, value" not in product
+    assert "For an ASIN × keyword question" not in product
+    assert "handoff of selected traffic terms for skill-owned follow-up reclassification" in product
+    assert "product traffic evidence remains supporting ASIN context" in product
+    assert "Product traffic health overview" in product
+    assert "Current traffic-term or named-visibility structure" in product
+    assert "Named traffic-term trend diagnosis" in product
 
 
-def test_diagnosis_defers_thresholds_and_keeps_artifact_guidance():
-    scenario = read("references/scenarios-keyword-traffic-diagnosis.md")
+def test_product_traffic_diagnosis_defers_thresholds_and_keeps_artifact_guidance():
+    scenario = read("references/scenarios-product-traffic-analysis.md")
 
     assert "## Alert-level meaning" not in scenario
     assert "`High`:" not in scenario
     assert "`Medium`:" not in scenario
     assert "`Low`:" not in scenario
-    assert "description of the observed movement's magnitude and persistence" in scenario
+    assert "Evidence-bounded movement or anomaly explanation" in scenario
     assert "sqp-field-semantics.md" in scenario
-    assert "instead of redefining them here" in scenario
-    assert "SQP artifact for the named ASIN × keyword question" in scenario
-    assert "Update only the funnel or conversion conclusion supported" in scenario
+    assert "SQP artifact for one named ASIN × keyword" in scenario
+    assert "Update only the funnel, conversion-impact, or product-priority conclusion" in scenario
     assert "Stage-End Selection List Rule" in scenario
-    assert "observed movement and its supporting signals in Evidence" in scenario
+    assert "returned product-traffic observations and period/coverage scope in Evidence" in scenario
     assert "unresolved diagnostic boundaries in Analysis" in scenario
 
 
@@ -848,8 +840,7 @@ def test_stage_end_selection_lists_are_unified_even_for_one_route():
     scenarios = [
         read("references/scenarios-expand.md"),
         read("references/scenarios-keyword-analysis.md"),
-        read("references/scenarios-reverse-asin.md"),
-        read("references/scenarios-keyword-traffic-diagnosis.md"),
+        read("references/scenarios-product-traffic-analysis.md"),
     ]
 
     assert "### Stage-End Selection List Rule" in guide
@@ -866,14 +857,14 @@ def test_stage_end_selection_lists_are_unified_even_for_one_route():
         assert "Stage-End Selection List Rule" in scenario
         assert "Other instruction" not in scenario
 
-    diagnosis = scenarios[-1]
-    assert "A keyword-level explanation belongs to Stage 1B" in diagnosis
+    product = scenarios[-1]
+    assert "Stage 2 requires one named keyword and a relevant range" in product
 
 
 def test_all_selectable_subjects_are_merged_into_one_final_numbered_list():
     guide = read("references/execution-guide.md")
     output = read("references/output-rules.md")
-    reverse = read("references/scenarios-reverse-asin.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
 
     assert "Keep every user-selectable subject and action out of separate lists in Evidence, Analysis, and Conclusion" in guide
     assert "must not assign selection keys, present a candidate/action menu" in guide
@@ -888,14 +879,14 @@ def test_all_selectable_subjects_are_merged_into_one_final_numbered_list():
     assert "Do not emit a select-all item for one subject" in guide
     assert "Do not render a candidate menu, action menu, selection key" in output
     assert "place every user-selectable subject and action only in the single final numbered selection list" in output
-    assert "Do not render a separate candidate shortlist or selection keys" in reverse
-    assert "Apply the shared rule for individual items, set selection, and the select-all item" in reverse
+    assert "place every selectable term and its observed reason directly in the single final numbered selection list" in product
+    assert "under the shared handoff rule" in product
     for obsolete_pattern in (
         "stable lowercase alphabetic identifier",
         "assign stable lowercase alphabetic identifiers",
         "one final-list number containing that identifier",
     ):
-        assert obsolete_pattern not in "\n".join((guide, output, reverse))
+        assert obsolete_pattern not in "\n".join((guide, output, product))
 
 
 def test_stage_handoff_closure_populates_but_does_not_force_continuation():
@@ -903,8 +894,7 @@ def test_stage_handoff_closure_populates_but_does_not_force_continuation():
     scenarios = [
         read("references/scenarios-expand.md"),
         read("references/scenarios-keyword-analysis.md"),
-        read("references/scenarios-reverse-asin.md"),
-        read("references/scenarios-keyword-traffic-diagnosis.md"),
+        read("references/scenarios-product-traffic-analysis.md"),
     ]
     semantics = read("references/sqp-field-semantics.md")
 
@@ -929,92 +919,33 @@ def test_stage_handoff_closure_populates_but_does_not_force_continuation():
     assert "Other instruction" not in semantics
 
 
-def test_generic_asin_traffic_diagnosis_requires_intent_choice_before_calls():
+def test_generic_asin_traffic_analysis_routes_directly_to_product_health():
     skill = read("SKILL.md")
     guide = read("references/execution-guide.md")
-    reverse = read("references/scenarios-reverse-asin.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
 
-    for generic_scope in (
-        "broad analysis",
-        "overview",
-        "health check",
-        "perspective",
-        "analyze this ASIN from a keyword-traffic angle",
-    ):
-        assert generic_scope in skill
-    assert "without explicitly requesting either current traffic terms/source/placement/candidates or temporal change/trend/cause/anomaly" in skill
-    assert "Exact phrase matching is not required" in skill
-    assert "The absence of change language does not imply traffic-structure intent" in skill
-    assert "an ASIN plus a generic keyword-traffic framing does not supply that intent" in skill
-    assert "This check does not apply when the user names a target keyword" in skill
-    assert "current fit, relevance, or targeting value for the ASIN" in skill
-    assert "Route an explicit target keyword + ASIN question" in skill
-    assert "Before emitting any user-facing text or making any evidence call" in skill
-    assert "Make those reference reads the first actions" in skill
-    assert "without a preceding or interstitial assistant message" in skill
-    assert "never announce that a clarification rule or reference must be loaded" in skill
-    assert "ASIN Traffic Diagnosis Intent Clarification Gate" in skill
-
-    assert "### ASIN Traffic Diagnosis Intent Clarification Gate" in guide
-    assert "Apply this gate before any user-visible progress or classification prose" in guide
-    assert "Perform any reference reads needed to load this gate silently" in guide
-    assert "without announcing their purpose" in guide
-    assert "Do not select a scenario" in guide
-    assert "execute an API/tool evidence call before clarification" in guide
-    assert "Traffic-structure diagnosis" in guide
-    assert "Traffic-change diagnosis" in guide
-    assert "start only the selected scenario" in guide
-    assert "Broad requests for an analysis, overview, health check, or keyword-traffic perspective remain ambiguous" in guide
-    assert "absence of change intent is not traffic-structure intent" in guide
-    assert "An explicit named-keyword question about current ASIN fit, relevance, or targeting value" in guide
-    assert "not an ambiguous diagnosis request" in guide
-
-    assert "Do not claim a broad ASIN keyword-traffic analysis" in reverse
-    assert "merely because it lacks change language" in reverse
-    assert "must disambiguate it before this scenario is loaded" in reverse
+    assert "Route a broad ASIN traffic analysis, overview, or health check directly" in skill
+    assert "Do not ask the user to choose between structure and change first" in skill
+    assert "A broad ASIN traffic analysis, overview, or health check is a product traffic-health request" not in guide
+    assert "Use the scenario already selected through `SKILL.md`" in guide
+    assert "broad ASIN traffic analysis, overview, or health request enters" in product
+    assert "Product traffic health overview" in product
+    assert "ASIN Traffic Diagnosis Intent Clarification Gate" not in skill
+    assert "ASIN Traffic Diagnosis Intent Clarification Gate" not in guide
+    assert "Traffic-structure diagnosis" not in guide
+    assert "Traffic-change diagnosis" not in guide
 
 
-def test_asin_diagnosis_clarification_output_is_direct_and_process_free():
-    guide = read("references/execution-guide.md")
-    section = guide.split(
-        "### ASIN Traffic Diagnosis Intent Clarification Gate", 1
-    )[1].split("\n## ", 1)[0]
-    option_lines = [
-        line.strip()
-        for line in section.splitlines()
-        if re.match(r"- `[12]` \*\*Traffic-(structure|change) diagnosis\*\*", line.strip())
-    ]
-
-    assert len(option_lines) == 2
-    assert "Make the localized clarification question or heading and the following numbered list the first user-visible content" in section
-    assert "Ask another question or end this analysis" in section
-    assert "- `3` **Ask another question or end this analysis**\n" in section
-    assert "`A1`" not in section
-    assert "`A2`" not in section
-    assert "`X`" not in section
-    assert "enter a different question or state that no further analysis is needed" not in section
-    assert "Omit progress preambles" in section
-    assert "Do not expose the skill, Gate, scenario/module names" in section
-    assert "credits, or quota" in section
-    for line in option_lines:
-        assert "scenario" not in line.lower()
-        assert "module" not in line.lower()
-        assert "api" not in line.lower()
-        assert "credit" not in line.lower()
-        assert ".md" not in line.lower()
-
-
-def test_clarification_reference_loading_is_silent():
+def test_asin_keyword_routing_uses_requested_conclusion_not_input_shape_alone():
     skill = read("SKILL.md")
     guide = read("references/execution-guide.md")
-    output = read("references/output-rules.md")
 
-    assert "Make those reference reads the first actions" in skill
-    assert "without a preceding or interstitial assistant message" in skill
-    assert "never announce that a clarification rule or reference must be loaded" in skill
-    assert "Perform any reference reads needed to load this gate silently" in guide
-    assert "Complete internal preparation silently" in output
-    assert "Never announce the loading, selection, or application of internal instructions or resources" in output
+    assert "For an ASIN × keyword request" in skill
+    assert "value/fit/relevance questions without movement or causal intent" in skill
+    assert "visibility, placement, exposure, movement, anomaly, or causal questions" in skill
+    assert "For an ASIN × keyword request" not in guide
+    assert "target-keyword analysis for value/fit/relevance" not in guide
+    assert "product traffic analysis for visibility, placement, exposure" not in guide
 
 
 def test_target_keyword_seller_calibration_does_not_require_candidate_expansion():
@@ -1083,7 +1014,7 @@ def test_api_reference_remains_the_contract_source():
     evidence = read("references/evidence-protocols.md")
 
     assert "production capability whitelist" in reference
-    assert "Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, and timeline" in reference
+    assert "Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, `product-traffic-terms-profile`, and timeline" in reference
     assert "`trend-profile` bills a keyword when at least one requested window row has `status=ok`" in reference
     assert "do not estimate billing from request size or batch width" in evidence
     assert "keywords/market-profile" in reference
@@ -1129,8 +1060,7 @@ def test_traffic_observation_semantics_have_one_progressively_loaded_owner():
     skill = read("SKILL.md")
     reference = read("references/reference.md")
     evidence = read("references/evidence-protocols.md")
-    reverse = read("references/scenarios-reverse-asin.md")
-    diagnosis = read("references/scenarios-keyword-traffic-diagnosis.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
     semantics = read("references/traffic-observation-semantics.md")
     readme = read("README.md")
 
@@ -1145,11 +1075,14 @@ def test_traffic_observation_semantics_have_one_progressively_loaded_owner():
     assert "Interpret the series' snapshot, weekly-period, metric-window" in reference
     assert "sampled share within the returned ASIN traffic period" not in reference
     assert "Keep time grains separate" not in reference
+    assert "Exposure-position fields under `placement` return `null` both" not in reference
+    assert "previous-period count, share, and impression-point fields use `null`" not in reference
+    assert "numeric `0` means that period exists" not in reference
 
     assert "high `adCount`" not in evidence
     assert "low `daysCoverageRate`" not in evidence
-    assert "sponsored-only row" not in reverse
-    assert "co-movement into causality" not in diagnosis
+    assert "sponsored-only row" not in product
+    assert "co-movement into causality" not in product
 
     for owned_semantic in (
         "`trafficShare` is the row's sampled share",
@@ -1158,11 +1091,17 @@ def test_traffic_observation_semantics_have_one_progressively_loaded_owner():
         "`asinSnapshot` is tied to the series date",
         "`adActivity` counts and coverage describe observed ad participation",
         "Time-aligned co-movement can narrow an explanation",
-        "Current ORG/SP/SB/SBV/SPR impression-point fields support",
-        "channel impression points ÷ sum of included current channel impression points",
-        "membership changes in the endpoint-defined first-three-page organic Top-N set",
-        "Use a numeric `Top N` label only when returned context",
-        "The overview has no keyword contribution rows",
+        "Exposure-position fields under `placement` return `null` both when period data is unavailable and when no position was observed",
+        "A null position cannot distinguish those states by itself",
+        "`productTrafficTermsProfile` is a server-calculated metric object",
+        "Preserve each returned module, channel key, field name, value, and period scope",
+        "a null profile, or an omitted/nullable module field is a coverage boundary",
+        "count, share, and impression-point fields, `null` means the previous weekly data is unavailable",
+        "Numeric `0` means that weekly period exists but the relevant signal was not observed",
+        "This rule does not apply to exposure-position fields",
+        "empty `newTerms`, `lostTerms`, `top10Gainers`, or `top10Losers` arrays carry no zero-change conclusion",
+        "Do not project retired flat overview fields",
+        "Do not infer an array-item schema from an empty array",
     ):
         assert owned_semantic in semantics
 
@@ -1202,10 +1141,10 @@ def test_ranked_and_change_explanations_require_explicit_scope():
 
     assert "returned traffic-term rows may be described as Top N by that exact field and direction" in semantics
     assert "Top N by trafficShare descending" in semantics
-    assert "Report those arrays with the returned current period" in semantics
-    assert "previous-period boundary is not returned" in semantics
-    assert "Do not infer the missing previous dates" in semantics
-    assert "Entry or exit does not establish per-keyword traffic gain/loss" in semantics
+    assert "Preserve each returned module, channel key, field name, value, and period scope" in semantics
+    assert "Compare current and previous evidence only" in semantics
+    assert "Do not infer a missing previous window" in semantics
+    assert "Do not reconstruct a missing profile from traffic-term rows" in semantics
 
 
 def test_missing_previous_period_evidence_is_not_inferred_or_replaced_by_wrong_grain():
@@ -1213,21 +1152,37 @@ def test_missing_previous_period_evidence_is_not_inferred_or_replaced_by_wrong_g
     evidence = read("references/evidence-protocols.md")
     semantics = read("references/traffic-observation-semantics.md")
 
-    assert "does not return separate previous-period date boundaries" in reference
-    assert "A `*Prev` field may also be null or absent" in reference
+    assert "current/previous data windows" in reference
+    assert "nullable `productTrafficTermsProfile`" in reference
+    assert "`summary`: `currEstimateImpressionPoint`, `prevEstimateImpressionPoint`" in reference
+    assert "`trafficStructureChange`: objects keyed by returned traffic type" in reference
+    assert "`organicStructureChange`: `currTermCount`, `prevTermCount`" in reference
+    assert "`termChangeDrivers`: `gainerCount`, `loserCount`" in reference
+    assert "each successfully returned ASIN item with `status=ok` is billed once" in reference
+    assert "an ASIN item with `status=empty` is not billed" in reference
+    assert "previous-period count, share, and impression-point fields use `null` when" not in reference
+    assert "numeric `0` means that period exists but the relevant signal was not observed" not in reference
+    assert "Exposure-position fields under `placement` return `null` both when period data is unavailable" not in reference
+    assert "Interpret their meanings, comparison boundaries" in reference
     assert "only if it preserves the claim's subject, grain, marketplace, and comparison meaning" in evidence
-    assert "cannot replace an ASIN-wide aggregate overview" in evidence
+    assert "cannot replace an ASIN-wide aggregate traffic-term profile" in evidence
     assert "leave the comparison unavailable and do not infer" in evidence
-    assert "label that boundary unavailable and never derive it from weekly cadence" in semantics
-    assert "the movement comparison for that channel is unavailable" in semantics
+    assert "Do not infer a missing previous window from weekly cadence" in semantics
+    assert "a null profile, or an omitted/nullable module field is a coverage boundary" in semantics
+    assert "Never coerce `null` to zero" in semantics
+    assert "When `dataWindow.previousPeriod` is null" in semantics
+    assert "A null position cannot distinguish those states by itself" in semantics
+
+    zoodata_reference = (ROOT.parent / "zoodata" / "references" / "openapi-reference.md").read_text()
+    assert "Billing is per successfully returned ASIN item" in zoodata_reference
+    assert "item with `status=empty` is not billed" in zoodata_reference
 
 
 def test_full_mode_scenario_shapes_align_with_top_level_output_order():
     output = read("references/output-rules.md")
     expand = read("references/scenarios-expand.md")
     target = read("references/scenarios-keyword-analysis.md")
-    reverse = read("references/scenarios-reverse-asin.md")
-    diagnosis = read("references/scenarios-keyword-traffic-diagnosis.md")
+    product = read("references/scenarios-product-traffic-analysis.md")
 
     assert "exactly this canonical top-level template" in output
     for label in ("`Data Notes`", "`Evidence`", "`Analysis`", "`Conclusion`", "`API Usage`"):
@@ -1245,7 +1200,7 @@ def test_full_mode_scenario_shapes_align_with_top_level_output_order():
         "Use the canonical Full-Mode Stage Output template from `output-rules.md` "
         "without renaming, adding, removing, or reordering its report sections."
     )
-    for scenario in (expand, target, reverse, diagnosis):
+    for scenario in (expand, target, product):
         assert canonical_contract in scenario
         assert "## Section content requirements" in scenario
         assert "## Output shape" not in scenario
@@ -1254,13 +1209,11 @@ def test_full_mode_scenario_shapes_align_with_top_level_output_order():
     assert "candidate terms" in expand
     assert "active target-keyword stage's observations in Evidence" in target
     assert "authorized judgment in Conclusion" in target
-    assert "current overview fields and any material, explicitly scoped" in reverse
-    assert "current keyword-row observations and selection basis in Evidence" in reverse
-    assert "supported discovery conclusion in Conclusion" in reverse
-    assert "observed movement and its supporting signals in Evidence" in diagnosis
-    assert "active stage's new evidence and compatible prior-stage evidence in Conclusion" in diagnosis
-    assert "Stage 1 discovery conclusion" not in reverse
-    assert "observed change/evidence" not in diagnosis
+    assert "returned product-traffic observations and period/coverage scope in Evidence" in product
+    assert "dimension-level health interpretation" in product
+    assert "product-traffic health or diagnostic conclusion" in product
+    assert "Stage 1 discovery conclusion" not in product
+    assert "observed change/evidence" not in product
 
 
 def test_seller_decision_stages_are_explicit_separate_and_cumulative():
@@ -1275,8 +1228,7 @@ def test_seller_decision_stages_are_explicit_separate_and_cumulative():
     for relative_path in (
         "references/scenarios-expand.md",
         "references/scenarios-keyword-analysis.md",
-        "references/scenarios-reverse-asin.md",
-        "references/scenarios-keyword-traffic-diagnosis.md",
+        "references/scenarios-product-traffic-analysis.md",
     ):
         scenario = read(relative_path)
         assert "Ads-performance calibration" in scenario, relative_path
@@ -1304,8 +1256,21 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
     assert "Direct access to all 22 API endpoints" in root_readme
     assert "200M+ Amazon products. 22 endpoints. One API key." in zoodata_readme
     assert "| 14 | `keywords/market-profile`" in zoodata_readme
+    assert "| 21 | `keywords/product-traffic-terms-profile`" in zoodata_readme
     assert "| 22 | `keywords/product-traffic-terms-timeline`" in zoodata_readme
     assert "20 endpoints" not in zoodata_readme
+
+    for profile_field in (
+        "`currEstimateImpressionPoint`, `prevEstimateImpressionPoint`",
+        "`currAsinTrafficShare`",
+        "`newTermCount`, `lostTermCount`, `newTerms[]`, and `lostTerms[]`",
+        "`gainerCount`, `loserCount`, `top10Gainers[]`, and `top10Losers[]`",
+    ):
+        assert profile_field in openapi_reference
+    assert "previous-period count, share, and impression-point fields, `null` means" in openapi_reference
+    assert "numeric `0` means the previous weekly period exists" in openapi_reference
+    assert "Exposure-position fields under `placement` are nullable for both" in openapi_reference
+    assert "Never convert a null position to numeric zero" in openapi_reference
 
     for text in (zoodata_readme, zoodata_skill, openapi_reference):
         assert "every traffic-related conclusion" not in text
@@ -1313,14 +1278,32 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
     assert "does not prescribe a blanket caveat or one seller view for every subject" in zoodata_skill
     assert "belong to the `amazon-keyword-traffic-analysis` skill" in openapi_reference
 
+    assert "Production supports one ASIN or a batch of up to 20 ASINs" in zoodata_skill
+    assert "Read `references/openapi-reference.md § 18`" in zoodata_skill
+    for openapi_owned_detail in (
+        "requires `date` + exactly one of `asin` / `asins[]`",
+        "`currEstimateImpressionPoint`, `prevEstimateImpressionPoint`",
+        "`newTermCount`, `lostTermCount`, `newTerms[]`, and `lostTerms[]`",
+        "previous-period count, share, and impression-point fields",
+        "Exposure-position fields under `placement` use `null` both",
+    ):
+        assert openapi_owned_detail not in zoodata_skill
+
+    cli_contract = (
+        ROOT.parent / "zoodata" / "references" / "cli-contract.md"
+    ).read_text(encoding="utf-8")
+    assert "`_transport.status=410` is a retired-interface response" in cli_contract
+    assert "A future HTTP 410 from any route" not in zoodata_skill
+
 
 def test_zoodata_credential_and_credit_contract_matches_cli_output():
     zoodata_skill = (ROOT.parent / "zoodata" / "SKILL.md").read_text(encoding="utf-8")
 
     for status in (401, 402):
         assert f"`_transport.status={status}`" in zoodata_skill
-        assert f"`error.status={status}`" in zoodata_skill
+        assert f"`error.status={status}`" not in zoodata_skill
         assert f'{{"code": {status}' not in zoodata_skill
+    assert "regardless of whether the preserved server `error` object contains `status`" in zoodata_skill
     assert "API Budget table" not in zoodata_skill
     assert "if it is absent, say it was not returned rather than estimating it" in zoodata_skill
 
@@ -1450,8 +1433,7 @@ def test_seller_acquisition_details_have_one_source():
     for relative_path in (
         "references/scenarios-expand.md",
         "references/scenarios-keyword-analysis.md",
-        "references/scenarios-reverse-asin.md",
-        "references/scenarios-keyword-traffic-diagnosis.md",
+        "references/scenarios-product-traffic-analysis.md",
     ):
         scenario = read(relative_path)
         assert "sqp-field-semantics.md" in scenario

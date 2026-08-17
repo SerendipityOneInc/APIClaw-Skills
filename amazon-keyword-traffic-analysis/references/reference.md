@@ -36,7 +36,7 @@ Do not move Agent outputs such as `recommendedAction`, `conclusion`, `reasoning`
 | `keywords/product-traffic-terms` | data | available | `data.context + data.identity + data.rows[]` |
 | `keywords/competitor-product-keywords` | data | available | same shape as `product-traffic-terms` |
 | `keywords/product-traffic-terms-timeline` | data | available | `data.context + data.items[].series[]` |
-| `keywords/product-traffic-terms-overview` | aggregate metric | available, legacy shape | flat `data` object with current channel and matching `*Prev` fields |
+| `keywords/product-traffic-terms-profile` | aggregate metric | available | `data.context + data.items[].productTrafficTermsProfile` |
 | `realtime/product` | supporting product data | available | current ASIN product, offer, listing, and asset fields in `data` |
 | WebTools `/search` | supporting URL discovery | available | `data.query + data.results[]` |
 | WebTools `/scrape` | supporting page acquisition | available | requested page formats plus `data.meta` |
@@ -65,6 +65,7 @@ The following live endpoints support batch subjects:
 | `keywords/market-profile` | `keyword` | `keywords[]` | 20 |
 | `keywords/trend-profile` | `keyword` | `keywords[]` | 20 |
 | `keywords/trend` | `keyword` | `keywords[]` | 20 |
+| `keywords/product-traffic-terms-profile` | `asin` | `asins[]` | 20 |
 | `keywords/product-traffic-terms-timeline` | `asin + keyword` | `asin + keywords[]` | 20 keywords for one ASIN |
 
 Rules:
@@ -74,7 +75,7 @@ Rules:
 - Deduplicate case-insensitively before calling; duplicate subjects return 422.
 - Preserve input order in `data.items[]` and when merging multiple chunks.
 - Outer `success` is service execution status, not proof that every item has data.
-- Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, and timeline. `trend-profile` bills a keyword when at least one requested window row has `status=ok`. Empty-only subjects are not billed. Always use returned credit metadata rather than calculating credits from subject or row counts.
+- Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, `product-traffic-terms-profile`, and timeline. For `product-traffic-terms-profile`, each successfully returned ASIN item with `status=ok` is billed once; an ASIN item with `status=empty` is not billed. `trend-profile` bills a keyword when at least one requested window row has `status=ok`. Empty-only subjects are not billed. Always use returned credit metadata rather than calculating credits from subject or row counts.
 
 CLI examples:
 
@@ -92,6 +93,9 @@ python {skill_base_dir}/scripts/zoodata.py keyword-trend-profile \
 python {skill_base_dir}/scripts/zoodata.py keyword-trend \
   --keywords "yoga mat,pilates mat" \
   --date-from 2026-06-01 --date-to 2026-07-12 --marketplace US
+
+python {skill_base_dir}/scripts/zoodata.py product-traffic-terms-profile \
+  --asins "B01CGLCGRA,B07FR2V8SH" --date 2026-07-12 --marketplace US
 
 python {skill_base_dir}/scripts/zoodata.py product-traffic-terms-timeline \
   --asin B01CGLCGRA --keywords "yoga mat,pilates mat" \
@@ -272,22 +276,42 @@ Response:
   - `asinSnapshot`: title, price, link/image, brand, badges, sales, rating, BSR, video
   - `traffic`: ORG/SP/SB/SBV/SPR impression points
   - `placement`: organic/ad positions, pages, observation timestamps, average observations
-  - `keywordMetrics`: `metricWindow` plus search count, ABA rank, Top3 shares
+  - `keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, `keywordAbaRank`, and Top3 shares
   - `adActivity`: observation count, day coverage, campaign count, ad count
 
 Interpret the series' snapshot, weekly-period, metric-window, placement, traffic, and ad-activity fields through `traffic-observation-semantics.md`.
 
-### Metric layer (legacy response): `keywords/product-traffic-terms-overview`
+### Metric layer: `keywords/product-traffic-terms-profile`
 
-The endpoint is conceptually aggregate, but production still returns the legacy flat shape:
+Request:
 
-- `periodStartDate`, `periodEndDate`, `asin`, `site`
-- current ORG/SP/SB/SBV/SPR impression points
-- matching `*Prev` values
-- `first3PagesNewOrganicKeywords[]`
-- `first3PagesLostOrganicKeywords[]`
+- required `date` and exactly one of `asin` / `asins[]` (1–20)
+- `granularity=week` only; optional `marketplace`
 
-The response exposes matching current and `*Prev` channel fields but no keyword contribution rows. It returns only the current `periodStartDate` / `periodEndDate`; it does not return separate previous-period date boundaries. A `*Prev` field may also be null or absent when no previous-period value is available.
+Response:
+
+- `data.context`: marketplace, requested/resolved date, granularity, and current/previous data windows
+- input-ordered `data.items[]`: `identity`, `status=ok|empty`, `emptyReason`, and nullable `productTrafficTermsProfile`
+- `status=empty` with `emptyReason=current_period_unavailable` is a coverage boundary, not low-traffic evidence
+
+Observed non-null `productTrafficTermsProfile` modules and fields:
+
+- `summary`: `currEstimateImpressionPoint`, `prevEstimateImpressionPoint`,
+  `impressionPointChangeCount`, `impressionPointChangeRate`, `currTermCount`, `prevTermCount`,
+  `termCountChange`, `termCountChangeRate`, `totalIncreaseImpressionPoint`, and
+  `totalDecreaseImpressionPoint`
+- `trafficStructureChange`: objects keyed by returned traffic type (observed live: `ORG`, `SP`, `SB`,
+  `SPR`); each channel object contains `currEstimateImpressionPoint`, `currAsinTrafficShare`,
+  `prevEstimateImpressionPoint`, `prevAsinTrafficShare`, `impressionPointChangeCount`,
+  `impressionPointChangeRate`, `currTermCount`, `prevTermCount`, `termCountChange`, and
+  `termCountChangeRate`
+- `organicStructureChange`: `currTermCount`, `prevTermCount`, `termCountChange`,
+  `termCountChangeRate`, `newTermCount`, `lostTermCount`, `newTerms[]`, and `lostTerms[]`
+- `termChangeDrivers`: `gainerCount`, `loserCount`, `top10Gainers[]`, and `top10Losers[]`
+
+Preserve these exact field names. Previous-period fields and comparison arrays are nullable or
+empty according to the returned response schema. Interpret their meanings, comparison boundaries,
+and prohibited reconstructions only through `traffic-observation-semantics.md`.
 
 ## Authorized supporting acquisition surfaces
 
@@ -335,7 +359,7 @@ These are capability facts derived from the documented endpoints and user-provid
 | Query/seed relation | `keywords/extends` match data, query wording, and `keywords/search-results` when retrieved | Describes relation to the query and observed returned rows; it is not product conversion or campaign-fit evidence. |
 | Demand and weekly trend | `keywords/market-profile`, `keywords/trend-profile`, and documented raw snapshot/trend fields | Snapshot scale and weekly movement are distinct; these endpoints do not forecast. |
 | Market structure and SERP | Market-profile dimensions and `keywords/search-results` rows | Each metric retains its returned subject, population, and scope; no composite score is provided. |
-| Current ASIN posture | `realtime/product`, placement, traffic-term, overview, and timeline endpoints | Observes the returned ASIN/keyword subject and period; it does not supply seller conversion funnel data. |
+| Current ASIN posture | `realtime/product`, placement, traffic-term, profile, and timeline endpoints | Observes the returned ASIN/keyword subject and period; it does not supply seller conversion funnel data. |
 | Page or asset observation | WebTools `/search` for URL discovery, then `/scrape` or `/scrape-interactive` for the selected page | Preserves the acquired page representation; it does not establish ranking logic, attribution, conversion, or cause. |
 | Seller funnel and advertising economics | User-provided ABA-SQP and Amazon Ads search-term data | These are user-provided first-party inputs, not ZooData keyword endpoint outputs. |
 
@@ -351,7 +375,7 @@ These are capability facts derived from the documented endpoints and user-provid
 | Observed keyword SERP | `keywords/search-results` | Returned product, placement, and impression-point rows. |
 | Current ASIN traffic terms | `keywords/product-traffic-terms` or `keywords/competitor-product-keywords` | ASIN keyword rows, traffic share, placement, and keyword snapshot fields. |
 | ASIN × keyword movement | `keywords/product-traffic-terms-timeline` | Nested product, traffic, placement, keyword-metric, and ad-activity time-series groups. |
-| ASIN aggregate channel structure and movement | `keywords/product-traffic-terms-overview` | Current channel placement impression points, matching previous values, and first-three-page organic entry/exit lists. |
+| ASIN aggregate traffic-term profile | `keywords/product-traffic-terms-profile` | Server-returned ASIN profile dimensions, status/coverage, evidence, and current/previous period scope. |
 | Current product/listing inspection | `realtime/product` | Current ASIN product, offer, listing, and asset-link fields only. |
 | URL discovery | WebTools `/search` | Candidate result URLs and snippets for selecting a source; not product search or page-content proof. |
 | Known-page acquisition | WebTools `/scrape` or `/scrape-interactive` | Returned content for the selected URL and representation; interactive mode is reserved for rendering/actions. |
@@ -372,7 +396,7 @@ The bundled CLI mapping for `python {skill_base_dir}/scripts/zoodata.py` is:
 | `keywords/search-results` | `keyword-search-results` |
 | `keywords/product-traffic-terms` | `keyword-product-traffic-terms` |
 | `keywords/competitor-product-keywords` | `keyword-competitor-product-keywords` |
-| `keywords/product-traffic-terms-overview` | `product-traffic-terms-overview` |
+| `keywords/product-traffic-terms-profile` | `product-traffic-terms-profile` |
 | `keywords/product-traffic-terms-timeline` | `product-traffic-terms-timeline` |
 | `realtime/product` | `product` |
 

@@ -48,7 +48,7 @@ This repo contains **11 agent skills** organized in two tiers:
 |-------|-------------|-------|--------|---------------|
 | 📦 [`zoodata/`](zoodata/) | Direct access to all 22 API endpoints — 12 commerce endpoints plus 10 keyword-intelligence endpoints | Keyword, category, ASIN, or brand | Raw API data with field mapping and quirk documentation | Complete API reference — every other skill builds on this |
 | 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 built-in selection modes + market research, competitor analysis, ASIN evaluation, pricing, category research | Keyword/category/ASIN + intent | Analysis findings, top products, ASIN deep dives, confidence-tagged insights | Composite commands (`report`, `opportunity`) run multi-endpoint pipelines in one shot |
-| 🔎 [`amazon-keyword-traffic-analysis/`](amazon-keyword-traffic-analysis/) | Keyword intelligence workflows built on 10 keyword traffic endpoints | Seed keyword, target keyword, ASIN, or ASIN + keyword | Expansion tiers, single-keyword verdicts, reverse-ASIN traffic terms, anomaly explanations | Dedicated flows for keyword expansion, reverse ASIN, and keyword traffic monitoring |
+| 🔎 [`amazon-keyword-traffic-analysis/`](amazon-keyword-traffic-analysis/) | Keyword value and product traffic-health workflows built on 10 keyword intelligence endpoints | Seed keyword, target keyword, ASIN, or ASIN + keyword | Expansion tiers, keyword-value analysis, product traffic structure, trends, and health diagnosis | Dedicated flows for keyword expansion, keyword analysis, and product traffic analysis |
 
 **⚡ Specialized** — purpose-built for specific workflows:
 
@@ -157,7 +157,7 @@ The skill CLI (`zoodata.py --mode`) provides 13 preset modes for different resea
 
 ```
 ├── zoodata/                              # Data layer skill (lightweight)
-│   ├── SKILL.md                            # 11 endpoints, quick start
+│   ├── SKILL.md                            # 22 endpoints, quick start
 │   └── references/
 │       └── openapi-reference.md            # API field reference
 │
@@ -182,9 +182,8 @@ The skill CLI (`zoodata.py --mode`) provides 13 preset modes for different resea
 │       ├── reference.md                    # Keyword endpoint reference
 │       ├── execution-guide.md              # Execution and monitoring rules
 │       ├── scenarios-expand.md             # Keyword expansion
-│       ├── scenarios-keyword-analysis.md   # Single-keyword evaluation
-│       ├── scenarios-reverse-asin.md       # Reverse ASIN analysis
-│       └── scenarios-keyword-traffic-diagnosis.md # Keyword traffic anomaly diagnosis
+│       ├── scenarios-keyword-analysis.md   # Keyword value and trend analysis
+│       └── scenarios-product-traffic-analysis.md # Product traffic health analysis
 │
 ├── amazon-competitor-intelligence-monitor/  # Competitor intelligence & monitoring
 │   ├── SKILL.md

@@ -71,7 +71,7 @@ Select **ZooData** when prompted.
 | 18 | `keywords/search-results` | Keyword SERP snapshot |
 | 19 | `keywords/competitor-product-keywords` | Competitor ASIN keyword coverage |
 | 20 | `keywords/product-traffic-terms` | ASIN traffic-driving keywords |
-| 21 | `keywords/product-traffic-terms-overview` | Weekly ASIN traffic-term overview |
+| 21 | `keywords/product-traffic-terms-profile` | Weekly ASIN traffic-term profile (batch up to 20 ASINs) |
 | 22 | `keywords/product-traffic-terms-timeline` | ASIN + keyword timeline |
 
 Keyword endpoint note: ZooData keyword data is estimated search, exposure, visibility, rank, placement, and impression evidence; it is not seller ABA-SQP or Amazon Ads performance. Analysis-stage routing, seller-artifact acquisition, and output policy are owned by [`amazon-keyword-traffic-analysis`](../amazon-keyword-traffic-analysis/).
