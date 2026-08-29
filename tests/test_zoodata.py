@@ -2363,6 +2363,104 @@ class TestCompositeRobustness(unittest.TestCase):
         self.assertNotIn("realtimeFallbackHint", result.get("meta", {}))
 
 
+class TestCompositeEnvelopeShape(unittest.TestCase):
+    """Shape contract for composite commands: output is a dict of NAMED
+    SECTIONS plus a top-level `meta` total, with NO top-level `success`/`data`
+    key. cli-contract.md requires a consumer to "inspect nested endpoint
+    results before classifying the whole workflow" — i.e. classify a composite
+    by its sections, never by a flat top-level success flag. This guard pins
+    that shape so a refactor can't silently flatten a composite into one
+    envelope: a naive `result["success"]` reader would then mistake a
+    multi-section bundle for a single pass/fail. (Section VALUES vary
+    legitimately — envelope / list / dict — so only the top-level invariant is
+    asserted, not per-section structure.)
+    """
+
+    # Every fan-out command: one invocation dispatches to multiple endpoints.
+    # Curated by hand, NOT auto-derived: the CLI help text is not a reliable
+    # composite marker (e.g. `daily-radar` says "runs all tracking endpoints"
+    # with no "composite" keyword, while single-endpoint `keyword-market-profile`
+    # / `review-deepdive` mention "multidimensional"/"Full ... analysis"). A
+    # renamed or removed composite is already caught — a stale key becomes an
+    # unknown subcommand, argparse exits, `_run` returns {}, and the
+    # `assertIn("meta", out)` below fails loudly. Only a BRAND-NEW composite is
+    # invisible here; add its row when you add the command.
+    COMPOSITES = {
+        "report":              ["report", "--keyword", "yoga mat"],
+        "opportunity":         ["opportunity", "--keyword", "yoga mat"],
+        "market-entry":        ["market-entry", "--keyword", "yoga mat", "--category", "A > B"],
+        "competitor-analysis": ["competitor-analysis", "--keyword", "yoga mat", "--category", "A > B", "--my-asin", "B0TEST0001"],
+        "pricing-analysis":    ["pricing-analysis", "--keyword", "yoga mat", "--category", "A > B", "--my-asin", "B0TEST0001"],
+        "daily-radar":         ["daily-radar", "--asins", "B0TEST0001", "--category", "A > B"],
+        "listing-audit":       ["listing-audit", "--my-asin", "B0TEST0001", "--category", "A > B"],
+        "opportunity-scan":    ["opportunity-scan", "--keyword", "yoga mat", "--category", "A > B"],
+    }
+
+    def _run(self, argv, router):
+        captured = {}
+
+        def fake_api_call(endpoint, params):
+            resp = dict(router(endpoint, dict(params)))
+            resp.setdefault("_query", {"endpoint": endpoint, "params": params})
+            return resp
+
+        def fake_output(data, fmt="json"):
+            captured["results"] = data
+
+        with patch.object(zoodata, "api_call", side_effect=fake_api_call), \
+             patch.object(zoodata, "output", side_effect=fake_output), \
+             patch.object(sys, "argv", ["zoodata.py", *argv]):
+            try:
+                zoodata.main()
+            except SystemExit:
+                pass
+        return captured.get("results", {})
+
+    # The real API returns object-shaped `data` for these endpoints and
+    # list-shaped `data` for collection endpoints; composites read them with
+    # the matching access pattern, so the stub must mirror the real shape.
+    # WARNING: removing an entry (reclassifying a dict endpoint as list) makes
+    # the composite's `.get()` chain hit a list -> AttributeError, which
+    # surfaces as a test ERROR, not a clean shape assertion. Keep this in sync
+    # with the real per-endpoint shapes (characterized against live output).
+    _DICT_DATA_ENDPOINTS = {
+        "realtime/product", "products/brand-overview", "products/brand-detail",
+        "products/price-band-overview", "products/price-band-detail",
+        "reviews/analysis", "products/history",
+    }
+
+    @classmethod
+    def _router(cls, endpoint, params):
+        # One generous row carrying every field the composites read to fan out
+        # and summarize (categoryPath for self-heal, brand/price-band/review
+        # fields for the object endpoints).
+        row = {"asin": params.get("asin") or "B0TEST0001",
+               "categoryPath": ["Sports & Outdoors", "Yoga", "Mats"],
+               "title": "Test", "bsr": 10, "rating": 4.5, "ratingCount": 100,
+               "sampleAvgMonthlyRevenue": 1000, "monthlySalesFloor": 100,
+               "sampleBrandCount": 3, "sampleTop10BrandSalesRate": 0.4,
+               "sampleAvgPrice": 25.0, "hottestBand": {"bandLabel": "$20-$25"},
+               "ratingBreakdown": {}, "consumerInsights": []}
+        data = dict(row) if endpoint in cls._DICT_DATA_ENDPOINTS else [dict(row)]
+        return {"success": True, "data": data, "meta": {"creditsConsumed": 1}}
+
+    def test_composites_emit_named_sections_not_a_top_level_envelope(self):
+        for name, argv in self.COMPOSITES.items():
+            out = self._run(argv, self._router)
+            with self.subTest(composite=name):
+                self.assertIsInstance(out, dict, f"{name}: non-dict output")
+                # THE invariant consumers rely on — and the exact shape a naive
+                # top-level-success reader gets wrong:
+                self.assertNotIn("success", out,
+                    f"{name}: composite grew a top-level 'success' — consumers "
+                    "must classify by section, not a flat flag")
+                self.assertNotIn("data", out,
+                    f"{name}: composite grew a top-level 'data' key")
+                self.assertIn("meta", out, f"{name}: missing composite meta total")
+                sections = [k for k in out if k != "meta"]
+                self.assertTrue(sections, f"{name}: produced no named sections")
+
+
 # Standalone runner
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
