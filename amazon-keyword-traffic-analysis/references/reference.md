@@ -34,9 +34,10 @@ Do not move Agent outputs such as `recommendedAction`, `conclusion`, `reasoning`
 | `keywords/extends` | data | available | `data.context + data.query + data.queryType + data.rows[]` |
 | `keywords/search-results` | data | available | `data.context + data.identity + data.rows[]` |
 | `keywords/product-traffic-terms` | data | available | `data.context + data.identity + data.rows[]` |
-| `keywords/competitor-product-keywords` | data | available | same shape as `product-traffic-terms` |
-| `keywords/product-traffic-terms-timeline` | data | available | `data.context + data.items[].series[]` |
-| `keywords/product-traffic-terms-profile` | aggregate metric | available | `data.context + data.items[].productTrafficTermsProfile` |
+| `keywords/product-traffic-terms-trend` | data | available and live-validated | `data.context + data.items[].series[]` |
+| `keywords/product-traffic-structure-profile` | aggregate metric | available and live-validated | `data.context + data.items[].productTrafficTermsProfile` |
+| `keywords/product-traffic-trend` | data | available and live-validated | `data.context + data.items[].series[]` |
+| `keywords/product-traffic-trend-profile` | metric | available and live-validated | `data.context + data.items[].rows[].trafficTrendProfile` |
 | `realtime/product` | supporting product data | available | current ASIN product, offer, listing, and asset fields in `data` |
 | WebTools `/search` | supporting URL discovery | available | `data.query + data.results[]` |
 | WebTools `/scrape` | supporting page acquisition | available | requested page formats plus `data.meta` |
@@ -65,17 +66,19 @@ The following live endpoints support batch subjects:
 | `keywords/market-profile` | `keyword` | `keywords[]` | 20 |
 | `keywords/trend-profile` | `keyword` | `keywords[]` | 20 |
 | `keywords/trend` | `keyword` | `keywords[]` | 20 |
-| `keywords/product-traffic-terms-profile` | `asin` | `asins[]` | 20 |
-| `keywords/product-traffic-terms-timeline` | `asin + keyword` | `asin + keywords[]` | 20 keywords for one ASIN |
+| `keywords/product-traffic-structure-profile` | `asin` | `asins[]` | 20 |
+| `keywords/product-traffic-terms-trend` | `asin + keyword` | `asin + keywords[]` | 20 keywords for one ASIN |
+| `keywords/product-traffic-trend` | `asin` | `asins[]` | 20 |
+| `keywords/product-traffic-trend-profile` | `asin` | `asins[]` | 20 |
 
 Rules:
 
 - Send exactly one of the single or batch fields.
-- Batch only subjects with the same marketplace, snapshot/range, granularity, window, filters, and sort context; timeline batches must share one ASIN.
-- Deduplicate case-insensitively before calling; duplicate subjects return 422.
+- Batch only subjects with the same marketplace, snapshot/range, `granularity=week`, window, filters, and sort context; traffic-term trend batches must share one ASIN.
+- Normalize every batch keyword to `LOWER(TRIM(value))` before calling, then deduplicate; uppercase, surrounding whitespace, or duplicate batch values return validation errors. Single-keyword request fields retain their endpoint-specific normalization behavior.
 - Preserve input order in `data.items[]` and when merging multiple chunks.
 - Outer `success` is service execution status, not proof that every item has data.
-- Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, `product-traffic-terms-profile`, and timeline. For `product-traffic-terms-profile`, each successfully returned ASIN item with `status=ok` is billed once; an ASIN item with `status=empty` is not billed. `trend-profile` bills a keyword when at least one requested window row has `status=ok`. Empty-only subjects are not billed. Always use returned credit metadata rather than calculating credits from subject or row counts.
+- Billing is per `status=ok` subject for batch keyword and product-traffic endpoints. `trend-profile` bills a keyword when at least one requested window row has `status=ok`. For the structure endpoint, each successfully returned ASIN item with `status=ok` is billed once, while an ASIN item with `status=empty` is not billed; raw ASIN trends follow the same per-successful-ASIN rule. Product traffic trend profiles bill an ASIN when at least one requested window row has `status=ok`. Empty-only subjects are not billed. Always use returned credit metadata rather than calculating credits from subject or row counts.
 
 CLI examples:
 
@@ -94,12 +97,20 @@ python {skill_base_dir}/scripts/zoodata.py keyword-trend \
   --keywords "yoga mat,pilates mat" \
   --date-from 2026-06-01 --date-to 2026-07-12 --marketplace US
 
-python {skill_base_dir}/scripts/zoodata.py product-traffic-terms-profile \
+python {skill_base_dir}/scripts/zoodata.py product-traffic-structure-profile \
   --asins "B01CGLCGRA,B07FR2V8SH" --date 2026-07-12 --marketplace US
 
-python {skill_base_dir}/scripts/zoodata.py product-traffic-terms-timeline \
+python {skill_base_dir}/scripts/zoodata.py product-traffic-terms-trend \
   --asin B01CGLCGRA --keywords "yoga mat,pilates mat" \
   --date-from 2026-07-06 --date-to 2026-07-12 --marketplace US
+
+python {skill_base_dir}/scripts/zoodata.py product-traffic-trend \
+  --asins "B01CGLCGRA,B07FR2V8SH" \
+  --date-from 2026-06-01 --date-to 2026-07-12 --marketplace US
+
+python {skill_base_dir}/scripts/zoodata.py product-traffic-trend-profile \
+  --asin B01CGLCGRA --date 2026-07-12 \
+  --window-periods 4 --detail-level summary --marketplace US
 ```
 
 One request cannot contain more than 20 subjects. Each response preserves order only within that response and carries its own usage metadata.
@@ -110,7 +121,7 @@ One request cannot contain more than 20 subjects. Each response preserves order 
 - `status=empty` means no matching observation in the resolved snapshot/window. It does not prove low demand.
 - Distinguish the two empties by `resolvedDate*`: a non-null `resolvedDate*` with `status=empty` is a genuine no-observation result for that resolved snapshot; a null `resolvedDate*` is an out-of-window date selection, not evidence about the keyword.
 - `keywords/extends` may return an empty `rows[]`; this is a valid successful response.
-- Endpoint-specific validation details remain authoritative only when the shared contract classifies the outer response as HTTP 422. Keyword endpoints exposing granularity currently accept `week` only.
+- Endpoint-specific validation details remain authoritative only when the shared contract classifies the outer response as HTTP 422. All eleven current keyword and product-traffic request schemas retain `granularity` for compatibility and accept only `week`; all currently support only marketplace `US`, and the bundled CLI sends both values explicitly. Legacy `lookbackDays` remains unsupported.
 
 ### Credits
 
@@ -124,8 +135,8 @@ Request:
 
 - exactly one of `keyword` or `keywords[]` (1–20)
 - required `date` (`YYYY-MM-DD`)
-- `marketplace=US|UK`, default `US`
-- `granularity=week` only
+- `marketplace=US` only; default `US`
+- compatibility-retained `granularity` supports only `week`
 
 Response:
 
@@ -148,8 +159,8 @@ Request:
 
 - exactly one of `keyword` or `keywords[]` (1–20)
 - required `date` (`YYYY-MM-DD`)
-- `marketplace=US|UK`, default `US`
-- `granularity=week` only
+- `marketplace=US` only; default `US`
+- compatibility-retained `granularity` supports only `week`
 
 Response:
 
@@ -172,7 +183,7 @@ Request:
 
 - exactly one of `keyword` or `keywords[]` (1–20)
 - `dateFrom`, `dateTo`; maximum 93-day range
-- `marketplace=US|UK`; `granularity=week` only
+- `marketplace=US` only; compatibility-retained `granularity` supports only `week`
 
 Response:
 
@@ -188,7 +199,7 @@ Request:
 - exactly one of `keyword` or `keywords[]` (1–20)
 - required as-of `date` (`YYYY-MM-DD`)
 - required `windowPeriods[]`: 1–4 unique values selected from `4`, `8`, `12`, `26`
-- `marketplace=US|UK`, default `US`; `granularity=week` only
+- `marketplace=US` only; compatibility-retained `granularity` supports only `week`
 
 Response:
 
@@ -207,6 +218,7 @@ Request:
 - required `query`; do not rename it to `keyword`
 - `queryType=phrase|fuzzy`
 - optional marketplace, page, pageSize (1–100), sortBy, sortOrder
+- compatibility-retained `granularity` supports only `week`
 - no date is required; the service uses the latest available weekly snapshot. A legacy `date` may be sent but is ignored.
 - `sortBy=relevanceScore|estimateSearchCount|abaRank|keyword`
 
@@ -226,7 +238,7 @@ The current response does not expose the legacy flattened `term`, `seedKeyword`,
 Request:
 
 - required `keyword`, `date`
-- `granularity=week` only; `day`, `month`, `lately_day`, and `lookbackDays` are unsupported
+- compatibility-retained `granularity` supports only `week`; do not send legacy `lookbackDays`
 - optional `exploreTypes=ORG|SP|SB|SBV|SPR`, page/pageSize
 - `sortBy=absolutePosition|estimateImpressionPoint|latestObservedAt|price|rating|ratingCount|recentSales|asin|title`
 
@@ -240,31 +252,32 @@ Response:
 
 Interpretation, comparison, aggregation, and inference limits for `exploreType`, `estimateImpressionPoint`, and the repeated keyword-level `keywordTotalEstimateImpressionPoint` are owned by `serp-and-rollover.md`.
 
-### Data layer: `keywords/product-traffic-terms` and `keywords/competitor-product-keywords`
+### Data layer: `keywords/product-traffic-terms`
 
 Request:
 
 - required `asin`, `date`
-- `granularity=week` only; `day`, `month`, `lately_day`, and `lookbackDays` are unsupported
+- compatibility-retained `granularity` supports only `week`; do not send legacy `lookbackDays`
 - optional `keywordContains`, `exploreTypes`, page/pageSize
+- optional `keywordEstimateSearchCountMin` / `keywordEstimateSearchCountMax` (integers >= 0) and `keywordAbaRankMin` / `keywordAbaRankMax` (integers >= 1); each minimum must not exceed its maximum
 - `sortBy=trafficShare|estimateImpressionPoint|absolutePosition|avgPosition|keywordEstimateSearchCount|keywordAbaRank|latestObservedAt|keyword`
 
 Response:
 
 - `data.context`, `data.identity`, `data.rows[]`
-- rows include placement/position, keyword, impression points, `trafficShare`, `avgPosition`, coverage/observation counts, keyword search/change fields, and ABA rank/change
+- rows include placement/position, keyword, impression points, `trafficShare`, `avgPosition`, coverage/observation counts, estimated keyword search count, and numeric ABA rank
 
-The two endpoints currently return the same row shape. `product-traffic-terms` is the target-ASIN traffic-term route; `competitor-product-keywords` is the competitor/overlap route.
+Use `product-traffic-terms` for any target ASIN, including a competitor. The MCP `competitor-product-keywords` tool is retired and returns `tool_retired` with replacement `openapi_v2_product_traffic_terms`; it has no separate competitor/overlap contract.
 
 Interpret `trafficShare`, placement, contribution, and coverage fields through `traffic-observation-semantics.md`.
 
-### Data layer: `keywords/product-traffic-terms-timeline`
+### Data layer: `keywords/product-traffic-terms-trend`
 
 Request:
 
 - one ASIN and exactly one of `keyword` or `keywords[]` (1–20)
-- `dateFrom`, `dateTo`; maximum 61-day range
-- `granularity=week` only; `day`, `month`, `lately_day`, and `lookbackDays` are unsupported
+- `dateFrom`, `dateTo`; maximum 26-week range
+- compatibility-retained `granularity` supports only `week`; do not send legacy `lookbackDays`
 - no page/pageSize pagination for series
 
 Response:
@@ -281,12 +294,12 @@ Response:
 
 Interpret the series' snapshot, weekly-period, metric-window, placement, traffic, and ad-activity fields through `traffic-observation-semantics.md`.
 
-### Metric layer: `keywords/product-traffic-terms-profile`
+### Metric layer: `keywords/product-traffic-structure-profile`
 
 Request:
 
 - required `date` and exactly one of `asin` / `asins[]` (1–20)
-- `granularity=week` only; optional `marketplace`
+- optional `marketplace`; compatibility-retained `granularity` supports only `week`
 
 Response:
 
@@ -294,7 +307,8 @@ Response:
 - input-ordered `data.items[]`: `identity`, `status=ok|empty`, `emptyReason`, and nullable `productTrafficTermsProfile`
 - `status=empty` with `emptyReason=current_period_unavailable` is a coverage boundary, not low-traffic evidence
 
-Observed non-null `productTrafficTermsProfile` modules and fields:
+Observed non-null `productTrafficTermsProfile` modules and fields. The retained response field name
+does not change this endpoint's role as a current-vs-previous-week structure metric:
 
 - `summary`: `currEstimateImpressionPoint`, `prevEstimateImpressionPoint`,
   `impressionPointChangeCount`, `impressionPointChangeRate`, `currTermCount`, `prevTermCount`,
@@ -312,6 +326,46 @@ Observed non-null `productTrafficTermsProfile` modules and fields:
 Preserve these exact field names. Previous-period fields and comparison arrays are nullable or
 empty according to the returned response schema. Interpret their meanings, comparison boundaries,
 and prohibited reconstructions only through `traffic-observation-semantics.md`.
+
+### Data layer: `keywords/product-traffic-trend`
+
+Request:
+
+- exactly one of `asin` / `asins[]` (1–20)
+- required `dateFrom`, `dateTo`; maximum 26-week range
+- optional `marketplace`; compatibility-retained `granularity` supports only `week`
+
+Response:
+
+- `data.context`: requested and resolved weekly range
+- input-ordered `data.items[]`: ASIN identity, `status=ok|empty`, `emptyReason`, and `series[]`
+- each series point: period boundaries, total/organic/ad impression points, total/organic/ad term
+  counts, organic first-three-page term count, channel traffic, keyword-demand-rank distribution,
+  and organic-acquisition-rate distribution
+
+This endpoint is ASIN-level across all observed keywords and has no keyword dimension. Missing
+weeks are not zero-filled. Interpret returned traffic, coverage, and distribution fields only
+through `traffic-observation-semantics.md`.
+
+### Metric layer: `keywords/product-traffic-trend-profile`
+
+Request:
+
+- exactly one of `asin` / `asins[]` (1–20)
+- required as-of `date`
+- optional `windowPeriods`, default `[4]`; `[4]` is the only supported value
+- optional `detailLevel=summary|full` and `marketplace`; compatibility-retained `granularity` supports only `week`
+
+Response:
+
+- `data.context`: detail level, requested/resolved date, weekly granularity, and requested window
+- input-ordered `data.items[].rows[]`; read row `status`, then component `supported`,
+  `calculationStatus`, and `unsupportedReason`
+- `trafficTrendProfile`: total, organic, and ad traffic plus term coverage; summary mode returns
+  core classifications and evidence, while full mode may add placement/distribution breakdowns
+
+Interpret returned trend conclusions, evidence values, change units, and comparison limits only
+through `traffic-observation-semantics.md`.
 
 ## Authorized supporting acquisition surfaces
 
@@ -359,7 +413,7 @@ These are capability facts derived from the documented endpoints and user-provid
 | Query/seed relation | `keywords/extends` match data, query wording, and `keywords/search-results` when retrieved | Describes relation to the query and observed returned rows; it is not product conversion or campaign-fit evidence. |
 | Demand and weekly trend | `keywords/market-profile`, `keywords/trend-profile`, and documented raw snapshot/trend fields | Snapshot scale and weekly movement are distinct; these endpoints do not forecast. |
 | Market structure and SERP | Market-profile dimensions and `keywords/search-results` rows | Each metric retains its returned subject, population, and scope; no composite score is provided. |
-| Current ASIN posture | `realtime/product`, placement, traffic-term, profile, and timeline endpoints | Observes the returned ASIN/keyword subject and period; it does not supply seller conversion funnel data. |
+| Current ASIN posture | `realtime/product`, placement, traffic-term, structure-profile, and trend endpoints | Observes the returned ASIN/keyword subject and period; it does not supply seller conversion funnel data. |
 | Page or asset observation | WebTools `/search` for URL discovery, then `/scrape` or `/scrape-interactive` for the selected page | Preserves the acquired page representation; it does not establish ranking logic, attribution, conversion, or cause. |
 | Seller funnel and advertising economics | User-provided ABA-SQP and Amazon Ads search-term data | These are user-provided first-party inputs, not ZooData keyword endpoint outputs. |
 
@@ -373,9 +427,11 @@ These are capability facts derived from the documented endpoints and user-provid
 | Weekly trend shape | `keywords/trend-profile` | Fixed-window demand and ABA-rank profile rows. |
 | Raw weekly trend points | `keywords/trend` | Weekly search-count, ABA-rank, and Top-3 share series. |
 | Observed keyword SERP | `keywords/search-results` | Returned product, placement, and impression-point rows. |
-| Current ASIN traffic terms | `keywords/product-traffic-terms` or `keywords/competitor-product-keywords` | ASIN keyword rows, traffic share, placement, and keyword snapshot fields. |
-| ASIN × keyword movement | `keywords/product-traffic-terms-timeline` | Nested product, traffic, placement, keyword-metric, and ad-activity time-series groups. |
-| ASIN aggregate traffic-term profile | `keywords/product-traffic-terms-profile` | Server-returned ASIN profile dimensions, status/coverage, evidence, and current/previous period scope. |
+| Current ASIN traffic terms | `keywords/product-traffic-terms` | ASIN keyword rows, traffic share, placement, and keyword snapshot fields for any target ASIN, including a competitor. |
+| ASIN × keyword movement | `keywords/product-traffic-terms-trend` | Nested product, traffic, placement, keyword-metric, and ad-activity time-series groups. |
+| ASIN aggregate current structure/change | `keywords/product-traffic-structure-profile` | Server-returned structure dimensions, status/coverage, evidence, and current/previous period scope. |
+| ASIN-wide raw weekly trend | `keywords/product-traffic-trend` | Weekly total/organic/ad traffic and term-coverage series across all keywords. |
+| ASIN-wide four-week trend conclusion | `keywords/product-traffic-trend-profile` | Server-returned component conclusions, support status, and trend evidence. |
 | Current product/listing inspection | `realtime/product` | Current ASIN product, offer, listing, and asset-link fields only. |
 | URL discovery | WebTools `/search` | Candidate result URLs and snippets for selecting a source; not product search or page-content proof. |
 | Known-page acquisition | WebTools `/scrape` or `/scrape-interactive` | Returned content for the selected URL and representation; interactive mode is reserved for rendering/actions. |
@@ -395,9 +451,10 @@ The bundled CLI mapping for `python {skill_base_dir}/scripts/zoodata.py` is:
 | `keywords/extends` | `keyword-extends` |
 | `keywords/search-results` | `keyword-search-results` |
 | `keywords/product-traffic-terms` | `keyword-product-traffic-terms` |
-| `keywords/competitor-product-keywords` | `keyword-competitor-product-keywords` |
-| `keywords/product-traffic-terms-profile` | `product-traffic-terms-profile` |
-| `keywords/product-traffic-terms-timeline` | `product-traffic-terms-timeline` |
+| `keywords/product-traffic-structure-profile` | `product-traffic-structure-profile` |
+| `keywords/product-traffic-terms-trend` | `product-traffic-terms-trend` |
+| `keywords/product-traffic-trend` | `product-traffic-trend` |
+| `keywords/product-traffic-trend-profile` | `product-traffic-trend-profile` |
 | `realtime/product` | `product` |
 
 WebTools `/search`, `/scrape`, and `/scrape-interactive` are authorized only through an exposed ZooData WebTools session/callable surface. Inspect its exact live schema first; never infer a callable name from an HTTP path or treat `products/search` as WebTools `/search`.

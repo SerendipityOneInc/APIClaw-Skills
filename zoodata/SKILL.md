@@ -1,35 +1,33 @@
 ---
 name: zoodata
 description: >
-  API endpoint reference for the ZooData data platform: the 12 commerce
-  endpoints plus 10 keyword-intelligence endpoints (categories, markets,
-  products, competitors, realtime ASIN, AI review analysis, raw reviews,
-  price band, brand, history, and the keyword detail/trend/extends/search/
-  market-profile/product-traffic/competitor-keywords/traffic-profile/
-  traffic-timeline
-  family) — their inputs/outputs, parameter quirks, Quick Start (auth,
-  base URL), how credits are tracked (meta.creditsConsumed), and the Local
-  Review Toolkit (Map/Reduce for raw reviews).
+  API endpoint reference for ZooData's Amazon commerce and keyword-intelligence
+  surfaces, including request/response schemas, parameter quirks, authentication,
+  credit metadata, product-traffic structure and trend APIs, and the Local Review
+  Toolkit.
   Use when the user asks about the API itself: which endpoints exist, how
   to call them (e.g. /products/search), field schemas returned by an
   endpoint, parameter quirks, how to authenticate, how credit consumption
   is reported, how to get started, or how the Local Review Toolkit works.
   Requires ZOODATA_API_KEY.
 metadata:
-  version: "1.1.11"
+  version: "1.3.0"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/ZooData-Skills
   openclaw: {"requires": {"env": ["ZOODATA_API_KEY"]}, "primaryEnv": "ZOODATA_API_KEY"}
 ---
 
-> **📋 Live API Reference**: Field names and parameters may change. If you encounter field errors,
-> check the latest OpenAPI spec at https://zoodata.ai/api/v1/openapi-spec for current field definitions.
-> Keyword exception: the observation endpoints currently support `granularity=week` only. Do not
-> reintroduce `day`, `month`, `lately_day`, or `lookbackDays` from a stale generated schema.
+> **📋 Live API Reference**: Field names and parameters may change. For MCP calls, refresh and
+> inspect the current ZooData MCP `inputSchema`; for direct HTTP calls, also consult the OpenAPI
+> spec at https://zoodata.ai/api/v1/openapi-spec.
+> Keyword compatibility field: all eleven current keyword and product-traffic request schemas
+> retain `granularity`, but the only supported value is `week`. The bundled CLI always sends
+> `granularity=week`. Never send `day`, `month`, `lately_day`, or legacy `lookbackDays`; use the
+> weekly period boundaries returned by the service.
 
 # ZooData — Commerce Data Infrastructure for AI Agents
 
-200M+ Amazon products. 22 endpoints. One API key.
+200M+ Amazon products. 23 Amazon and keyword-intelligence endpoints. One API key.
 
 ## Quick Start
 1. Get key: [zoodata.ai/api-keys](https://zoodata.ai/en/api-keys) (1,000 free credits)
@@ -111,9 +109,9 @@ When `zoodata.py` returns a structured error with `_transport.status=402`, apply
 
 ## On 422 Validation Error
 
-For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as the authoritative outer status; response-body and nested status-like fields do not override it. When the CLI returns HTTP 422 / `VALIDATION_ERROR`, read the preserved structured server error on stdout, including its message/details and `_query.params`. Do not retry the unchanged request. Correct the named fields first; the CLI exits non-zero while preserving the server error fields for the calling agent. Keyword endpoints that expose granularity currently accept `week` only; do not send `day`, `month`, `lately_day`, or `lookbackDays`.
+For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as the authoritative outer status; response-body and nested status-like fields do not override it. When the CLI returns HTTP 422 / `VALIDATION_ERROR`, read the preserved structured server error on stdout, including its message/details and `_query.params`. Do not retry the unchanged request. Correct the named fields first; the CLI exits non-zero while preserving the server error fields for the calling agent. Current keyword requests retain `granularity` for compatibility but accept only `week`; legacy `lookbackDays` remains unsupported.
 
-## 22 Endpoints
+## 23 Amazon and Keyword Endpoints
 
 | # | Endpoint | Purpose | Key Output |
 |---|----------|---------|------------|
@@ -132,13 +130,14 @@ For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as t
 | 13 | `/openapi/v2/keywords/detail` | Keyword summary from the nearest available weekly snapshot | `data.context + data.items[].snapshotData` with `estimateSearchCount`, `abaRank`, market/SKU/ad fields |
 | 14 | `/openapi/v2/keywords/market-profile` | Multidimensional weekly keyword profile | demand scale, Top3 concentration, ad activity, organic-entry difficulty, saturation, brand structure, organic benchmark, coverage |
 | 15 | `/openapi/v2/keywords/trend` | Weekly keyword time series | `data.context + data.items[].series[]` with search count, ABA rank, Top3 shares, period bounds |
-| 15b | `/openapi/v2/keywords/trend-profile` | Server-calculated trend profile over fixed weekly windows | trend shape, volatility, normalized slope, direction consistency, ABA-rank evidence |
-| 16 | `/openapi/v2/keywords/extends` | Keyword expansion / long-tail discovery | `data.context + data.rows[].{matchData,keywordSnapshot}`; may return empty `rows[]` |
-| 17 | `/openapi/v2/keywords/search-results` | Weekly keyword SERP snapshot | `data.context + data.identity + data.rows[]` with placement, product, and impression fields |
-| 18 | `/openapi/v2/keywords/competitor-product-keywords` | Keyword set where an ASIN appears as a competitor | `data.context + data.identity + data.rows[]` with keyword, position, demand, and traffic share |
-| 19 | `/openapi/v2/keywords/product-traffic-terms` | Traffic-driving keywords for an ASIN | same response shape as competitor-product-keywords |
-| 20 | `/openapi/v2/keywords/product-traffic-terms-profile` | Weekly ASIN traffic-term profile | `data.context + data.items[].productTrafficTermsProfile` for one ASIN or a batch of up to 20 |
-| 21 | `/openapi/v2/keywords/product-traffic-terms-timeline` | ASIN + keyword weekly timeline | `data.context + data.items[].series[]` with nested ASIN, traffic, placement, keyword, and ad groups |
+| 16 | `/openapi/v2/keywords/trend-profile` | Server-calculated trend profile over fixed weekly windows | trend shape, volatility, normalized slope, direction consistency, ABA-rank evidence |
+| 17 | `/openapi/v2/keywords/extends` | Keyword expansion / long-tail discovery | `data.context + data.rows[].{matchData,keywordSnapshot}`; may return empty `rows[]` |
+| 18 | `/openapi/v2/keywords/search-results` | Weekly keyword SERP snapshot | `data.context + data.identity + data.rows[]` with placement, product, and impression fields |
+| 19 | `/openapi/v2/keywords/product-traffic-terms` | Traffic-driving keywords for any target ASIN, including a competitor | `data.context + data.identity + data.rows[]` with keyword, position, demand, ABA rank, and traffic share |
+| 20 | `/openapi/v2/keywords/product-traffic-structure-profile` | Current-vs-previous-week ASIN traffic structure and change drivers | `data.context + data.items[].productTrafficTermsProfile` for one ASIN or a batch of up to 20 |
+| 21 | `/openapi/v2/keywords/product-traffic-terms-trend` | Per-keyword weekly traffic trend for one ASIN | `data.context + data.items[].series[]` with nested ASIN, traffic, placement, keyword, and ad groups |
+| 22 | `/openapi/v2/keywords/product-traffic-trend` | ASIN-level weekly raw traffic across all keywords | `data.context + data.items[].series[]` with total/organic/ad traffic and term coverage |
+| 23 | `/openapi/v2/keywords/product-traffic-trend-profile` | Server-calculated four-week ASIN traffic conclusions | `data.context + data.items[].rows[].trafficTrendProfile` |
 
 ## Known Quirks
 - `topN`, `listingAge`, `newProductPeriod` are **strings** (`"10"` not `10`)
@@ -158,19 +157,22 @@ For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as t
 - `keywords/market-profile` accepts one of `keyword` / `keywords[]` (max 20), requires `date`, supports weekly granularity only, and returns input-ordered `data.items[]` with `status=ok|empty`. `emptyReason` is descriptive no-result text, not an enum. A subject-specific calculation failure can return HTTP 500 for the whole batch.
 - `keywords/trend-profile` accepts one of `keyword` / `keywords[]` (max 20), requires `date` and 1–4 unique `windowPeriods` selected from 4/8/12/26, and supports weekly granularity only.
 - `keywords/extends` requires `query` (not `keyword`), uses the latest available weekly snapshot, supports `queryType` = `phrase` or `fuzzy`, and may legitimately return empty `data.rows[]`; legacy `date` is optional and ignored
-- All keyword endpoints that expose `granularity` currently support `week` only. `day`, `month`, `lately_day`, and `lookbackDays` are unsupported. Use returned period boundaries instead of inferring a rolling window.
+- All eleven current keyword and product-traffic request schemas retain `granularity` for compatibility and accept only `week`; all currently support only marketplace `US`. The bundled CLI sends both values explicitly. Never send another granularity or legacy `lookbackDays`. Use returned weekly period boundaries instead of inferring a rolling window.
+- Batch keyword fields on `detail`, `market-profile`, `trend`, `trend-profile`, and `product-traffic-terms-trend` must already equal `LOWER(TRIM(value))`; the bundled CLI normalizes them. Single-keyword fields accept surrounding whitespace and letter case where the endpoint schema says so.
 - Keyword endpoints are keyword-query workflows; for inputs named `keyword` or `query`, use the Amazon search query / keyword phrase being analyzed
 - For keyword endpoints that require `date` or `dateTo`, prefer T-1 or earlier and avoid the current date unless the user explicitly asks for today's lookup
 - `keywords/search-results` requires `date` + `keyword`; `exploreTypes` values are `ORG`, `SP`, `SB`, `SBV`, `SPR`
-- `keywords/competitor-product-keywords` and `keywords/product-traffic-terms` require `date` + `asin`; both currently return the same live item shape, including `trafficShare`
-- `keywords/product-traffic-terms-profile` is the current ASIN aggregate route; the retired overview route is not exposed by the CLI. See `references/openapi-reference.md § 18` for its exact contract.
-- `keywords/product-traffic-terms-timeline` requires `asin` + exactly one of `keyword` / `keywords[]` + `dateFrom` + `dateTo`; the date range cannot exceed 61 days and the series request has no pagination or sort parameters
+- Competitor traffic-term lookup is consolidated into `keywords/product-traffic-terms`; route retired-interface behavior and the exact request contract to `references/openapi-reference.md § 16`.
+- `keywords/product-traffic-structure-profile` compares the resolved current week with the previous week; it is not a multi-week trend. See `references/openapi-reference.md § 17` for its exact contract.
+- `keywords/product-traffic-terms-trend` requires `asin` + exactly one of `keyword` / `keywords[]` + `dateFrom` + `dateTo`; the date range cannot exceed 26 weeks and the series request has no pagination or sort parameters.
+- `keywords/product-traffic-trend` is ASIN-level across all keywords and has no keyword dimension; use `product-traffic-terms-trend` for an ASIN × keyword series.
+- `keywords/product-traffic-trend-profile` provides the server-calculated ASIN-wide trend profile; route exact window, detail, and billing questions to `references/openapi-reference.md § 20`.
 - `keywords/search-results` is the default source for explaining what products currently appear on a keyword SERP because it already returns listing-level product fields
 - `products/search` is a broader ZooData product-database query and must not be presented as Amazon live keyword SERP ordering
 
 ## Keyword Intelligence Endpoints
 
-These ten endpoints fill the gap between raw
+These eleven endpoints fill the gap between raw
 catalog data and search-demand/search-visibility intelligence.
 
 Keyword value boundary:
@@ -180,7 +182,7 @@ Keyword value boundary:
 - Seller-artifact acquisition, stage selection, field interpretation, and user-facing output policy belong to the `amazon-keyword-traffic-analysis` skill. This API reference does not prescribe a blanket caveat or one seller view for every subject.
 
 ### `/openapi/v2/keywords/detail`
-- Input: exactly one of `keyword` / `keywords[]` (1–20), required `date`, optional `marketplace`, `granularity=week` only
+- Input: exactly one of `keyword` / `keywords[]` (1–20), required `date`, optional `marketplace`; compatibility-retained `granularity` supports only `week`
 - Data window: resolves the requested `date` to the nearest available weekly snapshot at or before that date
 - Date rule: prefer T-1 or earlier for `date`; avoid current-date lookup unless explicitly requested
 - Response shape: `data.context + data.items[]`, preserving request order
@@ -191,7 +193,7 @@ Keyword value boundary:
 
 ### `/openapi/v2/keywords/market-profile` (metric layer)
 - Availability: standard production endpoint under the documented base URL
-- Input: exactly one of `keyword` or `keywords[]` (1–20), required `date`, optional `marketplace`, `granularity=week` only
+- Input: exactly one of `keyword` or `keywords[]` (1–20), required `date`, optional `marketplace`; compatibility-retained `granularity` supports only `week`
 - Response shape: `data.context + data.items[]`, preserving request order
 - Context fields: `requestedDate`, `resolvedDate`, `dataWindow.currentPeriod`, `scoringSpec`, marketplace/site/granularity
 - Item fields: `identity`, `status=ok|empty`, `marketProfile`, `emptyReason`
@@ -205,7 +207,7 @@ Keyword value boundary:
 - Batch-first execution: after selecting the endpoint, collect all subjects with identical non-subject context and prefer its batch contract over repeated single calls. Deduplicate case-insensitively, preserve order, chunk compatible sets at the endpoint limit (20 for current keyword batches), and merge results back into global input order. Batch support never justifies an extra cross-layer call.
 
 ### `/openapi/v2/keywords/trend`
-- Input: exactly one of `keyword` / `keywords[]` (1–20), required `dateFrom` / `dateTo`, optional `marketplace`, `granularity=week` only; maximum 93-day range
+- Input: exactly one of `keyword` / `keywords[]` (1–20), required `dateFrom` / `dateTo`, optional `marketplace`; compatibility-retained `granularity` supports only `week`; maximum 93-day range
 - Data window: weekly-granularity points across the requested date range
 - Date rule: prefer T-1 or earlier for `dateTo`; avoid current-date lookup unless explicitly requested
 - Response shape: `data.context + data.items[].series[]`, preserving request order
@@ -214,7 +216,7 @@ Keyword value boundary:
   `abaTop3ClickShareRate`, `abaTop3ConversionShareRate`
 
 ### `/openapi/v2/keywords/trend-profile` (metric layer)
-- Input: exactly one of `keyword` / `keywords[]` (1–20), required `date`, required unique `windowPeriods[]` selected from 4/8/12/26, optional `marketplace`, `granularity=week` only
+- Input: exactly one of `keyword` / `keywords[]` (1–20), required `date`, required unique `windowPeriods[]` selected from 4/8/12/26, optional `marketplace`; compatibility-retained `granularity` supports only `week`
 - Response: `data.context + data.items[].rows[]`; every requested window returns one row with `rowContext`, `status=ok|empty`, `emptyReason`, and `trendProfile`
 - Available profiles contain independently guarded `searchDemand` and `abaRank` dimensions with `trend`, `trendPattern`, and `{value,direction}` entries under `trendEvidence`
 - Evidence includes first/last/change values, normalized slope, direction consistency, aligned/eligible period counts, plus demand volatility/window position or ABA best/worst rank
@@ -222,7 +224,7 @@ Keyword value boundary:
 - Preserve null empty reasons rather than inventing one. Billing is per keyword with at least one `status=ok` window; use returned credit metadata.
 
 ### `/openapi/v2/keywords/extends`
-- Input: required `query`; optional `marketplace`, `page`, `pageSize`, `queryType`, `sortBy`, `sortOrder`; no date is required
+- Input: required `query`; optional `marketplace`, `page`, `pageSize`, `queryType`, `sortBy`, `sortOrder`; compatibility-retained `granularity` supports only `week`; no date is required
 - Important quirk: seed field is `query`, not `keyword`; `queryType` supports `phrase` and `fuzzy`
 - Data window: latest available weekly snapshot; a legacy `date` may be sent but is ignored
 - Response shape: `data.context + data.query + data.queryType + data.rows[]`
@@ -231,8 +233,8 @@ Keyword value boundary:
 - Do not flatten rows to legacy `term`, `seedKeyword`, or `estimateSearchCountWeekly`; empty `rows[]` is normal
 
 ### `/openapi/v2/keywords/search-results`
-- Input: required `keyword` / `date`, `granularity=week` only; optional `marketplace`, `page`, `pageSize`, `exploreTypes`, `sortBy`, `sortOrder`
-- Do not send `lookbackDays`; `day`, `month`, and `lately_day` are unsupported
+- Input: required `keyword` / `date`; optional `marketplace`, `page`, `pageSize`, `exploreTypes`, `sortBy`, `sortOrder`
+- Compatibility-retained `granularity` supports only `week`; do not send legacy `lookbackDays`
 - Data window: latest available weekly period at or before the requested date; use the returned period boundaries
 - Date rule: prefer T-1 or earlier for `date`; avoid current-date lookup unless explicitly requested
 - Response shape: `data.context + data.identity + data.rows[]`
@@ -243,40 +245,20 @@ Keyword value boundary:
 - Interpretation rule: use this endpoint first for "what is on page 1 / what products dominate this keyword / what does the SERP look like"
 - Do not substitute `products/search` when the question is about observed keyword SERP composition or ordering
 
-### `/openapi/v2/keywords/competitor-product-keywords`
-- Input: required `asin` / `date`, `granularity=week` only; optional `marketplace`, `page`, `pageSize`, `exploreTypes`,
-  `keywordContains`, `sortBy`, `sortOrder`
-- Do not send `lookbackDays`; `day`, `month`, and `lately_day` are unsupported; use returned weekly period boundaries
-- Date rule: prefer T-1 or earlier for `date`; avoid current-date lookup unless explicitly requested
-- Response shape: `data.context + data.identity + data.rows[]`
-- Row fields include `latestObservedAt`, `exploreType`, `absolutePosition`, `pageIndex`,
-  `pagePosition`, `asin`, `keyword`, `estimateImpressionPoint`, `asinTotalEstimateImpressionPoint`,
-  `avgPosition`, `daysCoverageRate`, `observationCount`, `keywordEstimateSearchCount`,
-  `keywordEstimateSearchChangeCount`, `keywordEstimateSearchCountChangeRate`, `keywordAbaRank`,
-  `keywordAbaRankChangeCount`, `trafficShare`
-
 ### `/openapi/v2/keywords/product-traffic-terms`
-- Input: same request shape as `keywords/competitor-product-keywords`
-- Data window: weekly period selected by `date` + `granularity=week`; use returned period boundaries
-- Date rule: prefer T-1 or earlier for `date`; avoid current-date lookup unless explicitly requested
-- Response shape: `data.context + data.identity + data.rows[]`
-- Row fields include `latestObservedAt`, `exploreType`, `absolutePosition`, `pageIndex`,
-  `pagePosition`, `asin`, `keyword`, `estimateImpressionPoint`, `asinTotalEstimateImpressionPoint`,
-  `avgPosition`, `daysCoverageRate`, `observationCount`, `keywordEstimateSearchCount`,
-  `keywordEstimateSearchChangeCount`, `keywordEstimateSearchCountChangeRate`, `keywordAbaRank`,
-  `keywordAbaRankChangeCount`, `trafficShare`
-- Live validation note: current live response item shape matches `keywords/competitor-product-keywords`
-  field-for-field; keep the semantic distinction in output wording rather than assuming a unique schema
+- Provides traffic-driving keyword rows for any target ASIN, including competitor research; the former competitor-specific lookup is consolidated into this route.
+- Read `references/openapi-reference.md § 16` for the request, response, field, date, filtering, pagination, retirement, and billing contract.
+- Apply `references/cli-contract.md` to every result.
 
-### `/openapi/v2/keywords/product-traffic-terms-profile`
-- Production supports one ASIN or a batch of up to 20 ASINs at weekly granularity.
-- Read `references/openapi-reference.md § 18` for the request, response, status, field, date, batching, and billing contract.
+### `/openapi/v2/keywords/product-traffic-structure-profile`
+- Production supports one ASIN or a batch of up to 20 ASINs, retains `granularity` with `week` as its only supported value, and compares the resolved current week with the previous week.
+- Read `references/openapi-reference.md § 17` for the request, response, status, field, date, batching, and billing contract.
 - Apply `references/cli-contract.md` to every result, including a server-provided endpoint migration response.
 
-### `/openapi/v2/keywords/product-traffic-terms-timeline`
-- Input: required `asin`, exactly one of `keyword` / `keywords[]` (1–20), `dateFrom`, `dateTo`, `granularity=week` only; optional `marketplace`
-- Do not send `lookbackDays`, `page`, `pageSize`, `sortBy`, or `sortOrder`; `day`, `month`, and `lately_day` are unsupported
-- Data window: ASIN + keyword timeline across the requested date range; date range cannot exceed 61 days
+### `/openapi/v2/keywords/product-traffic-terms-trend`
+- Input: required `asin`, exactly one of `keyword` / `keywords[]` (1–20), `dateFrom`, `dateTo`; optional `marketplace`; compatibility-retained `granularity` supports only `week`
+- Do not send legacy `lookbackDays`, `page`, `pageSize`, `sortBy`, or `sortOrder`
+- Data window: ASIN + keyword weekly trend across the requested date range; date range cannot exceed 26 weeks
 - Date rule: prefer T-1 or earlier for `dateTo`; avoid current-date lookup unless explicitly requested
 - Response shape: `data.context + data.items[].series[]`, preserving keyword request order
 - Item fields: `identity`, `status=ok|empty`, `series[]`, `emptyReason`, nullable `errorCode`, nullable `errorMessage`
@@ -289,6 +271,16 @@ Keyword value boundary:
   in `traffic`; positions/pages/observation times in `placement`; `keywordEstimateSearchCount`,
   `keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`;
   observation/campaign/ad counts in `adActivity`
+
+### `/openapi/v2/keywords/product-traffic-trend`
+- Provides ASIN-wide raw weekly traffic and term-coverage history across all observed keywords; it is the weekly-detail companion to the four-week metric profile.
+- Read `references/openapi-reference.md § 19` for the request, response, status, field, date, batching, and billing contract.
+- Apply `references/cli-contract.md` to every result.
+
+### `/openapi/v2/keywords/product-traffic-trend-profile`
+- Provides the server-calculated ASIN-wide four-week trend profile; use the raw trend endpoint when weekly points are required.
+- Read `references/openapi-reference.md § 20` for the request, response, status, field, date, batching, and billing contract.
+- Apply `references/cli-contract.md` to every result.
 
 ## Local Review Toolkit
 

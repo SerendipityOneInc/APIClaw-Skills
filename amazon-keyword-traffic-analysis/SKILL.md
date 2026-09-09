@@ -9,7 +9,7 @@ description: >
   does not make direct bid, budget, pause, or negative-keyword decisions without
   seller ABA-SQP and Amazon Ads data. Requires ZOODATA_API_KEY.
 metadata:
-  version: "0.1.9"
+  version: "0.3.0"
   author: SerendipityOneInc
   homepage: https://github.com/SerendipityOneInc/ZooData-Skills
   openclaw: {"requires": {"env": ["ZOODATA_API_KEY"]}, "primaryEnv": "ZOODATA_API_KEY"}
@@ -38,7 +38,7 @@ Respond in the user's language.
    - `references/metrics-market-profile.md` for `market-profile`
    - `references/metrics-trend-profile.md` for `trend-profile`
    - `references/serp-and-rollover.md` for SERP or `organicRolloverRate`
-   - `references/traffic-observation-semantics.md` for traffic-term lists, traffic timelines, or traffic-profile data
+   - `references/traffic-observation-semantics.md` for traffic-term lists, traffic-term trends, ASIN traffic structure, or ASIN traffic trends
 7. Before requesting or interpreting a seller artifact, load `references/sqp-field-semantics.md`. Treat it as the sole acquisition and field-semantics source for user-provided ABA-SQP or Amazon Ads data.
 
 ## Source-of-truth boundaries
@@ -64,7 +64,7 @@ Respond in the user's language.
 - Use the bundled `{skill_base_dir}/scripts/zoodata.py` for documented keyword endpoints and `realtime/product`; the bundled manifest `scripts/allowed-commands.json` enforces that scope — the CLI refuses out-of-scope subcommands with a structured `COMMAND_NOT_ALLOWED` error before any API request. Use ZooData WebTools `/search`, `/scrape`, and `/scrape-interactive` only through an exposed, documented ZooData WebTools surface after inspecting its live schema.
 - Use only the acquisition routes whitelisted in `reference.md`. WebTools `/search` is permitted URL discovery; it is not `products/search`. Never use `products/search`, external browser automation, direct Amazon navigation, or non-ZooData public web search as evidence or fallback.
 - WebTools calls are read-only public-page acquisition. Never use `/scrape-interactive` actions to log in, submit forms, purchase, or otherwise change page or account state; use click/write/press/scroll/JavaScript actions only to render or reveal the requested public content.
-- Treat keyword inputs as Amazon search queries. Default an omitted marketplace to `US`; choose T-1 or earlier before the first request for endpoints requiring `date` or `dateTo` unless the user requests today's data.
+- Treat keyword inputs as Amazon search queries. Current keyword and product-traffic endpoints support only the `US` marketplace. Normalize batch keyword values to lowercase after trimming, and choose T-1 or earlier before the first request for endpoints requiring `date` or `dateTo` unless the user requests today's data.
 - ZooData keyword data is estimated search, visibility, rank, placement, and impression evidence. It is not the seller's ABA-SQP conversion funnel. Keep product-specific value, profitability, bids, spend, budgets, pauses, negatives, and unconditional go/no-go decisions within the evidence authority defined in `execution-guide.md`.
 - Preserve returned status, period, subject, field scope, and uncertainty. `status=empty` is an observation-coverage boundary, not proof of low demand.
 - Do not report an API root cause, strategy recommendation, or undocumented metric as though the API returned it.
@@ -79,6 +79,6 @@ python {skill_base_dir}/scripts/zoodata.py <documented-subcommand> ...
 
 Run bare `python {skill_base_dir}/scripts/zoodata.py check` for credential diagnostics only. Without `--endpoints` or `--keyword-endpoints`, it makes no evidence calls; those opt-in probe flags consume credits and are outside this skill's evidence workflow.
 
-The bundled manifest allows exactly: `keyword-detail`, `keyword-market-profile`, `keyword-trend-profile`, `keyword-trend`, `keyword-extends`, `keyword-search-results`, `keyword-competitor-product-keywords`, `keyword-product-traffic-terms`, `product-traffic-terms-profile`, `product-traffic-terms-timeline`, `product`, and the diagnostic `check`.
+The bundled manifest allows exactly: `keyword-detail`, `keyword-market-profile`, `keyword-trend-profile`, `keyword-trend`, `keyword-extends`, `keyword-search-results`, `keyword-product-traffic-terms`, `product-traffic-structure-profile`, `product-traffic-terms-trend`, `product-traffic-trend`, `product-traffic-trend-profile`, `product`, and the diagnostic `check`.
 
 WebTools has no bundled subcommand in this skill. Use only an exposed ZooData WebTools session/callable surface as documented in `reference.md`.

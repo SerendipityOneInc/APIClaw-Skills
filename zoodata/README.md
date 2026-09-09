@@ -1,14 +1,14 @@
 # ZooData — Commerce Data Infrastructure for AI Agents
 
-> 200M+ Amazon products. 22 endpoints. One API key.
+> 200M+ Amazon products. 23 Amazon and keyword-intelligence endpoints. One API key.
 
 ## What This Skill Does
 
-The foundational data layer for all ZooData agent skills. Provides direct access to 22 API endpoints covering category browsing, market metrics, product search (20+ filter fields), competitor lookup, real-time ASIN detail, AI review analysis, price band analysis, brand intelligence, product history, and keyword intelligence. Use this skill when you need raw API access or want to understand what data is available.
+The foundational data layer for all ZooData agent skills. Provides direct access to 23 Amazon commerce and keyword-intelligence endpoints covering category browsing, market metrics, product search, competitor lookup, real-time ASIN detail, review analysis, price and brand intelligence, product history, keyword intelligence, and product-traffic structure and trends. Use this skill when you need raw API access or want to understand what data is available.
 
 ### What Makes This Different
 
-- **22 endpoints in one skill**: Complete API reference with field mappings and known quirks
+- **23 endpoints in one skill**: Complete Amazon and keyword API reference with field mappings and known quirks
 - **Critical pitfalls documented**: Category-first workflow, field naming differences across endpoints, aggregation gotchas
 - **Cross-endpoint field guide**: Know exactly which field to use from which endpoint
 - **Foundation for all skills**: Every ZooData skill builds on this data layer
@@ -41,7 +41,7 @@ Select **ZooData** when prompted.
 
 | Section | Description |
 |---------|-------------|
-| 📚 22 Endpoint Reference | Purpose, key parameters, output fields |
+| 📚 23 Endpoint Reference | Purpose, key parameters, output fields |
 | ⚠️ API Pitfalls | Critical rules all skills must follow |
 | 📊 Field Difference Table | Which field comes from which endpoint |
 | 🏷️ Confidence Labels | Data-backed / Inferred / Directional tagging system |
@@ -69,14 +69,17 @@ Select **ZooData** when prompted.
 | 16 | `keywords/trend-profile` | Keyword trend profile for fixed weekly windows |
 | 17 | `keywords/extends` | Keyword expansion |
 | 18 | `keywords/search-results` | Keyword SERP snapshot |
-| 19 | `keywords/competitor-product-keywords` | Competitor ASIN keyword coverage |
-| 20 | `keywords/product-traffic-terms` | ASIN traffic-driving keywords |
-| 21 | `keywords/product-traffic-terms-profile` | Weekly ASIN traffic-term profile (batch up to 20 ASINs) |
-| 22 | `keywords/product-traffic-terms-timeline` | ASIN + keyword timeline |
+| 19 | `keywords/product-traffic-terms` | Traffic-driving keywords for any target ASIN, including a competitor |
+| 20 | `keywords/product-traffic-structure-profile` | Current-vs-previous-week ASIN traffic structure (batch up to 20 ASINs) |
+| 21 | `keywords/product-traffic-terms-trend` | Per-keyword weekly traffic trend for one ASIN |
+| 22 | `keywords/product-traffic-trend` | ASIN-level weekly traffic trend across all keywords |
+| 23 | `keywords/product-traffic-trend-profile` | Server-calculated four-week ASIN traffic trend profile |
 
 Keyword endpoint note: ZooData keyword data is estimated search, exposure, visibility, rank, placement, and impression evidence; it is not seller ABA-SQP or Amazon Ads performance. Analysis-stage routing, seller-artifact acquisition, and output policy are owned by [`amazon-keyword-traffic-analysis`](../amazon-keyword-traffic-analysis/).
 
 Keyword date rule: keyword workflows are keyword-query lookups. When a keyword endpoint requires `date` or `dateTo`, prefer T-1 or earlier and avoid current-date lookup unless the user explicitly asks for today's data.
+
+Keyword schema compatibility: all 11 current keyword and product-traffic request schemas retain `granularity`; only `week` and marketplace `US` are supported. The bundled CLI sends both explicitly; legacy `lookbackDays` and other granularity values are unsupported. The retired competitor-keyword route is consolidated into `keywords/product-traffic-terms`.
 
 ## Credit Cost
 
