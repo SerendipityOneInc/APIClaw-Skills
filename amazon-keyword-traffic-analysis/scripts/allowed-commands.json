@@ -1,7 +1,6 @@
 {
   "allowedCommands": [
     "check",
-    "keyword-competitor-product-keywords",
     "keyword-detail",
     "keyword-extends",
     "keyword-market-profile",
@@ -10,7 +9,9 @@
     "keyword-trend",
     "keyword-trend-profile",
     "product",
-    "product-traffic-terms-profile",
-    "product-traffic-terms-timeline"
+    "product-traffic-structure-profile",
+    "product-traffic-terms-trend",
+    "product-traffic-trend",
+    "product-traffic-trend-profile"
   ]
 }

@@ -17,7 +17,7 @@ This scenario owns keyword-centered analysis. The keyword is the primary subject
 |---|---|---|
 | Market demand, structure, or entry context for a keyword | `market-profile` + `trend-profile` | `search-results` for observed product type, intent, or placement structure; `detail` for a documented raw field absent from the metric contract |
 | Official ZooData organic rollover/stability indicator | `detail.snapshotData.organicRolloverRate` | Load `serp-and-rollover.md`; do not relabel it as a Top-N turnover calculation |
-| Keyword plus ASIN admitted to this scenario | Carry compatible market evidence + `keywords/product-traffic-terms` filtered to the target keyword + `realtime/product` or compatible carried direct product evidence | `search-results` only for a named SERP question; do not substitute `keywords/competitor-product-keywords` for the target-ASIN route. |
+| Keyword plus ASIN admitted to this scenario | Carry compatible market evidence + `keywords/product-traffic-terms` filtered to the target keyword + `realtime/product` or compatible carried direct product evidence | `search-results` only for a named SERP question; use `product-traffic-terms` for the named ASIN whether it is owned or a competitor. |
 | Seller-real calibration | User-provided ABA-SQP, plus Amazon Ads data when economics or execution settings are requested | Load `sqp-field-semantics.md` before interpreting SQP fields |
 
 ## Evidence stages

@@ -7,7 +7,7 @@
 """
 ZooData CLI — Amazon Product Research via ZooData API
 
-Single-script interface for all 11 ZooData endpoints + composite workflows.
+Single-script interface for ZooData's documented Amazon commerce and keyword endpoints plus composite workflows.
 Handles authentication, retries, rate limits, parameter quirks, and output formatting.
 
 Usage:
@@ -23,10 +23,11 @@ Usage:
     python zoodata.py keyword-trend --keywords "yoga mat,pilates mat" --date-from 2026-06-01 --date-to 2026-07-12
     python zoodata.py keyword-extends --query "yoga mat"
     python zoodata.py keyword-search-results --keyword "yoga mat" --date 2025-06-01
-    python zoodata.py keyword-competitor-product-keywords --asin B09V3KXJPB --date 2025-06-01
     python zoodata.py keyword-product-traffic-terms --asin B09V3KXJPB --date 2025-06-01
-    python zoodata.py product-traffic-terms-profile --asins "B09V3KXJPB,B07FR2V8SH" --date 2025-06-01
-    python zoodata.py product-traffic-terms-timeline --asin B09V3KXJPB --keywords "yoga mat,pilates mat" --date-from 2026-07-06 --date-to 2026-07-12
+    python zoodata.py product-traffic-structure-profile --asins "B09V3KXJPB,B07FR2V8SH" --date 2025-06-01
+    python zoodata.py product-traffic-terms-trend --asin B09V3KXJPB --keywords "yoga mat,pilates mat" --date-from 2026-07-06 --date-to 2026-07-12
+    python zoodata.py product-traffic-trend --asins "B09V3KXJPB,B07FR2V8SH" --date-from 2026-06-01 --date-to 2026-07-12
+    python zoodata.py product-traffic-trend-profile --asin B09V3KXJPB --date 2026-07-12 --window-periods 4
 
 Environment:
     ZOODATA_API_KEY — Required. Get one at https://zoodata.ai/en/api-keys
@@ -49,7 +50,8 @@ from datetime import date
 DEFAULT_BASE_URL = "https://api.zoodata.ai/openapi/v2"
 API_BASE_PATH = "/openapi/v2"
 KEYWORD_DATE_RANGE_MAX_DAYS = 93
-KEYWORD_TIMELINE_MAX_DAYS = 61
+PRODUCT_TRAFFIC_TREND_MAX_DAYS = 182
+KEYWORD_MARKETPLACE_CHOICES = ["US"]
 
 
 def _host_of(url):
@@ -2950,32 +2952,41 @@ def cmd_check(args):
         keyword = (args.keyword or "").strip() or "yoga mat"
         date = args.date or time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
         keyword_probes = [
-            ("keywords/detail", {"keyword": keyword, "date": date}, "Keyword snapshot"),
-            ("keywords/market-profile", {"keyword": keyword, "date": date}, "Keyword market profile"),
+            ("keywords/detail", {"keyword": keyword, "date": date, "granularity": "week"}, "Keyword snapshot"),
+            ("keywords/market-profile", {"keyword": keyword, "date": date, "granularity": "week"}, "Keyword market profile"),
             (
                 "keywords/trend-profile",
                 {"keyword": keyword, "date": date, "windowPeriods": [4], "granularity": "week"},
                 "Keyword trend profile",
             ),
-            ("keywords/extends", {"query": keyword, "date": date, "queryType": "phrase", "pageSize": 1}, "Keyword expansion"),
-            ("keywords/search-results", {"keyword": keyword, "date": date, "pageSize": 1}, "Keyword SERP"),
+            ("keywords/extends", {"query": keyword, "date": date, "queryType": "phrase", "pageSize": 1, "granularity": "week"}, "Keyword expansion"),
+            ("keywords/search-results", {"keyword": keyword, "date": date, "pageSize": 1, "granularity": "week"}, "Keyword SERP"),
         ]
         endpoints.extend(keyword_probes)
         if args.asin:
             endpoints.extend([
-                ("keywords/product-traffic-terms", {"asin": args.asin, "date": date, "pageSize": 1}, "ASIN traffic terms"),
-                ("keywords/competitor-product-keywords", {"asin": args.asin, "date": date, "pageSize": 1}, "ASIN keyword coverage"),
+                ("keywords/product-traffic-terms", {"asin": args.asin, "date": date, "pageSize": 1, "granularity": "week"}, "ASIN traffic terms"),
                 (
-                    "keywords/product-traffic-terms-profile",
+                    "keywords/product-traffic-structure-profile",
                     {"asin": args.asin, "date": date, "granularity": "week"},
-                    "ASIN traffic profile",
+                    "ASIN traffic structure profile",
+                ),
+                (
+                    "keywords/product-traffic-trend-profile",
+                    {"asin": args.asin, "date": date, "windowPeriods": [4], "detailLevel": "summary", "granularity": "week"},
+                    "ASIN traffic trend profile",
+                ),
+                (
+                    "keywords/product-traffic-trend",
+                    {"asin": args.asin, "dateFrom": date, "dateTo": date, "granularity": "week"},
+                    "ASIN traffic trend",
                 ),
             ])
             if keyword:
                 endpoints.append((
-                    "keywords/product-traffic-terms-timeline",
-                    {"asin": args.asin, "keyword": keyword, "dateFrom": date, "dateTo": date},
-                    "ASIN + keyword timeline",
+                    "keywords/product-traffic-terms-trend",
+                    {"asin": args.asin, "keyword": keyword, "dateFrom": date, "dateTo": date, "granularity": "week"},
+                    "ASIN + keyword traffic trend",
                 ))
         else:
             print("⏭️  ASIN keyword endpoints      (skipped, pass --asin to probe)", file=sys.stderr)
@@ -3144,10 +3155,10 @@ def _keyword_subject(args, max_items=20):
         raise SystemExit("ERROR: --keywords must contain at least one non-empty keyword")
     if len(keywords) > max_items:
         raise SystemExit(f"ERROR: --keywords accepts at most {max_items} keywords, got {len(keywords)}")
-    normalized = [keyword.casefold() for keyword in keywords]
+    normalized = [keyword.lower() for keyword in keywords]
     if len(set(normalized)) != len(normalized):
         raise SystemExit("ERROR: --keywords contains case-insensitive duplicates")
-    return "keywords", keywords
+    return "keywords", normalized
 
 
 def _asin_subject(args, max_items=20):
@@ -3271,6 +3282,7 @@ def cmd_keyword_extends(args):
     params = {
         "query": _require_nonempty_text(args.query, "--query"),
         "marketplace": args.marketplace,
+        "granularity": "week",
         "page": args.page,
         "pageSize": args.page_size,
         "queryType": args.query_type,
@@ -3312,25 +3324,23 @@ def _asin_keyword_params(args):
         "pageSize": args.page_size,
         "exploreTypes": _split_csv(args.explore_types),
         "keywordContains": args.keyword_contains,
+        "keywordEstimateSearchCountMin": args.keyword_search_count_min,
+        "keywordEstimateSearchCountMax": args.keyword_search_count_max,
+        "keywordAbaRankMin": args.keyword_aba_rank_min,
+        "keywordAbaRankMax": args.keyword_aba_rank_max,
         "sortBy": args.sort_by,
         "sortOrder": args.sort_order,
     }
 
 
-def cmd_keyword_competitor_product_keywords(args):
-    """Get competitor ASIN keyword rows."""
-    result = api_call("keywords/competitor-product-keywords", _asin_keyword_params(args))
-    output(result, args.format)
-
-
 def cmd_keyword_product_traffic_terms(args):
-    """Get traffic-driving keyword rows for one ASIN."""
+    """Get traffic-driving keyword rows for any target ASIN."""
     result = api_call("keywords/product-traffic-terms", _asin_keyword_params(args))
     output(result, args.format)
 
 
-def cmd_product_traffic_terms_profile(args):
-    """Get weekly product traffic-term profiles for one or more ASINs."""
+def cmd_product_traffic_structure_profile(args):
+    """Get current-vs-previous-week traffic structure for one or more ASINs."""
     _require_yyyy_mm_dd(args.date, "--date")
     subject_field, subject_value = _asin_subject(args)
     params = {
@@ -3339,19 +3349,19 @@ def cmd_product_traffic_terms_profile(args):
         "marketplace": args.marketplace,
         "granularity": "week",
     }
-    result = api_call("keywords/product-traffic-terms-profile", params)
+    result = api_call("keywords/product-traffic-structure-profile", params)
     output(result, args.format)
 
 
-def cmd_product_traffic_terms_timeline(args):
-    """Get product traffic-term timeline for one ASIN + one or more keywords."""
+def cmd_product_traffic_terms_trend(args):
+    """Get per-keyword weekly traffic trend for one ASIN."""
     _require_yyyy_mm_dd(args.date_from, "--date-from")
     _require_yyyy_mm_dd(args.date_to, "--date-to")
     _require_date_range_within(
         args.date_from,
         args.date_to,
-        KEYWORD_TIMELINE_MAX_DAYS,
-        "product-traffic-terms-timeline",
+        PRODUCT_TRAFFIC_TREND_MAX_DAYS,
+        "product-traffic-terms-trend",
     )
     params = {
         "asin": _require_nonempty_text(args.asin, "--asin"),
@@ -3362,7 +3372,52 @@ def cmd_product_traffic_terms_timeline(args):
     }
     subject_field, subject_value = _keyword_subject(args)
     params[subject_field] = subject_value
-    result = api_call("keywords/product-traffic-terms-timeline", params)
+    result = api_call("keywords/product-traffic-terms-trend", params)
+    output(result, args.format)
+
+
+def cmd_product_traffic_trend(args):
+    """Get ASIN-level weekly traffic series across all keywords."""
+    _require_yyyy_mm_dd(args.date_from, "--date-from")
+    _require_yyyy_mm_dd(args.date_to, "--date-to")
+    _require_date_range_within(
+        args.date_from,
+        args.date_to,
+        PRODUCT_TRAFFIC_TREND_MAX_DAYS,
+        "product-traffic-trend",
+    )
+    subject_field, subject_value = _asin_subject(args)
+    params = {
+        subject_field: subject_value,
+        "dateFrom": args.date_from,
+        "dateTo": args.date_to,
+        "marketplace": args.marketplace,
+        "granularity": "week",
+    }
+    result = api_call("keywords/product-traffic-trend", params)
+    output(result, args.format)
+
+
+def cmd_product_traffic_trend_profile(args):
+    """Get server-calculated four-week ASIN traffic trend conclusions."""
+    _require_yyyy_mm_dd(args.date, "--date")
+    raw_periods = _split_csv(args.window_periods) or []
+    try:
+        window_periods = [int(period) for period in raw_periods]
+    except ValueError:
+        raise SystemExit("ERROR: --window-periods currently accepts only 4")
+    if window_periods != [4]:
+        raise SystemExit("ERROR: --window-periods currently accepts exactly one value: 4")
+    subject_field, subject_value = _asin_subject(args)
+    params = {
+        subject_field: subject_value,
+        "date": args.date,
+        "windowPeriods": window_periods,
+        "detailLevel": args.detail_level,
+        "marketplace": args.marketplace,
+        "granularity": "week",
+    }
+    result = api_call("keywords/product-traffic-trend-profile", params)
     output(result, args.format)
 
 
@@ -3627,7 +3682,7 @@ Examples:
     kd_subject.add_argument("--keyword", help="One keyword")
     kd_subject.add_argument("--keywords", help="Keywords (comma-separated, max 20)")
     p_kd.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_kd.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_kd.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_kd.set_defaults(func=cmd_keyword_detail)
 
     # ── keyword-market-profile ──
@@ -3640,7 +3695,7 @@ Examples:
     kmp_subject.add_argument("--keyword", help="One keyword")
     kmp_subject.add_argument("--keywords", help="Keywords (comma-separated, max 20)")
     p_kmp.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_kmp.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_kmp.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_kmp.set_defaults(func=cmd_keyword_market_profile)
 
     # ── keyword-trend-profile ──
@@ -3658,7 +3713,7 @@ Examples:
         required=True,
         help="Comma-separated weekly windows selected from 4,8,12,26",
     )
-    p_ktp.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_ktp.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_ktp.set_defaults(func=cmd_keyword_trend_profile)
 
     # ── keyword-trend ──
@@ -3668,14 +3723,14 @@ Examples:
     kt_subject.add_argument("--keywords", help="Keywords (comma-separated, max 20)")
     p_kt.add_argument("--date-from", required=True, help="Start date (YYYY-MM-DD; max 93-day range)")
     p_kt.add_argument("--date-to", required=True, help="End date (YYYY-MM-DD; max 93-day range)")
-    p_kt.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_kt.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_kt.set_defaults(func=cmd_keyword_trend)
 
     # ── keyword-extends ──
     p_ke = sub.add_parser("keyword-extends", help="Keyword expansion", allow_abbrev=False)
     p_ke.add_argument("--query", required=True, help="Seed keyword (required)")
     p_ke.add_argument("--date", help="Legacy lookup date (optional; service uses latest snapshot)")
-    p_ke.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_ke.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_ke.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_ke.add_argument("--page-size", type=int, default=20, help="Page size (default: 20, max 100)")
     p_ke.add_argument("--query-type", choices=["phrase", "fuzzy"], default="phrase", help="Expansion mode (default: phrase)")
@@ -3687,7 +3742,7 @@ Examples:
     p_ksr = sub.add_parser("keyword-search-results", help="Keyword SERP snapshot", allow_abbrev=False)
     p_ksr.add_argument("--keyword", required=True, help="Keyword (required)")
     p_ksr.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_ksr.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_ksr.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_ksr.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_ksr.add_argument("--page-size", type=int, default=20, help="Page size (default: 20, max 100)")
     p_ksr.add_argument("--explore-types", help="Comma-separated placements: ORG,SP,SB,SBV,SPR")
@@ -3695,51 +3750,63 @@ Examples:
     p_ksr.add_argument("--sort-order", choices=["asc", "desc"], default="asc")
     p_ksr.set_defaults(func=cmd_keyword_search_results)
 
-    # ── keyword-competitor-product-keywords ──
-    p_kcpk = sub.add_parser("keyword-competitor-product-keywords", help="Competitor ASIN keyword rows", allow_abbrev=False)
-    p_kcpk.add_argument("--asin", required=True, help="ASIN (required)")
-    p_kcpk.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_kcpk.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
-    p_kcpk.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
-    p_kcpk.add_argument("--page-size", type=int, default=20, help="Page size (default: 20, max 100)")
-    p_kcpk.add_argument("--explore-types", help="Comma-separated placements: ORG,SP,SB,SBV,SPR")
-    p_kcpk.add_argument("--keyword-contains", help="Optional substring filter")
-    p_kcpk.add_argument("--sort-by", choices=["trafficShare", "estimateImpressionPoint", "absolutePosition", "avgPosition", "keywordEstimateSearchCount", "keywordAbaRank", "latestObservedAt", "keyword"], default="trafficShare")
-    p_kcpk.add_argument("--sort-order", choices=["asc", "desc"], default="desc")
-    p_kcpk.set_defaults(func=cmd_keyword_competitor_product_keywords)
-
     # ── keyword-product-traffic-terms ──
     p_kptt = sub.add_parser("keyword-product-traffic-terms", help="ASIN traffic-driving keyword rows", allow_abbrev=False)
     p_kptt.add_argument("--asin", required=True, help="ASIN (required)")
     p_kptt.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_kptt.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
+    p_kptt.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
     p_kptt.add_argument("--page", type=int, default=1, help="Page number (default: 1)")
     p_kptt.add_argument("--page-size", type=int, default=20, help="Page size (default: 20, max 100)")
     p_kptt.add_argument("--explore-types", help="Comma-separated placements: ORG,SP,SB,SBV,SPR")
     p_kptt.add_argument("--keyword-contains", help="Optional substring filter")
+    p_kptt.add_argument("--keyword-search-count-min", type=int, help="Minimum estimated keyword search count (>= 0)")
+    p_kptt.add_argument("--keyword-search-count-max", type=int, help="Maximum estimated keyword search count (>= 0)")
+    p_kptt.add_argument("--keyword-aba-rank-min", type=int, help="Minimum numeric keyword ABA rank (>= 1)")
+    p_kptt.add_argument("--keyword-aba-rank-max", type=int, help="Maximum numeric keyword ABA rank (>= 1)")
     p_kptt.add_argument("--sort-by", choices=["trafficShare", "estimateImpressionPoint", "absolutePosition", "avgPosition", "keywordEstimateSearchCount", "keywordAbaRank", "latestObservedAt", "keyword"], default="trafficShare")
     p_kptt.add_argument("--sort-order", choices=["asc", "desc"], default="desc")
     p_kptt.set_defaults(func=cmd_keyword_product_traffic_terms)
 
-    # ── product-traffic-terms-profile ──
-    p_pttp = sub.add_parser("product-traffic-terms-profile", help="Weekly ASIN traffic-term profile", allow_abbrev=False)
-    pttp_subject = p_pttp.add_mutually_exclusive_group(required=True)
-    pttp_subject.add_argument("--asin", help="One ASIN")
-    pttp_subject.add_argument("--asins", help="ASINs (comma-separated, max 20)")
-    p_pttp.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
-    p_pttp.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
-    p_pttp.set_defaults(func=cmd_product_traffic_terms_profile)
+    # ── product-traffic-structure-profile ──
+    p_ptsp = sub.add_parser("product-traffic-structure-profile", help="Current-vs-previous-week ASIN traffic structure", allow_abbrev=False)
+    ptsp_subject = p_ptsp.add_mutually_exclusive_group(required=True)
+    ptsp_subject.add_argument("--asin", help="One ASIN")
+    ptsp_subject.add_argument("--asins", help="ASINs (comma-separated, max 20)")
+    p_ptsp.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
+    p_ptsp.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
+    p_ptsp.set_defaults(func=cmd_product_traffic_structure_profile)
 
-    # ── product-traffic-terms-timeline ──
-    p_pttt = sub.add_parser("product-traffic-terms-timeline", help="ASIN + keyword traffic-term timeline", allow_abbrev=False)
+    # ── product-traffic-terms-trend ──
+    p_pttt = sub.add_parser("product-traffic-terms-trend", help="ASIN + keyword weekly traffic trend", allow_abbrev=False)
     p_pttt.add_argument("--asin", required=True, help="ASIN (required)")
     pttt_subject = p_pttt.add_mutually_exclusive_group(required=True)
     pttt_subject.add_argument("--keyword", help="One exact keyword")
     pttt_subject.add_argument("--keywords", help="Exact keywords (comma-separated, max 20)")
-    p_pttt.add_argument("--date-from", required=True, help="Start date (YYYY-MM-DD; max 61-day range)")
-    p_pttt.add_argument("--date-to", required=True, help="End date (YYYY-MM-DD; max 61-day range)")
-    p_pttt.add_argument("--marketplace", choices=["US", "UK"], default="US", help="Marketplace (default: US)")
-    p_pttt.set_defaults(func=cmd_product_traffic_terms_timeline)
+    p_pttt.add_argument("--date-from", required=True, help="Start date (YYYY-MM-DD; max 26-week range)")
+    p_pttt.add_argument("--date-to", required=True, help="End date (YYYY-MM-DD; max 26-week range)")
+    p_pttt.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
+    p_pttt.set_defaults(func=cmd_product_traffic_terms_trend)
+
+    # ── product-traffic-trend ──
+    p_ptt = sub.add_parser("product-traffic-trend", help="ASIN-level weekly traffic trend across all keywords", allow_abbrev=False)
+    ptt_subject = p_ptt.add_mutually_exclusive_group(required=True)
+    ptt_subject.add_argument("--asin", help="One ASIN")
+    ptt_subject.add_argument("--asins", help="ASINs (comma-separated, max 20)")
+    p_ptt.add_argument("--date-from", required=True, help="Start date (YYYY-MM-DD; max 26-week range)")
+    p_ptt.add_argument("--date-to", required=True, help="End date (YYYY-MM-DD; max 26-week range)")
+    p_ptt.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
+    p_ptt.set_defaults(func=cmd_product_traffic_trend)
+
+    # ── product-traffic-trend-profile ──
+    p_pttp = sub.add_parser("product-traffic-trend-profile", help="Server-calculated four-week ASIN traffic trend profile", allow_abbrev=False)
+    pttp_subject = p_pttp.add_mutually_exclusive_group(required=True)
+    pttp_subject.add_argument("--asin", help="One ASIN")
+    pttp_subject.add_argument("--asins", help="ASINs (comma-separated, max 20)")
+    p_pttp.add_argument("--date", required=True, help="Lookup date (YYYY-MM-DD)")
+    p_pttp.add_argument("--window-periods", default="4", help="Weekly window; currently exactly 4")
+    p_pttp.add_argument("--detail-level", choices=["summary", "full"], default="summary", help="Response detail (default: summary)")
+    p_pttp.add_argument("--marketplace", choices=KEYWORD_MARKETPLACE_CHOICES, default="US", help="Marketplace (currently US only)")
+    p_pttp.set_defaults(func=cmd_product_traffic_trend_profile)
 
     # ── check (API self-check) ──
     p_check = sub.add_parser("check", help="Check credentials; endpoint probes are opt-in", allow_abbrev=False)

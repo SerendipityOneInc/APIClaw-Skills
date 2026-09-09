@@ -309,14 +309,18 @@ Keyword value boundary for all keyword endpoints:
 - For keyword endpoints that require `date` or `dateTo`, prefer T-1 or earlier and avoid the current date unless the user explicitly asks for today's lookup.
 - These signals support directional screening and testing priority, but do not 100% prove a keyword's value for a specific ASIN.
 - Seller-artifact acquisition, stage selection, field interpretation, and output policy are outside this endpoint contract and belong to the `amazon-keyword-traffic-analysis` skill.
+- All eleven current keyword and product-traffic request schemas retain `granularity` for compatibility. Its only supported value is `week`, and their only supported marketplace is `US`; never send another value or legacy `lookbackDays`.
+- For batch `keywords[]` on detail, market-profile, trend, trend-profile, and product-traffic-terms-trend, every value must already equal `LOWER(TRIM(value))`; uppercase letters, surrounding whitespace, and duplicates are rejected. The bundled CLI normalizes case and whitespace before sending.
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
 | keyword | String | Conditional | One keyword; exactly one of `keyword` / `keywords` |
 | keywords | List\<String\> | Conditional | Batch of 1–20 keywords; preserves request order |
 | date | String | **Yes** | Lookup date `YYYY-MM-DD`; prefer T-1 or earlier; resolves to the nearest available weekly snapshot at or before that date |
-| marketplace | String | No | `US` / `UK`, default `US` |
-| granularity | String | No | `week` only |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[]` for both single and batch requests.
 
@@ -341,8 +345,10 @@ Availability: standard production endpoint under the documented base URL. A subj
 | keyword | String | Conditional | One keyword; exactly one of `keyword` / `keywords` |
 | keywords | List\<String\> | Conditional | Batch of 1–20 keywords; preserves request order |
 | date | String | **Yes** | Lookup date `YYYY-MM-DD`; resolves to the latest weekly snapshot on or before this date |
-| marketplace | String | No | `US` / `UK`, default `US` |
-| granularity | String | No | `week` only |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[]` for both single and batch requests.
 
@@ -358,7 +364,7 @@ Three-layer boundary: `keywords/detail` is the traceable data layer; `keywords/m
 
 Metric-first rule: use `market-profile` before `detail` for supported market judgments. Do not descend merely because a metric dimension has incomplete calculation coverage; both are source-related, so the missing metric input will usually remain missing. Descend only when a named Agent inference requires raw fields omitted by the metric contract, the metric endpoint is unavailable, or the user requests source evidence.
 
-Batch-first rule: once an endpoint is selected, prefer its batch form for all subjects sharing marketplace, date/range, granularity, window, filters, and sort context. Deduplicate while preserving order, chunk at 20, and use single calls only for one subject or incompatible contexts.
+Batch-first rule: once an endpoint is selected, prefer its batch form for all subjects sharing marketplace, date/range, window, filters, and sort context. Deduplicate while preserving order, chunk at 20, and use single calls only for one subject or incompatible contexts.
 
 CLI: `zoodata.py keyword-market-profile --keywords "yoga mat,pilates mat" --date 2026-06-29 --marketplace US`
 
@@ -372,8 +378,10 @@ CLI: `zoodata.py keyword-market-profile --keywords "yoga mat,pilates mat" --date
 | keywords | List\<String\> | Conditional | Batch of 1–20 keywords; preserves request order |
 | dateFrom | String | **Yes** | Start date `YYYY-MM-DD` |
 | dateTo | String | **Yes** | End date `YYYY-MM-DD`; prefer T-1 or earlier; maximum 93-day range |
-| marketplace | String | No | `US` / `UK`, default `US` |
-| granularity | String | No | `week` only |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[].series[]` for both single and batch requests.
 
@@ -395,8 +403,10 @@ Each item has `identity`, `status=ok|empty`, `series[]`, `emptyReason`, and null
 | keywords | String[] | Conditional | 1–20, mutually exclusive with `keyword` |
 | date | String | **Yes** | As-of date `YYYY-MM-DD` |
 | windowPeriods | Integer[] | **Yes** | 1–4 unique values from `4`, `8`, `12`, `26` |
-| marketplace | String | No | `US` / `UK`, default `US` |
-| granularity | String | No | `week` only |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[].rows[]`. Each keyword has one row per requested window. Rows return `status=ok|empty`, `rowContext`, `emptyReason`, and `trendProfile`. `status=ok` profiles expose guarded `searchDemand` and `abaRank` dimensions. Their `trendEvidence` values include an explicit direction plus slope and consistency evidence, so do not infer the server label from endpoint movement alone. Preserve null empty reasons without inventing one.
 
@@ -409,12 +419,13 @@ Use this metric endpoint first for trend shape and volatility; call raw `keyword
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
 | query | String | **Yes** | Seed keyword |
-| marketplace | String | No | Marketplace code, default `US` |
+| marketplace | String | No | Only `US` is supported; default `US` |
 | page | Integer | No | default 1 |
 | pageSize | Integer | No | default 20, max 100 |
 | queryType | String | No | `phrase` / `fuzzy` (default `phrase`) |
 | sortBy | String | No | `relevanceScore` / `estimateSearchCount` / `abaRank` / `keyword` |
 | sortOrder | String | No | `asc` / `desc` |
+| granularity | String | No | Compatibility field; only `week` is supported |
 
 ⚠️ Uses `query`, NOT `keyword`.
 ⚠️ No date is required; the service uses the latest available weekly snapshot. A legacy `date` may be sent but is ignored.
@@ -436,15 +447,15 @@ Do not flatten the response back to legacy `term`, `seedKeyword`, or `estimateSe
 |-----------|------|----------|------|
 | keyword | String | **Yes** | Keyword to inspect |
 | date | String | **Yes** | Snapshot lookup date `YYYY-MM-DD`; prefer T-1 or earlier |
-| granularity | String | No | `week` only |
-| marketplace | String | No | Marketplace code, default `US` |
+| marketplace | String | No | Only `US` is supported; default `US` |
 | page | Integer | No | default 1 |
 | pageSize | Integer | No | default 20, max 100 |
 | exploreTypes | Array\<String\> | No | `ORG` / `SP` / `SB` / `SBV` / `SPR` |
 | sortBy | String | No | `absolutePosition` / `estimateImpressionPoint` / `latestObservedAt` / `price` / `rating` / `ratingCount` / `recentSales` / `asin` / `title` |
 | sortOrder | String | No | `asc` / `desc` |
+| granularity | String | No | Compatibility field; only `week` is supported |
 
-⚠️ `day`, `month`, `lately_day`, and `lookbackDays` are unsupported. Use the returned weekly period boundaries instead of inferring a rolling window.
+⚠️ Compatibility-retained `granularity` accepts only `week`; do not send legacy `lookbackDays`. Use the returned weekly period boundaries instead of inferring a rolling window.
 ⚠️ Use this endpoint as the primary source for "what products are currently showing on the keyword SERP/page 1" because it already returns listing-level product fields.
 ⚠️ Do not replace it with `products/search` when the question is about observed Amazon keyword SERP composition or ordering.
 ⚠️ When analyzing this endpoint, separate `exploreType` at least into `ORG` and sponsored placements instead of collapsing all rows together.
@@ -462,73 +473,50 @@ Interpretation rule:
 
 ---
 
-## 16. /openapi/v2/keywords/competitor-product-keywords
+## 16. /openapi/v2/keywords/product-traffic-terms
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
 | asin | String | **Yes** | Target ASIN |
 | date | String | **Yes** | Snapshot lookup date `YYYY-MM-DD`; prefer T-1 or earlier |
-| granularity | String | No | `week` only |
-| marketplace | String | No | Marketplace code, default `US` |
+| marketplace | String | No | Only `US` is supported; default `US` |
 | page | Integer | No | default 1 |
 | pageSize | Integer | No | default 20, max 100 |
 | exploreTypes | Array\<String\> | No | `ORG` / `SP` / `SB` / `SBV` / `SPR` |
 | keywordContains | String | No | Optional substring filter on returned keywords |
+| keywordEstimateSearchCountMin | Integer | No | Minimum estimated keyword search count; at least 0 and no greater than the maximum |
+| keywordEstimateSearchCountMax | Integer | No | Maximum estimated keyword search count; at least 0 and no less than the minimum |
+| keywordAbaRankMin | Integer | No | Minimum numeric ABA rank; at least 1 and no greater than the maximum |
+| keywordAbaRankMax | Integer | No | Maximum numeric ABA rank; at least 1 and no less than the minimum |
 | sortBy | String | No | `trafficShare` / `estimateImpressionPoint` / `absolutePosition` / `avgPosition` / `keywordEstimateSearchCount` / `keywordAbaRank` / `latestObservedAt` / `keyword` |
 | sortOrder | String | No | `asc` / `desc` |
+| granularity | String | No | Compatibility field; only `week` is supported |
 
-**Response:** `data.context + data.identity + data.rows[]`.
-
-Key row fields: `latestObservedAt`, `exploreType`, `absolutePosition`, `pageIndex`, `pagePosition`, `asin`,
-`keyword`, `estimateImpressionPoint`, `asinTotalEstimateImpressionPoint`, `avgPosition`,
-`daysCoverageRate`, `observationCount`, `keywordEstimateSearchCount`,
-`keywordEstimateSearchChangeCount`, `keywordEstimateSearchCountChangeRate`, `keywordAbaRank`,
-`keywordAbaRankChangeCount`, `trafficShare`
-
-⚠️ `day`, `month`, `lately_day`, and `lookbackDays` are unsupported; use the returned weekly period boundaries.
-⚠️ In skill workflows, this endpoint is a reverse-ASIN source endpoint, not a substitute for `keywords/search-results` when the question is about visible page-1 product composition.
-
----
-
-## 17. /openapi/v2/keywords/product-traffic-terms
-
-| Parameter | Type | Required | Note |
-|-----------|------|----------|------|
-| asin | String | **Yes** | Target ASIN |
-| date | String | **Yes** | Snapshot lookup date `YYYY-MM-DD`; prefer T-1 or earlier |
-| granularity | String | No | `week` only |
-| marketplace | String | No | Marketplace code, default `US` |
-| page | Integer | No | default 1 |
-| pageSize | Integer | No | default 20, max 100 |
-| exploreTypes | Array\<String\> | No | `ORG` / `SP` / `SB` / `SBV` / `SPR` |
-| keywordContains | String | No | Optional substring filter on returned keywords |
-| sortBy | String | No | `trafficShare` / `estimateImpressionPoint` / `absolutePosition` / `avgPosition` / `keywordEstimateSearchCount` / `keywordAbaRank` / `latestObservedAt` / `keyword` |
-| sortOrder | String | No | `asc` / `desc` |
-
-⚠️ Live validation showed the same item shape as `keywords/competitor-product-keywords`; do not assume
-the semantic label implies a different wire schema.
-⚠️ `day`, `month`, `lately_day`, and `lookbackDays` are unsupported; use the returned weekly period boundaries.
+⚠️ The MCP `competitor-product-keywords` tool is retired and returns `tool_retired` with replacement
+`openapi_v2_product_traffic_terms`. Use this route for any target ASIN, including a competitor.
+⚠️ Compatibility-retained `granularity` accepts only `week`; do not send legacy `lookbackDays`; use the returned weekly period boundaries.
 ⚠️ In skill workflows, this endpoint is a reverse-ASIN source endpoint, not a substitute for `keywords/search-results` when the question is about visible page-1 product composition.
 
 **Response:** `data.context + data.identity + data.rows[]`.
 
 Key row fields: `latestObservedAt`, `exploreType`, `absolutePosition`, `pageIndex`, `pagePosition`, `asin`,
 `keyword`, `estimateImpressionPoint`, `asinTotalEstimateImpressionPoint`, `avgPosition`,
-`daysCoverageRate`, `observationCount`, `keywordEstimateSearchCount`,
-`keywordEstimateSearchChangeCount`, `keywordEstimateSearchCountChangeRate`, `keywordAbaRank`,
-`keywordAbaRankChangeCount`, `trafficShare`
+`daysCoverageRate`, `observationCount`, `keywordEstimateSearchCount`, `keywordAbaRank`, and
+`trafficShare`.
 
 ---
 
-## 18. /openapi/v2/keywords/product-traffic-terms-profile
+## 17. /openapi/v2/keywords/product-traffic-structure-profile
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
 | asin | String | Conditional | One target ASIN; exactly one of `asin` / `asins` |
 | asins | List\<String\> | Conditional | Batch of 1–20 target ASINs; exactly one of `asin` / `asins` |
 | date | String | **Yes** | Lookup date `YYYY-MM-DD`; prefer T-1 or earlier |
-| marketplace | String | No | Marketplace code, default `US` |
-| granularity | String | No | `week` only |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[]`, preserving ASIN request order.
 
@@ -545,7 +533,9 @@ item with `status=empty` is not billed. Use the response's `meta.creditsConsumed
 `meta.creditsConsumedExact` as the authoritative usage record rather than calculating credits from
 the number of requested ASINs.
 
-A non-null `productTrafficTermsProfile` has the following observed structure:
+A non-null `productTrafficTermsProfile` has the following observed structure. Despite the retained
+response field name, this endpoint is the current-vs-previous-week traffic-structure metric, not a
+multi-week trend profile:
 
 - `summary`
   - `currEstimateImpressionPoint`, `prevEstimateImpressionPoint`
@@ -580,7 +570,7 @@ from `replacementPath`.
 
 ---
 
-## 19. /openapi/v2/keywords/product-traffic-terms-timeline
+## 18. /openapi/v2/keywords/product-traffic-terms-trend
 
 | Parameter | Type | Required | Note |
 |-----------|------|----------|------|
@@ -588,9 +578,11 @@ from `replacementPath`.
 | keyword | String | Conditional | One exact keyword; exactly one of `keyword` / `keywords` |
 | keywords | List\<String\> | Conditional | Batch of 1–20 exact keywords for the same ASIN |
 | dateFrom | String | **Yes** | Start date `YYYY-MM-DD` |
-| dateTo | String | **Yes** | End date `YYYY-MM-DD`; prefer T-1 or earlier; maximum 61-day range |
-| marketplace | String | No | Marketplace code, default `US` |
-| granularity | String | No | `week` only |
+| dateTo | String | **Yes** | End date `YYYY-MM-DD`; prefer T-1 or earlier; maximum 26-week range |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
 
 **Response:** `data.context + data.items[].series[]` for both single and batch requests.
 
@@ -603,8 +595,8 @@ Exposure-position fields under `placement` are nullable for both unavailable per
 observed position. A null position does not distinguish those states by itself; inspect returned
 period boundaries and observation/coverage fields. Never convert a null position to numeric zero.
 
-⚠️ Do not send `page`, `pageSize`, `sortBy`, or `sortOrder`. `day`, `month`, `lately_day`, and
-`lookbackDays` are unsupported.
+⚠️ `granularity` accepts only `week`; do not send legacy `lookbackDays`, `page`, `pageSize`, `sortBy`, or
+`sortOrder`.
 
 Diagnosis curves and events:
 - Price curve: `asinSnapshot.latestPrice`
@@ -619,6 +611,73 @@ Key groups: product/listing/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR imp
 `traffic`; positions/pages/observation timestamps in `placement`; `keywordEstimateSearchCount`,
 `keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`; observation/campaign/ad
 counts in `adActivity`.
+
+---
+
+## 19. /openapi/v2/keywords/product-traffic-trend
+
+This is the ASIN-level raw weekly trend across all observed keywords. It has no keyword dimension;
+use `product-traffic-terms-trend` for one ASIN plus one or more named keywords.
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| asin | String | Conditional | One target ASIN; exactly one of `asin` / `asins` |
+| asins | List\<String\> | Conditional | Batch of 1–20 target ASINs; exactly one of `asin` / `asins` |
+| dateFrom | String | **Yes** | Start date `YYYY-MM-DD` |
+| dateTo | String | **Yes** | End date `YYYY-MM-DD`; prefer T-1 or earlier; maximum 26-week range |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
+
+**Response:** `data.context + data.items[].series[]`, preserving ASIN request order. Inspect each
+item's `status=ok|empty` before reading `series`; missing weeks are not filled with zero.
+
+Each weekly series point includes `periodStartDate`, `periodEndDate`,
+`totalEstimateImpressionPoint`, `organicEstimateImpressionPoint`, `adEstimateImpressionPoint`,
+`totalTermCount`, `organicTermCount`, `adTermCount`, `organicFirst3PagesTermCount`,
+`trafficByExploreType[]`, `keywordDemandRankDistribution[]`, and
+`organicAcquisitionRateDistribution[]`. Impression points are estimated traffic scores, not actual
+impression counts. Null shares stay unavailable; do not calculate or fill them unless the user asks
+for a transparent Agent-side calculation.
+
+Billing is once per ASIN with `status=ok`; empty items are free. Use returned credit metadata.
+
+---
+
+## 20. /openapi/v2/keywords/product-traffic-trend-profile
+
+This is the server-calculated ASIN-level four-week trend metric. Use `product-traffic-trend` when
+raw weekly points are required and `product-traffic-structure-profile` for current-vs-previous-week
+structure and driver evidence.
+
+| Parameter | Type | Required | Note |
+|-----------|------|----------|------|
+| asin | String | Conditional | One target ASIN; exactly one of `asin` / `asins` |
+| asins | List\<String\> | Conditional | Batch of 1–20 target ASINs; exactly one of `asin` / `asins` |
+| date | String | **Yes** | As-of date `YYYY-MM-DD`; prefer T-1 or earlier |
+| windowPeriods | Integer[] | No | Defaults to `[4]`; `[4]` is the only supported value |
+| detailLevel | String | No | `summary` (default) or `full` |
+| marketplace | String | No | Only `US` is supported; default `US` |
+| granularity | String | No | Compatibility field; only `week` is supported |
+
+Send `granularity=week` when specifying the compatibility field; the bundled CLI sends it explicitly.
+
+**Response:** `data.context + data.items[].rows[]`, preserving ASIN request order. Read row
+`status=ok|empty`, then each component's `supported`, `calculationStatus`, and
+`unsupportedReason`. A successful row contains `trafficTrendProfile`; summary mode covers
+`asinTotalTraffic`, `organicTraffic`, `adTraffic`, and `termCoverage`, while full mode may add
+placement and distribution breakdowns. `detailLevel` changes response detail only, not query scope
+or billing.
+
+Each component returns the server's `trend`, `volatilityLevel`, `lastPeriodWindowPosition`, and
+`trendEvidence`. Treat `trend` as the conclusion for the resolved four-week window, not as a
+forecast or causal explanation. Share changes are absolute decimal differences (for example,
+`0.05` means five percentage points); change rates are relative. Normalized-slope magnitudes are
+not comparable across ASINs and are not percentage growth.
+
+Billing is once per ASIN with at least one `status=ok` row; empty-only ASINs are free. Use returned
+credit metadata.
 
 ---
 

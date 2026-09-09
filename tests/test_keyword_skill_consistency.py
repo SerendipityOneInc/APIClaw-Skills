@@ -615,11 +615,11 @@ def test_interface_failure_never_descends_to_data_layer():
     assert "Endpoint-specific validation details remain authoritative only" in reference
 
 
-def test_timeline_health_probe_omits_unsupported_pagination():
+def test_traffic_term_trend_health_probe_omits_unsupported_pagination():
     script = read("scripts/zoodata.py")
     timeline_probe = script.split(
-        '"keywords/product-traffic-terms-timeline"', 1
-    )[1].split('"ASIN + keyword timeline"', 1)[0]
+        '"keywords/product-traffic-terms-trend"', 1
+    )[1].split('"ASIN + keyword traffic trend"', 1)[0]
 
     assert '"pageSize"' not in timeline_probe
 
@@ -636,7 +636,7 @@ def test_timeline_keyword_metric_fields_are_documented_consistently():
         "`keywordEstimateSearchCount`, `keywordAbaRank`, Top3 shares, and "
         "`metricWindow` in `keywordMetrics`"
     )
-    assert contract_phrase in " ".join(zoodata_skill.split())
+    assert contract_phrase not in " ".join(zoodata_skill.split())
     assert contract_phrase in " ".join(openapi_reference.split())
     assert (
         "`keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, "
@@ -714,9 +714,9 @@ def test_scenarios_define_evidence_stages_and_conclusion_authority():
     assert "worth targeting" in target
     assert "`keywords/product-traffic-terms` filtered to the target keyword" in target
     assert "the exact target-keyword row returned by `keywords/product-traffic-terms`" in target
-    assert "do not substitute `keywords/competitor-product-keywords` for the target-ASIN route" in target
+    assert "use `product-traffic-terms` for the named ASIN whether it is owned or a competitor" in target
     assert "current placement/traffic evidence" not in target
-    assert "`product-traffic-terms-timeline`" not in target
+    assert "`product-traffic-terms-trend`" not in target
     assert "Requests outside this keyword-centered conclusion boundary must be reclassified" in target
     assert "Route product visibility, placement, exposure, movement, anomaly, and causal questions" not in target
     assert "movement posture" not in target
@@ -727,6 +727,14 @@ def test_scenarios_define_evidence_stages_and_conclusion_authority():
     for text in (target, expand, product):
         assert "Interactive Stage Gate" in text
         assert "Stage-End Selection List Rule" in text
+    assert "the requested window matches the profile-supported window" in product
+    assert "any explicit non-matching window, whether shorter or longer" in product
+    assert "including a shorter window" in product
+    assert "Do not ask the user to restate a valid shorter-window request" in product
+    assert "stretch the profile across a different window" in product
+    assert "do not silently truncate it or issue an out-of-contract call" in product
+    assert "If `product-traffic-terms` is unavailable" in product
+    assert "neither ASIN traffic-list endpoint" not in product
 
 
 def test_expansion_does_not_define_an_undocumented_composite_score():
@@ -771,8 +779,9 @@ def test_product_traffic_analysis_unifies_structure_change_trend_and_health():
     assert "| 5. Profitability calibration" in scenario
     assert "| 6. Advertising-control decision" in scenario
     assert "Stages 1A and 1B are alternative current-product entry points" in scenario
-    assert "Stage 1A follows metric-first access" in scenario
-    assert "Do not reconstruct the profile from traffic rows" in scenario
+    assert "Stage 1A uses the metric profile when no trend window is specified" in scenario
+    assert "Use raw `product-traffic-trend` for an explicit window that does not match" in scenario
+    assert "do not reconstruct the profile from traffic rows" in scenario.lower()
     assert "Stage 1B may use Top-N wording only when" in scenario
     assert "Stage 1B discovers product traffic terms or describes one named term's current product-side observation" in scenario
     assert "named ASIN × keyword visibility/placement/exposure question without movement or causal intent" in scenario
@@ -1014,11 +1023,13 @@ def test_api_reference_remains_the_contract_source():
     evidence = read("references/evidence-protocols.md")
 
     assert "production capability whitelist" in reference
-    assert "Billing is per `status=ok` item for `detail`, `market-profile`, `trend`, `product-traffic-terms-profile`, and timeline" in reference
+    assert "Billing is per `status=ok` subject for batch keyword and product-traffic endpoints" in reference
     assert "`trend-profile` bills a keyword when at least one requested window row has `status=ok`" in reference
     assert "do not estimate billing from request size or batch width" in evidence
     assert "keywords/market-profile" in reference
-    assert "keywords/product-traffic-terms-timeline" in reference
+    assert "keywords/product-traffic-terms-trend" in reference
+    assert "keywords/product-traffic-structure-profile" in reference
+    assert "keywords/product-traffic-trend-profile" in reference
     assert "paginated related-term recall" in reference
     assert "does not define them as an exhaustive root-keyword universe" in reference
     assert "return a root-universe aggregate demand field" in reference
@@ -1037,6 +1048,9 @@ def test_reference_stays_contract_local_and_scenarios_own_selection():
     assert "`reference.md` owns only production API and acquisition-surface facts" in skill
     assert "Scenario files own only scenario-specific stage entry requirements, capability selection" in skill
     assert "Apply each rule from its responsible owner module above" in skill
+    assert "load `reference.md` for the endpoint's marketplace, keyword-normalization, and date contract" in skill
+    assert "Current keyword and product-traffic endpoints support only the `US` marketplace" not in skill
+    assert "Normalize batch keyword values to lowercase after trimming" not in skill
     assert "try `phrase` and `fuzzy`" not in reference
     assert "Use the routes in this order" not in reference
     assert "Use this endpoint first" not in reference
@@ -1073,11 +1087,15 @@ def test_traffic_observation_semantics_have_one_progressively_loaded_owner():
 
     assert "Interpret `trafficShare`, placement, contribution, and coverage fields through `traffic-observation-semantics.md`" in reference
     assert "Interpret the series' snapshot, weekly-period, metric-window" in reference
+    assert "Interpret returned trend conclusions, evidence values, change units, and comparison limits only" in reference
     assert "sampled share within the returned ASIN traffic period" not in reference
     assert "Keep time grains separate" not in reference
     assert "Exposure-position fields under `placement` return `null` both" not in reference
     assert "previous-period count, share, and impression-point fields use `null`" not in reference
     assert "numeric `0` means that period exists" not in reference
+    assert "Share changes are absolute decimal differences" not in reference
+    assert "Normalized-slope magnitudes are not comparable across ASINs" not in reference
+    assert "Impression points are estimated traffic scores, not actual impressions" not in reference
 
     assert "high `adCount`" not in evidence
     assert "low `daysCoverageRate`" not in evidence
@@ -1102,9 +1120,14 @@ def test_traffic_observation_semantics_have_one_progressively_loaded_owner():
         "empty `newTerms`, `lostTerms`, `top10Gainers`, or `top10Losers` arrays carry no zero-change conclusion",
         "Do not project retired flat overview fields",
         "Do not infer an array-item schema from an empty array",
+        "Share changes are absolute decimal differences",
+        "Do not compare normalized-slope magnitudes across ASINs",
+        "request modes and billing are owned by `reference.md`",
     ):
         assert owned_semantic in semantics
 
+    assert "detailLevel=summary|full" not in semantics
+    assert "changes response detail, not the underlying query or billing" not in semantics
     assert "Repeated brands or parent-ASIN families" not in semantics
 
 
@@ -1249,16 +1272,31 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
     root_readme = (ROOT.parent / "README.md").read_text(encoding="utf-8")
     zoodata_readme = (ROOT.parent / "zoodata" / "README.md").read_text(encoding="utf-8")
     zoodata_skill = (ROOT.parent / "zoodata" / "SKILL.md").read_text(encoding="utf-8")
+    keyword_reference = read("references/reference.md")
     openapi_reference = (
         ROOT.parent / "zoodata" / "references" / "openapi-reference.md"
     ).read_text(encoding="utf-8")
 
-    assert "Direct access to all 22 API endpoints" in root_readme
-    assert "200M+ Amazon products. 22 endpoints. One API key." in zoodata_readme
+    assert "Direct access to 23 Amazon commerce and keyword-intelligence endpoints" in root_readme
+    assert "200M+ Amazon products. 23 Amazon and keyword-intelligence endpoints. One API key." in zoodata_readme
     assert "| 14 | `keywords/market-profile`" in zoodata_readme
-    assert "| 21 | `keywords/product-traffic-terms-profile`" in zoodata_readme
-    assert "| 22 | `keywords/product-traffic-terms-timeline`" in zoodata_readme
+    assert "| 20 | `keywords/product-traffic-structure-profile`" in zoodata_readme
+    assert "| 21 | `keywords/product-traffic-terms-trend`" in zoodata_readme
+    assert "| 22 | `keywords/product-traffic-trend`" in zoodata_readme
+    assert "| 23 | `keywords/product-traffic-trend-profile`" in zoodata_readme
     assert "20 endpoints" not in zoodata_readme
+
+    for text in (zoodata_skill, keyword_reference, openapi_reference):
+        assert "removed `granularity`" not in text
+        assert "only `week`" in text
+    assert "all eleven current keyword and product-traffic request schemas" in zoodata_skill.lower()
+    assert openapi_reference.count(
+        "| granularity | String | No | Compatibility field; only `week` is supported |"
+    ) == 11
+    assert "Competitor traffic-term lookup is consolidated into `keywords/product-traffic-terms`" in zoodata_skill
+    assert "`competitor-product-keywords` tool is retired" in openapi_reference
+    assert "`openapi_v2_product_traffic_terms`" in openapi_reference
+    assert "keyword-competitor-product-keywords" not in read("scripts/allowed-commands.json")
 
     for profile_field in (
         "`currEstimateImpressionPoint`, `prevEstimateImpressionPoint`",
@@ -1279,7 +1317,7 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
     assert "belong to the `amazon-keyword-traffic-analysis` skill" in openapi_reference
 
     assert "Production supports one ASIN or a batch of up to 20 ASINs" in zoodata_skill
-    assert "Read `references/openapi-reference.md § 18`" in zoodata_skill
+    assert "Read `references/openapi-reference.md § 17`" in zoodata_skill
     for openapi_owned_detail in (
         "requires `date` + exactly one of `asin` / `asins[]`",
         "`currEstimateImpressionPoint`, `prevEstimateImpressionPoint`",
@@ -1288,6 +1326,47 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
         "Exposure-position fields under `placement` use `null` both",
     ):
         assert openapi_owned_detail not in zoodata_skill
+
+    traffic_terms_entry = zoodata_skill.split(
+        "### `/openapi/v2/keywords/product-traffic-terms`", 1
+    )[1].split("### `/openapi/v2/keywords/product-traffic-structure-profile`", 1)[0]
+    assert "Read `references/openapi-reference.md § 16`" in traffic_terms_entry
+    for owned_parameter in (
+        "keywordEstimateSearchCountMin",
+        "keywordEstimateSearchCountMax",
+        "keywordAbaRankMin",
+        "keywordAbaRankMax",
+    ):
+        assert owned_parameter in openapi_reference
+        assert owned_parameter not in zoodata_skill
+
+    terms_trend_entry = zoodata_skill.split(
+        "### `/openapi/v2/keywords/product-traffic-terms-trend`", 1
+    )[1].split("### `/openapi/v2/keywords/product-traffic-trend`", 1)[0]
+    assert "Read `references/openapi-reference.md § 18`" in terms_trend_entry
+    for owned_contract in (
+        "exactly one of `keyword` / `keywords[]`",
+        "date range cannot exceed 26 weeks",
+        "no pagination or sort parameters",
+        "Response shape:",
+    ):
+        assert owned_contract not in terms_trend_entry
+
+    raw_trend_entry = zoodata_skill.split(
+        "### `/openapi/v2/keywords/product-traffic-trend`", 1
+    )[1].split("### `/openapi/v2/keywords/product-traffic-trend-profile`", 1)[0]
+    trend_profile_entry = zoodata_skill.split(
+        "### `/openapi/v2/keywords/product-traffic-trend-profile`", 1
+    )[1].split("## Local Review Toolkit", 1)[0]
+    assert "Read `references/openapi-reference.md § 19`" in raw_trend_entry
+    assert "Read `references/openapi-reference.md § 20`" in trend_profile_entry
+    assert "detailLevel=summary|full" not in zoodata_skill
+    assert "changes returned detail, not query scope or billing" not in zoodata_skill
+    for routed_entry in (raw_trend_entry, trend_profile_entry):
+        assert "Response:" not in routed_entry
+        assert "only `status=ok` ASINs are billed" not in routed_entry
+        assert "Share changes are absolute decimal differences" not in routed_entry
+        assert "normalized slope" not in routed_entry.lower()
 
     cli_contract = (
         ROOT.parent / "zoodata" / "references" / "cli-contract.md"

@@ -43,9 +43,9 @@
 
 | 技能 | 说明 | 输入 | 输出 | 核心优势 |
 |------|------|------|------|----------|
-| 📦 [`zoodata/`](zoodata/) | 直接调用全部 22 个 API 端点（12 个商品接口 + 10 个关键词接口） | 关键词/品类/ASIN/品牌 | 原始 API 数据 + 字段映射文档 | 所有其他 skill 的底层依赖 |
+| 📦 [`zoodata/`](zoodata/) | 直接调用全部 23 个 Amazon API 端点（12 个商品接口 + 11 个关键词接口） | 关键词/品类/ASIN/品牌 | 原始 API 数据 + 字段映射文档 | 所有其他 skill 的底层依赖 |
 | 🎯 [`amazon-analysis/`](amazon-analysis/) | 13 种选品模式 + 市场/竞品/ASIN/定价/品类研究 | 关键词/品类/ASIN + 意图 | 分析发现、Top 产品、深度报告、置信度标签 | report/opportunity 复合命令一键跑完 |
-| 🔎 [`amazon-keyword-traffic-analysis/`](amazon-keyword-traffic-analysis/) | 基于 10 个关键词 intelligence 接口的关键词价值与商品流量健康工作流 | 种子词、目标词、ASIN 或 ASIN + 关键词 | 拓词分层、关键词价值分析、商品流量结构、趋势与健康诊断 | 专门覆盖关键词拓展、关键词分析和商品流量分析 |
+| 🔎 [`amazon-keyword-traffic-analysis/`](amazon-keyword-traffic-analysis/) | 基于 11 个关键词 intelligence 接口的关键词价值与商品流量健康工作流 | 种子词、目标词、ASIN 或 ASIN + 关键词 | 拓词分层、关键词价值分析、商品流量结构、趋势与健康诊断 | 专门覆盖关键词拓展、关键词分析和商品流量分析 |
 
 **⚡ 专项层** — 面向特定工作流的专用技能：
 
@@ -154,7 +154,7 @@ python amazon-analysis/scripts/zoodata.py products --keyword "wireless earbuds" 
 
 ```
 ├── zoodata/                              # 数据层技能（轻量版）
-│   ├── SKILL.md                            # 22 个接口，快速入门
+│   ├── SKILL.md                            # 23 个接口，快速入门
 │   └── references/
 │       └── openapi-reference.md            # API 字段参考
 │

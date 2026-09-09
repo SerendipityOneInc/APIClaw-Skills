@@ -226,9 +226,10 @@ SUBCOMMANDS = [
     "review-deepdive", "analyze", "price-band-overview", "price-band-detail",
     "brand-overview", "brand-detail", "history",
     "keyword-detail", "keyword-market-profile", "keyword-trend-profile", "keyword-trend", "keyword-extends",
-    "keyword-search-results", "keyword-competitor-product-keywords",
+    "keyword-search-results",
     "keyword-product-traffic-terms",
-    "product-traffic-terms-profile", "product-traffic-terms-timeline",
+    "product-traffic-structure-profile", "product-traffic-terms-trend",
+    "product-traffic-trend", "product-traffic-trend-profile",
     "check",
 ]
 
@@ -454,10 +455,10 @@ class TestCategoryResolutionMeta(unittest.TestCase):
             "keyword-market-profile",
             "--keywords", "yoga mat,pilates mat",
             "--date", "2026-06-29",
-            "--marketplace", "UK",
+            "--marketplace", "US",
         )
         self.assertEqual(r["params"]["keywords"], ["yoga mat", "pilates mat"])
-        self.assertEqual(r["params"]["marketplace"], "UK")
+        self.assertEqual(r["params"]["marketplace"], "US")
 
     def test_keyword_market_profile_batch_rejects_duplicates(self):
         with self.assertRaises(SystemExit):
@@ -479,12 +480,12 @@ class TestCategoryResolutionMeta(unittest.TestCase):
             "--keywords", "yoga mat,pilates mat",
             "--date", "2026-07-15",
             "--window-periods", "4,12,26",
-            "--marketplace", "UK",
+            "--marketplace", "US",
         )
         self.assertEqual(r["endpoint"], "keywords/trend-profile")
         self.assertEqual(r["params"]["keywords"], ["yoga mat", "pilates mat"])
         self.assertEqual(r["params"]["windowPeriods"], [4, 12, 26])
-        self.assertEqual(r["params"]["marketplace"], "UK")
+        self.assertEqual(r["params"]["marketplace"], "US")
         self.assertEqual(r["params"]["granularity"], "week")
 
     def test_keyword_trend_profile_rejects_duplicate_windows(self):
@@ -511,6 +512,7 @@ class TestCategoryResolutionMeta(unittest.TestCase):
         self.assertEqual(r["params"]["query"], "yoga mat")
         self.assertEqual(r["params"]["queryType"], "fuzzy")
         self.assertEqual(r["params"]["pageSize"], 50)
+        self.assertEqual(r["params"]["granularity"], "week")
 
     def test_keyword_extends_date_optional(self):
         r = run_cli("keyword-extends", "--query", "yoga mat")
@@ -526,33 +528,41 @@ class TestCategoryResolutionMeta(unittest.TestCase):
         self.assertEqual(r["params"]["granularity"], "week")
         self.assertNotIn("lookbackDays", r["params"])
 
-    def test_keyword_competitor_product_keywords(self):
-        r = run_cli("keyword-competitor-product-keywords",
-                    "--asin", "B01CGLCGRA",
-                    "--date", "2026-06-29",
-                    "--keyword-contains", "yoga",
-                    "--explore-types", "ORG")
-        self.assertEqual(r["endpoint"], "keywords/competitor-product-keywords")
-        self.assertEqual(r["params"]["keywordContains"], "yoga")
-        self.assertEqual(r["params"]["exploreTypes"], ["ORG"])
-        self.assertEqual(r["params"]["granularity"], "week")
-        self.assertNotIn("lookbackDays", r["params"])
-
     def test_keyword_product_traffic_terms(self):
         r = run_cli("keyword-product-traffic-terms",
                     "--asin", "B01CGLCGRA",
-                    "--date", "2026-06-29")
+                    "--date", "2026-06-29",
+                    "--keyword-search-count-min", "100",
+                    "--keyword-search-count-max", "10000",
+                    "--keyword-aba-rank-min", "1",
+                    "--keyword-aba-rank-max", "5000")
         self.assertEqual(r["endpoint"], "keywords/product-traffic-terms")
         self.assertEqual(r["params"]["asin"], "B01CGLCGRA")
         self.assertEqual(r["params"]["sortBy"], "trafficShare")
+        self.assertEqual(r["params"]["keywordEstimateSearchCountMin"], 100)
+        self.assertEqual(r["params"]["keywordEstimateSearchCountMax"], 10000)
+        self.assertEqual(r["params"]["keywordAbaRankMin"], 1)
+        self.assertEqual(r["params"]["keywordAbaRankMax"], 5000)
         self.assertEqual(r["params"]["granularity"], "week")
         self.assertNotIn("lookbackDays", r["params"])
 
-    def test_product_traffic_terms_profile_single(self):
-        r = run_cli("product-traffic-terms-profile",
+    def test_keyword_marketplace_rejects_non_us(self):
+        with self.assertRaises(SystemExit):
+            run_cli("keyword-detail", "--keyword", "yoga mat", "--date", "2026-06-29", "--marketplace", "UK")
+
+    def test_keyword_batch_is_normalized_for_live_schema(self):
+        r = run_cli("keyword-detail", "--keywords", "Yoga Mat, PILATES MAT ", "--date", "2026-06-29")
+        self.assertEqual(r["params"]["keywords"], ["yoga mat", "pilates mat"])
+
+    def test_keyword_batch_normalization_uses_unicode_lower_not_casefold(self):
+        r = run_cli("keyword-detail", "--keywords", " Straße ,CAFÉ", "--date", "2026-06-29")
+        self.assertEqual(r["params"]["keywords"], ["straße", "café"])
+
+    def test_product_traffic_structure_profile_single(self):
+        r = run_cli("product-traffic-structure-profile",
                     "--asin", "B01CGLCGRA",
                     "--date", "2026-06-29")
-        self.assertEqual(r["endpoint"], "keywords/product-traffic-terms-profile")
+        self.assertEqual(r["endpoint"], "keywords/product-traffic-structure-profile")
         self.assertEqual(r["params"], {
             "asin": "B01CGLCGRA",
             "date": "2026-06-29",
@@ -560,39 +570,39 @@ class TestCategoryResolutionMeta(unittest.TestCase):
             "granularity": "week",
         })
 
-    def test_product_traffic_terms_profile_batch(self):
+    def test_product_traffic_structure_profile_batch(self):
         r = run_cli(
-            "product-traffic-terms-profile",
+            "product-traffic-structure-profile",
             "--asins", "B01CGLCGRA,B07FR2V8SH",
             "--date", "2026-06-29",
         )
-        self.assertEqual(r["endpoint"], "keywords/product-traffic-terms-profile")
+        self.assertEqual(r["endpoint"], "keywords/product-traffic-structure-profile")
         self.assertEqual(r["params"]["asins"], ["B01CGLCGRA", "B07FR2V8SH"])
         self.assertEqual(r["params"]["granularity"], "week")
 
-    def test_product_traffic_terms_profile_rejects_more_than_20_asins(self):
+    def test_product_traffic_structure_profile_rejects_more_than_20_asins(self):
         with self.assertRaisesRegex(SystemExit, "at most 20 ASINs"):
             run_cli(
-                "product-traffic-terms-profile",
+                "product-traffic-structure-profile",
                 "--asins", ",".join(f"B{i:09d}" for i in range(21)),
                 "--date", "2026-06-29",
             )
 
-    def test_product_traffic_terms_profile_rejects_duplicate_asins(self):
+    def test_product_traffic_structure_profile_rejects_duplicate_asins(self):
         with self.assertRaisesRegex(SystemExit, "case-insensitive duplicates"):
             run_cli(
-                "product-traffic-terms-profile",
+                "product-traffic-structure-profile",
                 "--asins", "B01CGLCGRA,b01cglcgra",
                 "--date", "2026-06-29",
             )
 
-    def test_product_traffic_terms_timeline(self):
-        r = run_cli("product-traffic-terms-timeline",
+    def test_product_traffic_terms_trend(self):
+        r = run_cli("product-traffic-terms-trend",
                     "--asin", "B01CGLCGRA",
                     "--keyword", "yoga mat",
                     "--date-from", "2026-06-23",
                     "--date-to", "2026-06-29")
-        self.assertEqual(r["endpoint"], "keywords/product-traffic-terms-timeline")
+        self.assertEqual(r["endpoint"], "keywords/product-traffic-terms-trend")
         self.assertEqual(r["params"], {
             "asin": "B01CGLCGRA",
             "keyword": "yoga mat",
@@ -602,13 +612,46 @@ class TestCategoryResolutionMeta(unittest.TestCase):
             "granularity": "week",
         })
 
-    def test_product_traffic_terms_timeline_batch(self):
-        r = run_cli("product-traffic-terms-timeline",
+    def test_product_traffic_terms_trend_batch(self):
+        r = run_cli("product-traffic-terms-trend",
                     "--asin", "B01CGLCGRA",
                     "--keywords", "yoga mat,pilates mat",
                     "--date-from", "2026-06-23",
                     "--date-to", "2026-06-29")
         self.assertEqual(r["params"]["keywords"], ["yoga mat", "pilates mat"])
+
+    def test_product_traffic_trend_batch(self):
+        r = run_cli(
+            "product-traffic-trend",
+            "--asins", "B01CGLCGRA,B07FR2V8SH",
+            "--date-from", "2026-06-01",
+            "--date-to", "2026-06-29",
+        )
+        self.assertEqual(r["endpoint"], "keywords/product-traffic-trend")
+        self.assertEqual(r["params"]["asins"], ["B01CGLCGRA", "B07FR2V8SH"])
+        self.assertEqual(r["params"]["granularity"], "week")
+
+    def test_product_traffic_trend_profile(self):
+        r = run_cli(
+            "product-traffic-trend-profile",
+            "--asin", "B01CGLCGRA",
+            "--date", "2026-06-29",
+            "--window-periods", "4",
+            "--detail-level", "full",
+        )
+        self.assertEqual(r["endpoint"], "keywords/product-traffic-trend-profile")
+        self.assertEqual(r["params"]["windowPeriods"], [4])
+        self.assertEqual(r["params"]["detailLevel"], "full")
+        self.assertEqual(r["params"]["granularity"], "week")
+
+    def test_product_traffic_trend_profile_rejects_unsupported_window(self):
+        with self.assertRaisesRegex(SystemExit, "exactly one value: 4"):
+            run_cli(
+                "product-traffic-trend-profile",
+                "--asin", "B01CGLCGRA",
+                "--date", "2026-06-29",
+                "--window-periods", "8",
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -881,11 +924,11 @@ class TestApiErrorPropagation(unittest.TestCase):
                 "code": "endpoint_gone",
                 "message": (
                     "product-traffic-terms-overview has been retired. "
-                    "Use product-traffic-terms-profile instead."
+                    "Use product-traffic-structure-profile instead."
                 ),
                 "details": {
                     "replacementMethod": "POST",
-                    "replacementPath": "/openapi/v2/keywords/product-traffic-terms-profile",
+                    "replacementPath": "/openapi/v2/keywords/product-traffic-structure-profile",
                     "supportedGranularity": ["week"],
                     "maxAsins": 20,
                 },
@@ -913,7 +956,7 @@ class TestApiErrorPropagation(unittest.TestCase):
         self.assertEqual(result["_transport"], {"status": 410})
         self.assertEqual(
             result["error"]["details"]["replacementPath"],
-            "/openapi/v2/keywords/product-traffic-terms-profile",
+            "/openapi/v2/keywords/product-traffic-structure-profile",
         )
 
     def test_account_http_errors_preserve_final_server_message_after_blind_retries(self):
@@ -1031,7 +1074,7 @@ class TestApiErrorPropagation(unittest.TestCase):
 
         def service_error(*args, **kwargs):
             raise urllib.error.HTTPError(
-                "https://api.zoodata.ai/openapi/v2/keywords/product-traffic-terms-profile",
+                "https://api.zoodata.ai/openapi/v2/keywords/product-traffic-structure-profile",
                 503,
                 "Service Unavailable",
                 {},
@@ -1041,10 +1084,9 @@ class TestApiErrorPropagation(unittest.TestCase):
         with patch.object(zoodata, "get_api_key", return_value="test_key"), \
              patch.object(zoodata.urllib.request, "urlopen", side_effect=service_error) as urlopen, \
              patch.object(zoodata.time, "sleep"):
-            result = zoodata.api_call("keywords/product-traffic-terms-profile", {
+            result = zoodata.api_call("keywords/product-traffic-structure-profile", {
                 "asin": "B01CGLCGRA",
                 "date": "2026-07-29",
-                "granularity": "week",
             })
 
         self.assertEqual(urlopen.call_count, zoodata.MAX_RETRIES)
@@ -1150,6 +1192,7 @@ class TestApiErrorPropagation(unittest.TestCase):
         self.assertEqual(result["meta"], server_response["meta"])
         self.assertIs(result["success"], False)
         self.assertEqual(result["_transport"], {"status": 422})
+        self.assertEqual(result["_query"]["params"]["granularity"], "lately_day")
         self.assertEqual(result["_query"]["params"]["lookbackDays"], 7)
 
     def test_http_422_transport_status_cannot_be_overridden_by_response_body(self):
@@ -1321,9 +1364,9 @@ class TestApiErrorPropagation(unittest.TestCase):
             ("keyword-extends", "--query", "   "),
             ("keyword-search-results", "--keyword", "   ", "--date", "2026-07-29"),
             ("keyword-product-traffic-terms", "--asin", "   ", "--date", "2026-07-29"),
-            ("product-traffic-terms-profile", "--asin", "   ", "--date", "2026-07-29"),
+            ("product-traffic-structure-profile", "--asin", "   ", "--date", "2026-07-29"),
             (
-                "product-traffic-terms-timeline",
+                "product-traffic-terms-trend",
                 "--asin", "   ",
                 "--keyword", "yoga mat",
                 "--date-from", "2026-07-01",
@@ -2001,7 +2044,7 @@ class TestCheckCommand(unittest.TestCase):
             self.assertIn("keywords/market-profile", calls)
             self.assertIn("keywords/trend-profile", calls)
 
-    def test_keyword_check_uses_product_traffic_terms_profile_for_asin_probe(self):
+    def test_keyword_check_uses_new_product_traffic_profiles_for_asin_probe(self):
         args = type("Args", (), {
             "format": "json",
             "endpoints": False,
@@ -2022,10 +2065,16 @@ class TestCheckCommand(unittest.TestCase):
             zoodata.cmd_check(args)
 
         endpoints = [endpoint for endpoint, _ in calls]
-        self.assertIn("keywords/product-traffic-terms-profile", endpoints)
+        self.assertIn("keywords/product-traffic-structure-profile", endpoints)
+        self.assertIn("keywords/product-traffic-trend-profile", endpoints)
+        self.assertIn("keywords/product-traffic-trend", endpoints)
+        self.assertIn("keywords/product-traffic-terms-trend", endpoints)
+        for endpoint, params in calls:
+            with self.subTest(endpoint=endpoint):
+                self.assertEqual(params["granularity"], "week")
         profile_params = next(
             params for endpoint, params in calls
-            if endpoint == "keywords/product-traffic-terms-profile"
+            if endpoint == "keywords/product-traffic-structure-profile"
         )
         self.assertEqual(profile_params["asin"], "B01CGLCGRA")
         self.assertEqual(profile_params["granularity"], "week")
