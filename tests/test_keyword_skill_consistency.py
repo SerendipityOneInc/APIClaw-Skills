@@ -636,7 +636,7 @@ def test_timeline_keyword_metric_fields_are_documented_consistently():
         "`keywordEstimateSearchCount`, `keywordAbaRank`, Top3 shares, and "
         "`metricWindow` in `keywordMetrics`"
     )
-    assert contract_phrase in " ".join(zoodata_skill.split())
+    assert contract_phrase not in " ".join(zoodata_skill.split())
     assert contract_phrase in " ".join(openapi_reference.split())
     assert (
         "`keywordMetrics`: `metricWindow`, `keywordEstimateSearchCount`, "
@@ -727,9 +727,11 @@ def test_scenarios_define_evidence_stages_and_conclusion_authority():
     for text in (target, expand, product):
         assert "Interactive Stage Gate" in text
         assert "Stage-End Selection List Rule" in text
-    assert "raw `product-traffic-trend` when the user explicitly requests weekly points" in product
-    assert "an explicitly requested period longer than four weeks" in product
-    assert "do not stretch the four-week profile across that longer period" in product
+    assert "the requested window matches the profile-supported window" in product
+    assert "any explicit non-matching window, whether shorter or longer" in product
+    assert "including a shorter window" in product
+    assert "Do not ask the user to restate a valid shorter-window request" in product
+    assert "stretch the profile across a different window" in product
     assert "do not silently truncate it or issue an out-of-contract call" in product
     assert "If `product-traffic-terms` is unavailable" in product
     assert "neither ASIN traffic-list endpoint" not in product
@@ -777,8 +779,9 @@ def test_product_traffic_analysis_unifies_structure_change_trend_and_health():
     assert "| 5. Profitability calibration" in scenario
     assert "| 6. Advertising-control decision" in scenario
     assert "Stages 1A and 1B are alternative current-product entry points" in scenario
-    assert "Stage 1A follows metric-first access" in scenario
-    assert "Do not reconstruct the profile from traffic rows" in scenario
+    assert "Stage 1A uses the metric profile when no trend window is specified" in scenario
+    assert "Use raw `product-traffic-trend` for an explicit window that does not match" in scenario
+    assert "do not reconstruct the profile from traffic rows" in scenario.lower()
     assert "Stage 1B may use Top-N wording only when" in scenario
     assert "Stage 1B discovers product traffic terms or describes one named term's current product-side observation" in scenario
     assert "named ASIN × keyword visibility/placement/exposure question without movement or causal intent" in scenario
@@ -1045,6 +1048,9 @@ def test_reference_stays_contract_local_and_scenarios_own_selection():
     assert "`reference.md` owns only production API and acquisition-surface facts" in skill
     assert "Scenario files own only scenario-specific stage entry requirements, capability selection" in skill
     assert "Apply each rule from its responsible owner module above" in skill
+    assert "load `reference.md` for the endpoint's marketplace, keyword-normalization, and date contract" in skill
+    assert "Current keyword and product-traffic endpoints support only the `US` marketplace" not in skill
+    assert "Normalize batch keyword values to lowercase after trimming" not in skill
     assert "try `phrase` and `fuzzy`" not in reference
     assert "Use the routes in this order" not in reference
     assert "Use this endpoint first" not in reference
@@ -1333,6 +1339,18 @@ def test_public_keyword_endpoint_inventory_and_sqp_routing_are_consistent():
     ):
         assert owned_parameter in openapi_reference
         assert owned_parameter not in zoodata_skill
+
+    terms_trend_entry = zoodata_skill.split(
+        "### `/openapi/v2/keywords/product-traffic-terms-trend`", 1
+    )[1].split("### `/openapi/v2/keywords/product-traffic-trend`", 1)[0]
+    assert "Read `references/openapi-reference.md § 18`" in terms_trend_entry
+    for owned_contract in (
+        "exactly one of `keyword` / `keywords[]`",
+        "date range cannot exceed 26 weeks",
+        "no pagination or sort parameters",
+        "Response shape:",
+    ):
+        assert owned_contract not in terms_trend_entry
 
     raw_trend_entry = zoodata_skill.split(
         "### `/openapi/v2/keywords/product-traffic-trend`", 1

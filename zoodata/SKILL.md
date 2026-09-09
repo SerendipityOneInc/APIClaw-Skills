@@ -164,7 +164,6 @@ For every parsed HTTP response from `zoodata.py`, treat `_transport.status` as t
 - `keywords/search-results` requires `date` + `keyword`; `exploreTypes` values are `ORG`, `SP`, `SB`, `SBV`, `SPR`
 - Competitor traffic-term lookup is consolidated into `keywords/product-traffic-terms`; route retired-interface behavior and the exact request contract to `references/openapi-reference.md § 16`.
 - `keywords/product-traffic-structure-profile` compares the resolved current week with the previous week; it is not a multi-week trend. See `references/openapi-reference.md § 17` for its exact contract.
-- `keywords/product-traffic-terms-trend` requires `asin` + exactly one of `keyword` / `keywords[]` + `dateFrom` + `dateTo`; the date range cannot exceed 26 weeks and the series request has no pagination or sort parameters.
 - `keywords/product-traffic-trend` is ASIN-level across all keywords and has no keyword dimension; use `product-traffic-terms-trend` for an ASIN × keyword series.
 - `keywords/product-traffic-trend-profile` provides the server-calculated ASIN-wide trend profile; route exact window, detail, and billing questions to `references/openapi-reference.md § 20`.
 - `keywords/search-results` is the default source for explaining what products currently appear on a keyword SERP because it already returns listing-level product fields
@@ -256,21 +255,9 @@ Keyword value boundary:
 - Apply `references/cli-contract.md` to every result, including a server-provided endpoint migration response.
 
 ### `/openapi/v2/keywords/product-traffic-terms-trend`
-- Input: required `asin`, exactly one of `keyword` / `keywords[]` (1–20), `dateFrom`, `dateTo`; optional `marketplace`; compatibility-retained `granularity` supports only `week`
-- Do not send legacy `lookbackDays`, `page`, `pageSize`, `sortBy`, or `sortOrder`
-- Data window: ASIN + keyword weekly trend across the requested date range; date range cannot exceed 26 weeks
-- Date rule: prefer T-1 or earlier for `dateTo`; avoid current-date lookup unless explicitly requested
-- Response shape: `data.context + data.items[].series[]`, preserving keyword request order
-- Item fields: `identity`, `status=ok|empty`, `series[]`, `emptyReason`, nullable `errorCode`, nullable `errorMessage`
-- Each series point groups fields under `asinSnapshot`, `traffic`, `placement`, `keywordMetrics`, and `adActivity`; keep their returned period boundaries separate
-- Diagnosis curves/events: price (`asinSnapshot.latestPrice`), BSR (`asinSnapshot.latestBsr`,
-  `asinSnapshot.latestSubBsr`), sales (`asinSnapshot.latestMonthlySaleCount`), rating
-  (`asinSnapshot.latestRating`, `asinSnapshot.latestRatingCount`), traffic estimate (`traffic.*`
-  plus placement averages), and listing events (`asinSnapshot.latestTitle`, `asinSnapshot.latestMainImageLink`)
-- Key groups: listing/product/rank fields in `asinSnapshot`; ORG/SP/SB/SBV/SPR impression points
-  in `traffic`; positions/pages/observation times in `placement`; `keywordEstimateSearchCount`,
-  `keywordAbaRank`, Top3 shares, and `metricWindow` in `keywordMetrics`;
-  observation/campaign/ad counts in `adActivity`
+- Provides weekly product-side traffic, placement, keyword-context, and product-observation history for one ASIN and its named keyword subjects.
+- Read `references/openapi-reference.md § 18` for the request, response, status, field, date, batching, range, and billing contract.
+- Apply `references/cli-contract.md` to every result.
 
 ### `/openapi/v2/keywords/product-traffic-trend`
 - Provides ASIN-wide raw weekly traffic and term-coverage history across all observed keywords; it is the weekly-detail companion to the four-week metric profile.
